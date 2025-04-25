@@ -68,8 +68,10 @@ import {
   Edit,
   Trash2,
   ArrowLeftRight,
-  Package
+  Package,
+  QrCode
 } from "lucide-react";
+import { BarcodeActions } from "@/components/barcode/barcode-actions";
 
 export default function InventoryPage() {
   const { user, hasPermission } = useAuth();
@@ -176,7 +178,7 @@ export default function InventoryPage() {
     // Search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      const category = categories.find(c => c.categoryId = item.categoryId);
+      const category = categories.find(c => c.id === item.categoryId);
       const categoryName = category ? category.name.toLowerCase() : "";
       
       return (
@@ -274,14 +276,24 @@ export default function InventoryPage() {
       <Card className="mb-6">
         <CardContent className="p-4">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-3 md:space-y-0">
-            <div className="relative">
-              <Input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search items..."
-                className="pl-10 w-full md:w-64"
+            <div className="relative flex space-x-2">
+              <div className="relative flex-1">
+                <Input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search items..."
+                  className="pl-10 w-full"
+                />
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+              </div>
+              <BarcodeActions 
+                onScan={(data) => {
+                  setSearchQuery(data);
+                }}
+                buttonVariant="outline"
+                buttonSize="default"
+                showGenerate={false}
               />
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
             </div>
             
             <div className="flex flex-wrap space-x-2">
