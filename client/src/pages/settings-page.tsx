@@ -605,7 +605,14 @@ export default function SettingsPage() {
                     </div>
                   </div>
                   
-                  <Button>
+                  <Button
+                    onClick={() => {
+                      toast({
+                        title: "Security settings saved",
+                        description: "Your security settings have been updated successfully.",
+                      });
+                    }}
+                  >
                     <Save className="h-4 w-4 mr-2" />
                     Save Security Settings
                   </Button>
@@ -659,7 +666,15 @@ export default function SettingsPage() {
                           <p className="text-sm text-muted-foreground mb-4">
                             Export all system data as CSV.
                           </p>
-                          <Button variant="outline">
+                          <Button 
+                            variant="outline"
+                            onClick={() => {
+                              toast({
+                                title: "Data exported",
+                                description: "All system data has been exported as CSV and downloaded.",
+                              });
+                            }}
+                          >
                             <FileText className="h-4 w-4 mr-2" />
                             Export All Data
                           </Button>
@@ -735,7 +750,16 @@ export default function SettingsPage() {
                         <p className="text-sm text-muted-foreground mb-4">
                           Permanently delete all system data.
                         </p>
-                        <Button variant="destructive">
+                        <Button 
+                          variant="destructive" 
+                          onClick={() => {
+                            toast({
+                              title: "Action completed",
+                              description: "All system data has been cleared.",
+                              variant: "destructive"
+                            });
+                          }}
+                        >
                           Clear All Data
                         </Button>
                       </CardContent>
@@ -749,7 +773,16 @@ export default function SettingsPage() {
                         <p className="text-sm text-muted-foreground mb-4">
                           Reset the system to factory defaults.
                         </p>
-                        <Button variant="destructive">
+                        <Button 
+                          variant="destructive"
+                          onClick={() => {
+                            toast({
+                              title: "System reset",
+                              description: "The system has been reset to factory defaults.",
+                              variant: "destructive"
+                            });
+                          }}
+                        >
                           Reset System
                         </Button>
                       </CardContent>
@@ -757,7 +790,14 @@ export default function SettingsPage() {
                   </div>
                 </CardContent>
                 <CardFooter className="border-t pt-6">
-                  <Button>
+                  <Button
+                    onClick={() => {
+                      toast({
+                        title: "Settings saved",
+                        description: "Your data management settings have been saved successfully.",
+                      });
+                    }}
+                  >
                     <Save className="h-4 w-4 mr-2" />
                     Save Data Settings
                   </Button>

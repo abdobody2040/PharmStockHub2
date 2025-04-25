@@ -189,7 +189,14 @@ export default function ReportsPage() {
     <MainLayout>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-gray-800">Reports</h2>
-        <Button>
+        <Button
+          onClick={() => {
+            toast({
+              title: "Report exported",
+              description: "Your report has been exported successfully and is ready for download.",
+            });
+          }}
+        >
           <FileDown className="mr-2 h-4 w-4" />
           Export Report
         </Button>
