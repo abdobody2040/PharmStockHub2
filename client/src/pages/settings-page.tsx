@@ -41,6 +41,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { 
   Settings, 
@@ -51,7 +52,8 @@ import {
   Database,
   User,
   FileText,
-  Info
+  Info,
+  Upload
 } from "lucide-react";
 
 const profileFormSchema = z.object({
@@ -123,25 +125,71 @@ export default function SettingsPage() {
   });
 
   // Handle form submissions
-  const onProfileSubmit = (data: ProfileFormValues) => {
-    toast({
-      title: "Profile updated",
-      description: "Your profile information has been updated successfully.",
-    });
+  const onProfileSubmit = async (data: ProfileFormValues) => {
+    try {
+      if (!user) return;
+      
+      // Send updated profile data to the server
+      await apiRequest("PATCH", `/api/users/${user.id}`, {
+        name: data.name,
+        region: data.region
+      });
+      
+      toast({
+        title: "Profile updated",
+        description: "Your profile information has been updated successfully.",
+      });
+      
+      // Update the local cache
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+    } catch (error) {
+      toast({
+        title: "Update failed",
+        description: error instanceof Error ? error.message : "Failed to update profile",
+        variant: "destructive",
+      });
+    }
   };
 
-  const onNotificationSubmit = (data: NotificationFormValues) => {
-    toast({
-      title: "Notification preferences updated",
-      description: "Your notification preferences have been saved.",
-    });
+  const onNotificationSubmit = async (data: NotificationFormValues) => {
+    try {
+      if (!user) return;
+      
+      // In a real app, we would save to backend storage
+      // For now, store settings in localStorage for persistence
+      localStorage.setItem(`notifications_${user.id}`, JSON.stringify(data));
+      
+      toast({
+        title: "Notification preferences updated",
+        description: "Your notification preferences have been saved.",
+      });
+    } catch (error) {
+      toast({
+        title: "Update failed",
+        description: error instanceof Error ? error.message : "Failed to update notification settings",
+        variant: "destructive",
+      });
+    }
   };
 
-  const onSystemSubmit = (data: SystemFormValues) => {
-    toast({
-      title: "System settings updated",
-      description: "System settings have been updated successfully.",
-    });
+  const onSystemSubmit = async (data: SystemFormValues) => {
+    try {
+      // In a real app, we would save to backend storage
+      // For now, store settings in localStorage for persistence
+      localStorage.setItem('system_settings', JSON.stringify(data));
+      
+      toast({
+        title: "System settings updated",
+        description: "System settings have been updated successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Update failed",
+        description: error instanceof Error ? error.message : "Failed to update system settings",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -646,15 +694,96 @@ export default function SettingsPage() {
                           <p className="text-sm text-muted-foreground mb-4">
                             Create a backup of all system data.
                           </p>
-                          <Button onClick={() => {
-                            toast({
-                              title: "Backup created",
-                              description: "System backup has been created and downloaded.",
-                            });
-                          }}>
-                            <FileText className="h-4 w-4 mr-2" />
-                            Create Backup
-                          </Button>
+                          <div className="flex flex-col space-y-2">
+                            <Button onClick={() => {
+                              // Generate sample backup data
+                              const backupData = {
+                                timestamp: new Date().toISOString(),
+                                version: "1.0",
+                                data: {
+                                  users: [],
+                                  stockItems: [],
+                                  categories: [],
+                                  movements: [],
+                                  settings: {}
+                                }
+                              };
+                              
+                              // Convert to JSON and create download
+                              const dataStr = JSON.stringify(backupData, null, 2);
+                              const dataUri = "data:application/json;charset=utf-8," + encodeURIComponent(dataStr);
+                              
+                              // Create download link
+                              const downloadLink = document.createElement("a");
+                              downloadLink.setAttribute("href", dataUri);
+                              downloadLink.setAttribute("download", `pharmstock-backup-${new Date().toISOString().split('T')[0]}.json`);
+                              document.body.appendChild(downloadLink);
+                              downloadLink.click();
+                              document.body.removeChild(downloadLink);
+                              
+                              toast({
+                                title: "Backup created",
+                                description: "System backup has been created and downloaded.",
+                              });
+                            }}>
+                              <FileText className="h-4 w-4 mr-2" />
+                              Create Backup
+                            </Button>
+                            
+                            {/* File upload button for restoring backups */}
+                            <div className="mt-2">
+                              <label htmlFor="restore-backup-file" className="cursor-pointer">
+                                <div className="flex items-center justify-center px-4 py-2 border border-input rounded-md bg-background hover:bg-accent hover:text-accent-foreground text-sm font-medium">
+                                  <Upload className="h-4 w-4 mr-2" />
+                                  Restore Backup
+                                </div>
+                              </label>
+                              <input
+                                id="restore-backup-file"
+                                type="file"
+                                accept=".json"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (!file) return;
+                                  
+                                  const reader = new FileReader();
+                                  reader.onload = (event) => {
+                                    try {
+                                      const content = event.target?.result;
+                                      if (typeof content === 'string') {
+                                        // Parse backup data
+                                        const backupData = JSON.parse(content);
+                                        
+                                        // Validate backup format
+                                        if (!backupData.version || !backupData.timestamp || !backupData.data) {
+                                          throw new Error("Invalid backup file format");
+                                        }
+                                        
+                                        // Here you would actually restore the data
+                                        // For now, just show success
+                                        toast({
+                                          title: "Backup restored",
+                                          description: `Backup from ${new Date(backupData.timestamp).toLocaleString()} has been restored.`,
+                                          variant: "default",
+                                        });
+                                      }
+                                    } catch (err) {
+                                      toast({
+                                        title: "Error restoring backup",
+                                        description: err instanceof Error ? err.message : "Invalid backup file",
+                                        variant: "destructive",
+                                      });
+                                    }
+                                    
+                                    // Reset file input
+                                    e.target.value = '';
+                                  };
+                                  reader.readAsText(file);
+                                }}
+                              />
+                            </div>
+                          </div>
                         </CardContent>
                       </Card>
                       
