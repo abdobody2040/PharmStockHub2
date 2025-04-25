@@ -10,8 +10,13 @@ import type {
 import { ROLE_PERMISSIONS } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
+import connectPg from "connect-pg-simple";
+import { db, pool } from "./db";
+import { eq, lte, and } from "drizzle-orm";
+import { addDays } from "date-fns";
 
 const MemoryStore = createMemoryStore(session);
+const PostgresSessionStore = connectPg(session);
 
 // Interface for storage operations
 export interface IStorage {
@@ -269,4 +274,194 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+// Database storage implementation
+export class DatabaseStorage implements IStorage {
+  sessionStore: session.SessionStore;
+
+  constructor() {
+    this.sessionStore = new PostgresSessionStore({ 
+      pool, 
+      createTableIfMissing: true 
+    });
+    this.initializeData();
+  }
+
+  // Initialize with default data if needed
+  private async initializeData() {
+    const existingCategories = await this.getCategories();
+    
+    // Only initialize if no categories exist
+    if (existingCategories.length === 0) {
+      // Add default categories
+      const defaultCategories = [
+        { name: 'Brochures', color: 'bg-blue-500' },
+        { name: 'Samples', color: 'bg-green-500' },
+        { name: 'Gifts', color: 'bg-purple-500' },
+        { name: 'Banners', color: 'bg-yellow-500' },
+        { name: 'Digital Media', color: 'bg-indigo-500' },
+        { name: 'Other', color: 'bg-gray-500' }
+      ];
+      
+      for (const category of defaultCategories) {
+        await this.createCategory(category);
+      }
+    }
+  }
+  
+  // User operations
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+  
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
+  }
+  
+  async getUsers(): Promise<User[]> {
+    return db.select().from(users);
+  }
+  
+  async getUsersByRole(role: RoleType): Promise<User[]> {
+    return db.select().from(users).where(eq(users.role, role));
+  }
+  
+  async createUser(user: InsertUser): Promise<User> {
+    const [newUser] = await db.insert(users).values(user).returning();
+    return newUser;
+  }
+  
+  async updateUser(id: number, userData: Partial<User>): Promise<User | undefined> {
+    const [updatedUser] = await db
+      .update(users)
+      .set(userData)
+      .where(eq(users.id, id))
+      .returning();
+    return updatedUser;
+  }
+  
+  async deleteUser(id: number): Promise<boolean> {
+    const result = await db.delete(users).where(eq(users.id, id)).returning();
+    return result.length > 0;
+  }
+  
+  // Category operations
+  async getCategories(): Promise<Category[]> {
+    return db.select().from(categories);
+  }
+  
+  async getCategory(id: number): Promise<Category | undefined> {
+    const [category] = await db.select().from(categories).where(eq(categories.id, id));
+    return category;
+  }
+  
+  async createCategory(category: InsertCategory): Promise<Category> {
+    const [newCategory] = await db.insert(categories).values(category).returning();
+    return newCategory;
+  }
+  
+  // Stock item operations
+  async getStockItems(): Promise<StockItem[]> {
+    return db.select().from(stockItems);
+  }
+  
+  async getStockItem(id: number): Promise<StockItem | undefined> {
+    const [item] = await db.select().from(stockItems).where(eq(stockItems.id, id));
+    return item;
+  }
+  
+  async createStockItem(item: InsertStockItem): Promise<StockItem> {
+    const [newItem] = await db.insert(stockItems).values(item).returning();
+    return newItem;
+  }
+  
+  async updateStockItem(id: number, itemData: Partial<StockItem>): Promise<StockItem | undefined> {
+    const [updatedItem] = await db
+      .update(stockItems)
+      .set(itemData)
+      .where(eq(stockItems.id, id))
+      .returning();
+    return updatedItem;
+  }
+  
+  async deleteStockItem(id: number): Promise<boolean> {
+    const result = await db.delete(stockItems).where(eq(stockItems.id, id)).returning();
+    return result.length > 0;
+  }
+  
+  async getExpiringItems(daysThreshold: number): Promise<StockItem[]> {
+    const thresholdDate = addDays(new Date(), daysThreshold);
+    
+    return db
+      .select()
+      .from(stockItems)
+      .where(
+        and(
+          stockItems.expiry.isNotNull(),
+          lte(stockItems.expiry, thresholdDate)
+        )
+      );
+  }
+  
+  // Stock allocation operations
+  async getAllocations(userId?: number): Promise<StockAllocation[]> {
+    if (userId) {
+      return db
+        .select()
+        .from(stockAllocations)
+        .where(eq(stockAllocations.userId, userId));
+    }
+    return db.select().from(stockAllocations);
+  }
+  
+  async createAllocation(allocation: InsertStockAllocation): Promise<StockAllocation> {
+    const [newAllocation] = await db
+      .insert(stockAllocations)
+      .values(allocation)
+      .returning();
+    return newAllocation;
+  }
+  
+  async updateAllocation(id: number, allocationData: Partial<StockAllocation>): Promise<StockAllocation | undefined> {
+    const [updatedAllocation] = await db
+      .update(stockAllocations)
+      .set(allocationData)
+      .where(eq(stockAllocations.id, id))
+      .returning();
+    return updatedAllocation;
+  }
+  
+  async deleteAllocation(id: number): Promise<boolean> {
+    const result = await db
+      .delete(stockAllocations)
+      .where(eq(stockAllocations.id, id))
+      .returning();
+    return result.length > 0;
+  }
+  
+  // Stock movement operations
+  async getMovements(): Promise<StockMovement[]> {
+    return db.select().from(stockMovements);
+  }
+  
+  async createMovement(movement: InsertStockMovement): Promise<StockMovement> {
+    const [newMovement] = await db
+      .insert(stockMovements)
+      .values(movement)
+      .returning();
+    return newMovement;
+  }
+  
+  // Permission check
+  async hasPermission(userId: number, permission: keyof typeof ROLE_PERMISSIONS.ceo): Promise<boolean> {
+    const user = await this.getUser(userId);
+    if (!user) return false;
+    
+    const role = user.role as RoleType;
+    return ROLE_PERMISSIONS[role][permission] === true;
+  }
+}
+
+// Use the database storage for production
+export const storage = new DatabaseStorage();

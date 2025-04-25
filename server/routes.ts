@@ -333,6 +333,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
       next(error);
     }
   });
+  
+  // Get a single user
+  app.get("/api/users/:id", isAuthenticated, async (req, res, next) => {
+    try {
+      const id = parseInt(req.params.id);
+      const user = await storage.getUser(id);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Remove password from response
+      const { password, ...safeUser } = user;
+      res.json(safeUser);
+    } catch (error) {
+      next(error);
+    }
+  });
+  
+  // Update a user
+  app.put(
+    "/api/users/:id", 
+    isAuthenticated, 
+    hasPermission("canManageUsers"), 
+    async (req, res, next) => {
+      try {
+        const id = parseInt(req.params.id);
+        const userData = req.body;
+        
+        // If password is provided, hash it
+        if (userData.password) {
+          const { hashPassword } = await import('./auth');
+          userData.password = await hashPassword(userData.password);
+        }
+        
+        const updatedUser = await storage.updateUser(id, userData);
+        
+        if (!updatedUser) {
+          return res.status(404).json({ message: "User not found" });
+        }
+        
+        // Remove password from response
+        const { password, ...safeUser } = updatedUser;
+        res.json(safeUser);
+      } catch (error) {
+        next(error);
+      }
+    }
+  );
+  
+  // Delete a user
+  app.delete(
+    "/api/users/:id", 
+    isAuthenticated, 
+    hasPermission("canManageUsers"), 
+    async (req, res, next) => {
+      try {
+        const id = parseInt(req.params.id);
+        
+        // Don't allow deleting the current user
+        if (id === (req.user as User).id) {
+          return res.status(400).json({ message: "Cannot delete your own account" });
+        }
+        
+        const success = await storage.deleteUser(id);
+        
+        if (!success) {
+          return res.status(404).json({ message: "User not found" });
+        }
+        
+        res.status(204).end();
+      } catch (error) {
+        next(error);
+      }
+    }
+  );
 
   // Create HTTP server
   const httpServer = createServer(app);
