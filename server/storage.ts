@@ -59,7 +59,7 @@ export interface IStorage {
   hasPermission(userId: number, permission: keyof typeof ROLE_PERMISSIONS.ceo): Promise<boolean>;
   
   // Session store
-  sessionStore: session.SessionStore;
+  sessionStore: ReturnType<typeof createMemoryStore>;
 }
 
 // In-memory implementation for development
@@ -76,7 +76,7 @@ export class MemStorage implements IStorage {
   private stockAllocationIdCounter: number;
   private stockMovementIdCounter: number;
   
-  sessionStore: session.SessionStore;
+  sessionStore: ReturnType<typeof createMemoryStore>;
   
   constructor() {
     this.usersMap = new Map();
@@ -297,7 +297,7 @@ export class MemStorage implements IStorage {
 
 // Database storage implementation
 export class DatabaseStorage implements IStorage {
-  sessionStore: session.SessionStore;
+  sessionStore: ReturnType<typeof createMemoryStore>;
 
   constructor() {
     this.sessionStore = new PostgresSessionStore({ 

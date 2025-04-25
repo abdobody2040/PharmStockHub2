@@ -17,7 +17,7 @@ declare global {
   namespace Express {
     // Extend the Request interface to include file property from multer
     interface Request {
-      file?: any; // Using any for simplicity, avoiding importing specific multer types
+      file?: Express.Multer.File; // Type for multer file
     }
   }
 }
