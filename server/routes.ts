@@ -4,12 +4,22 @@ import { storage } from "./storage";
 import { setupAuth, upload } from "./auth";
 import path from "path";
 import fs from "fs";
+import multer from "multer";
 import { 
   extendedInsertStockItemSchema, 
   insertStockMovementSchema,
   insertCategorySchema
 } from "@shared/schema";
 import { User } from "@shared/schema";
+
+// Add multer type extensions to Request
+declare global {
+  namespace Express {
+    interface Request {
+      file?: multer.File;
+    }
+  }
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication
@@ -83,27 +93,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     upload.single("image"), 
     async (req, res, next) => {
       try {
-        let stockData = req.body;
-        
-        // Convert numeric strings to numbers
-        if (stockData.quantity) stockData.quantity = parseInt(stockData.quantity);
-        if (stockData.categoryId) stockData.categoryId = parseInt(stockData.categoryId);
-        
-        // Add the current user as creator
-        stockData.createdBy = (req.user as User).id;
+        // Parse form data properly
+        const stockData = {
+          ...req.body,
+          // Ensure numeric fields are properly converted
+          quantity: req.body.quantity ? parseInt(req.body.quantity) : undefined,
+          categoryId: req.body.categoryId ? parseInt(req.body.categoryId) : undefined,
+          // Add the current user as creator
+          createdBy: (req.user as User).id
+        };
         
         // Handle image upload
         if (req.file) {
           stockData.imageUrl = `/uploads/${req.file.filename}`;
         }
         
-        // Validate data
+        console.log("Received stock data:", stockData);
+        
+        // Validate data with extended schema
         const validatedData = extendedInsertStockItemSchema.parse(stockData);
         
         // Create stock item
         const stockItem = await storage.createStockItem(validatedData);
         res.status(201).json(stockItem);
       } catch (error) {
+        console.error("Stock item creation error:", error);
         next(error);
       }
     }
