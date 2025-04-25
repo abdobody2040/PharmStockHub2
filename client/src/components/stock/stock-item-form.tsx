@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/select";
 import { formatDate } from "@/lib/utils";
 import { FormFileInput } from "@/components/ui/file-input";
+import { BarcodeActions } from "@/components/barcode/barcode-actions";
 
 interface StockItemFormProps {
   onSubmit: (data: FormData) => void;
@@ -195,9 +196,20 @@ export function StockItemForm({ onSubmit, initialData, isLoading = false }: Stoc
           render={({ field }) => (
             <FormItem>
               <FormLabel>Unique Number</FormLabel>
-              <FormControl>
-                <Input {...field} />
-              </FormControl>
+              <div className="flex space-x-2">
+                <FormControl className="flex-1">
+                  <Input {...field} />
+                </FormControl>
+                <BarcodeActions 
+                  onScan={(data) => {
+                    field.onChange(data);
+                    form.setValue("uniqueNumber", data, { shouldValidate: true });
+                  }}
+                  buttonVariant="outline"
+                  buttonSize="icon"
+                  showGenerate={false}
+                />
+              </div>
               <FormMessage />
             </FormItem>
           )}
