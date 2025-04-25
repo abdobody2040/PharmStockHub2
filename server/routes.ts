@@ -364,7 +364,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // If password is provided, hash it
         if (userData.password) {
-          const { hashPassword } = await import('./auth');
+          const { hashPassword } = await import('./auth.js');
           userData.password = await hashPassword(userData.password);
         }
         

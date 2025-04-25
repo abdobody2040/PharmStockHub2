@@ -12,7 +12,7 @@ import session from "express-session";
 import createMemoryStore from "memorystore";
 import connectPg from "connect-pg-simple";
 import { db, pool } from "./db";
-import { eq, lte, and } from "drizzle-orm";
+import { eq, lte, and, isNotNull } from "drizzle-orm";
 import { addDays } from "date-fns";
 
 const MemoryStore = createMemoryStore(session);
@@ -393,15 +393,14 @@ export class DatabaseStorage implements IStorage {
   async getExpiringItems(daysThreshold: number): Promise<StockItem[]> {
     const thresholdDate = addDays(new Date(), daysThreshold);
     
-    return db
-      .select()
-      .from(stockItems)
-      .where(
-        and(
-          stockItems.expiry.isNotNull(),
-          lte(stockItems.expiry, thresholdDate)
-        )
-      );
+    // Get all items and filter manually
+    const items = await db.select().from(stockItems);
+    
+    // Filter items that have expiry dates less than or equal to threshold date
+    return items.filter(item => 
+      item.expiry !== null && 
+      new Date(item.expiry) <= thresholdDate
+    );
   }
   
   // Stock allocation operations
