@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { getRoleName, getPlaceholderAvatar } from "@/lib/utils";
+import { Link } from "wouter";
 
 interface HeaderProps {
   onSearch?: (query: string) => void;
@@ -86,8 +87,16 @@ export function Header({ onSearch }: HeaderProps) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem>Your Profile</DropdownMenuItem>
-            <DropdownMenuItem>Settings</DropdownMenuItem>
+            <Link href="/settings?tab=profile">
+              <DropdownMenuItem>
+                Your Profile
+              </DropdownMenuItem>
+            </Link>
+            <Link href="/settings">
+              <DropdownMenuItem>
+                Settings
+              </DropdownMenuItem>
+            </Link>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout}>
               Sign out

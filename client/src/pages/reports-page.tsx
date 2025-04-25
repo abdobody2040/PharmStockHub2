@@ -6,7 +6,8 @@ import {
   FileText,
   BarChart4,
   BarChart, 
-  PieChart
+  PieChart,
+  Clock
 } from "lucide-react";
 import {
   Card,
