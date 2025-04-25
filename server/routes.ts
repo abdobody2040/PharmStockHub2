@@ -1,0 +1,320 @@
+import express, { Express, Request, Response, NextFunction } from "express";
+import { createServer, type Server } from "http";
+import { storage } from "./storage";
+import { setupAuth, upload } from "./auth";
+import path from "path";
+import fs from "fs";
+import { 
+  extendedInsertStockItemSchema, 
+  insertStockMovementSchema,
+  insertCategorySchema
+} from "@shared/schema";
+import { User } from "@shared/schema";
+
+export async function registerRoutes(app: Express): Promise<Server> {
+  // Setup authentication
+  const { isAuthenticated, hasPermission } = setupAuth(app);
+
+  // Static route for serving uploaded files
+  const uploadDir = path.join(process.cwd(), "uploads");
+  app.use("/uploads", express.static(uploadDir));
+
+  // API routes
+  
+  // Categories
+  app.get("/api/categories", isAuthenticated, async (req, res, next) => {
+    try {
+      const categories = await storage.getCategories();
+      res.json(categories);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/categories", isAuthenticated, hasPermission("canAddItems"), async (req, res, next) => {
+    try {
+      const categoryData = insertCategorySchema.parse(req.body);
+      const category = await storage.createCategory(categoryData);
+      res.status(201).json(category);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Stock Items
+  app.get("/api/stock-items", isAuthenticated, async (req, res, next) => {
+    try {
+      const stockItems = await storage.getStockItems();
+      res.json(stockItems);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/stock-items/expiring", isAuthenticated, async (req, res, next) => {
+    try {
+      const days = parseInt(req.query.days as string) || 30;
+      const items = await storage.getExpiringItems(days);
+      res.json(items);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/stock-items/:id", isAuthenticated, async (req, res, next) => {
+    try {
+      const id = parseInt(req.params.id);
+      const item = await storage.getStockItem(id);
+      
+      if (!item) {
+        return res.status(404).json({ message: "Stock item not found" });
+      }
+      
+      res.json(item);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post(
+    "/api/stock-items", 
+    isAuthenticated, 
+    hasPermission("canAddItems"), 
+    upload.single("image"), 
+    async (req, res, next) => {
+      try {
+        let stockData = req.body;
+        
+        // Convert numeric strings to numbers
+        if (stockData.quantity) stockData.quantity = parseInt(stockData.quantity);
+        if (stockData.categoryId) stockData.categoryId = parseInt(stockData.categoryId);
+        
+        // Add the current user as creator
+        stockData.createdBy = (req.user as User).id;
+        
+        // Handle image upload
+        if (req.file) {
+          stockData.imageUrl = `/uploads/${req.file.filename}`;
+        }
+        
+        // Validate data
+        const validatedData = extendedInsertStockItemSchema.parse(stockData);
+        
+        // Create stock item
+        const stockItem = await storage.createStockItem(validatedData);
+        res.status(201).json(stockItem);
+      } catch (error) {
+        next(error);
+      }
+    }
+  );
+
+  app.put(
+    "/api/stock-items/:id", 
+    isAuthenticated, 
+    hasPermission("canEditItems"), 
+    upload.single("image"), 
+    async (req, res, next) => {
+      try {
+        const id = parseInt(req.params.id);
+        let updateData = req.body;
+        
+        // Convert numeric strings to numbers
+        if (updateData.quantity) updateData.quantity = parseInt(updateData.quantity);
+        if (updateData.categoryId) updateData.categoryId = parseInt(updateData.categoryId);
+        
+        // Handle image upload
+        if (req.file) {
+          updateData.imageUrl = `/uploads/${req.file.filename}`;
+          
+          // Delete old image if exists
+          const oldItem = await storage.getStockItem(id);
+          if (oldItem?.imageUrl) {
+            const oldImagePath = path.join(process.cwd(), oldItem.imageUrl.replace(/^\/uploads\//, 'uploads/'));
+            if (fs.existsSync(oldImagePath)) {
+              fs.unlinkSync(oldImagePath);
+            }
+          }
+        }
+        
+        const updatedItem = await storage.updateStockItem(id, updateData);
+        
+        if (!updatedItem) {
+          return res.status(404).json({ message: "Stock item not found" });
+        }
+        
+        res.json(updatedItem);
+      } catch (error) {
+        next(error);
+      }
+    }
+  );
+
+  app.delete(
+    "/api/stock-items/:id", 
+    isAuthenticated, 
+    hasPermission("canRemoveItems"), 
+    async (req, res, next) => {
+      try {
+        const id = parseInt(req.params.id);
+        
+        // Get item to check for image
+        const item = await storage.getStockItem(id);
+        if (!item) {
+          return res.status(404).json({ message: "Stock item not found" });
+        }
+        
+        // Delete associated image if exists
+        if (item.imageUrl) {
+          const imagePath = path.join(process.cwd(), item.imageUrl.replace(/^\/uploads\//, 'uploads/'));
+          if (fs.existsSync(imagePath)) {
+            fs.unlinkSync(imagePath);
+          }
+        }
+        
+        const success = await storage.deleteStockItem(id);
+        
+        if (!success) {
+          return res.status(404).json({ message: "Stock item not found" });
+        }
+        
+        res.status(204).end();
+      } catch (error) {
+        next(error);
+      }
+    }
+  );
+
+  // Stock Allocations
+  app.get("/api/allocations", isAuthenticated, async (req, res, next) => {
+    try {
+      const userId = req.query.userId ? parseInt(req.query.userId as string) : undefined;
+      const allocations = await storage.getAllocations(userId);
+      res.json(allocations);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Stock Movements
+  app.get("/api/movements", isAuthenticated, async (req, res, next) => {
+    try {
+      const movements = await storage.getMovements();
+      res.json(movements);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post(
+    "/api/movements", 
+    isAuthenticated, 
+    hasPermission("canMoveStock"), 
+    async (req, res, next) => {
+      try {
+        let movementData = req.body;
+        
+        // Convert numeric strings to numbers
+        if (movementData.stockItemId) movementData.stockItemId = parseInt(movementData.stockItemId);
+        if (movementData.fromUserId) movementData.fromUserId = parseInt(movementData.fromUserId);
+        if (movementData.toUserId) movementData.toUserId = parseInt(movementData.toUserId);
+        if (movementData.quantity) movementData.quantity = parseInt(movementData.quantity);
+        
+        // Set current user as the one who moved the stock
+        movementData.movedBy = (req.user as User).id;
+        
+        // Validate
+        const validatedData = insertStockMovementSchema.parse(movementData);
+        
+        // Check if source has enough stock
+        const stockItem = await storage.getStockItem(validatedData.stockItemId);
+        if (!stockItem) {
+          return res.status(404).json({ message: "Stock item not found" });
+        }
+        
+        // If moving from central inventory, check main stock
+        if (!validatedData.fromUserId) {
+          if (stockItem.quantity < validatedData.quantity) {
+            return res.status(400).json({ message: "Not enough stock available" });
+          }
+          
+          // Update central inventory quantity
+          await storage.updateStockItem(stockItem.id, {
+            quantity: stockItem.quantity - validatedData.quantity
+          });
+        } else {
+          // If moving from a user, check user's allocation
+          const userAllocations = await storage.getAllocations(validatedData.fromUserId);
+          const sourceAllocation = userAllocations.find(
+            a => a.stockItemId === validatedData.stockItemId
+          );
+          
+          if (!sourceAllocation || sourceAllocation.quantity < validatedData.quantity) {
+            return res.status(400).json({ message: "Source user does not have enough stock" });
+          }
+          
+          // Update source user's allocation
+          await storage.updateAllocation(sourceAllocation.id, {
+            quantity: sourceAllocation.quantity - validatedData.quantity
+          });
+        }
+        
+        // Update or create target user's allocation
+        const targetAllocations = await storage.getAllocations(validatedData.toUserId);
+        const targetAllocation = targetAllocations.find(
+          a => a.stockItemId === validatedData.stockItemId
+        );
+        
+        if (targetAllocation) {
+          // Update existing allocation
+          await storage.updateAllocation(targetAllocation.id, {
+            quantity: targetAllocation.quantity + validatedData.quantity
+          });
+        } else {
+          // Create new allocation
+          await storage.createAllocation({
+            userId: validatedData.toUserId,
+            stockItemId: validatedData.stockItemId,
+            quantity: validatedData.quantity,
+            allocatedBy: validatedData.movedBy
+          });
+        }
+        
+        // Create movement record
+        const movement = await storage.createMovement(validatedData);
+        res.status(201).json(movement);
+      } catch (error) {
+        next(error);
+      }
+    }
+  );
+
+  // Users
+  app.get("/api/users", isAuthenticated, async (req, res, next) => {
+    try {
+      const role = req.query.role as string | undefined;
+      
+      let users;
+      if (role) {
+        users = await storage.getUsersByRole(role as any);
+      } else {
+        users = await storage.getUsers();
+      }
+      
+      // Remove passwords from response
+      const safeUsers = users.map(u => {
+        const { password, ...userWithoutPassword } = u;
+        return userWithoutPassword;
+      });
+      
+      res.json(safeUsers);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Create HTTP server
+  const httpServer = createServer(app);
+
+  return httpServer;
+}
