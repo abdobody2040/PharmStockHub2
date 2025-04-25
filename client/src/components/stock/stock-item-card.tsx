@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import {
   Eye,
   Edit,
-  Trash2
+  Trash2,
+  QrCode
 } from "lucide-react";
 import { 
   cn, 
@@ -19,6 +20,7 @@ import {
 import { StockItem, Category } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 import { Badge } from "@/components/ui/badge";
+import { BarcodeActions } from "@/components/barcode/barcode-actions";
 
 interface StockItemCardProps {
   item: StockItem;
@@ -125,6 +127,18 @@ export function StockItemCard({
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
+            )}
+            
+            {item.uniqueNumber && (
+              <div className="ml-1">
+                <BarcodeActions
+                  value={item.uniqueNumber}
+                  buttonVariant="ghost"
+                  buttonSize="sm"
+                  showScan={false}
+                  showGenerate={true}
+                />
+              </div>
             )}
           </div>
         </div>

@@ -13,12 +13,12 @@ interface BarcodeScannerProps {
 
 export function BarcodeScanner({ onScan, isOpen, onClose }: BarcodeScannerProps) {
   const [permissionGranted, setPermissionGranted] = useState<boolean | null>(null);
+  const [isTorchOn, setIsTorchOn] = useState(false);
   const { toast } = useToast();
 
   const {
     ref,
-    torch: { on: turnOnTorch, off: turnOffTorch, status: torchStatus },
-    error,
+    torch: { on: turnOnTorch, off: turnOffTorch, isAvailable: torchAvailable },
   } = useZxing({
     onDecodeResult(result) {
       const scannedValue = result.getText();
@@ -57,15 +57,13 @@ export function BarcodeScanner({ onScan, isOpen, onClose }: BarcodeScannerProps)
     }
   }, [isOpen, toast]);
 
-  if (error) {
-    console.error("Scanner error:", error);
-  }
-
-  const toggleTorch = () => {
-    if (torchStatus === "on") {
-      turnOffTorch();
+  const toggleTorch = async () => {
+    if (isTorchOn) {
+      await turnOffTorch();
+      setIsTorchOn(false);
     } else {
-      turnOnTorch();
+      await turnOnTorch();
+      setIsTorchOn(true);
     }
   };
 
