@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { MainLayout } from "@/components/layout/main-layout";
+import CategoryManagement from "@/components/settings/category-management";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -48,9 +49,9 @@ import {
   Bell,
   Shield,
   Database,
+  User,
   FileText,
-  Info,
-  User
+  Info
 } from "lucide-react";
 
 const profileFormSchema = z.object({
@@ -622,6 +623,11 @@ export default function SettingsPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
+                  {/* Category Management Section */}
+                  <div className="space-y-4 pt-2 pb-8 border-b">
+                    <CategoryManagement />
+                  </div>
+                  
                   <div className="space-y-4">
                     <h3 className="text-lg font-medium">Backup & Export</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
