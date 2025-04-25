@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/main-layout";
 import CategoryManagement from "@/components/settings/category-management";
 import { Button } from "@/components/ui/button";
@@ -104,24 +104,52 @@ export default function SettingsPage() {
   // Notification form
   const notificationForm = useForm<NotificationFormValues>({
     resolver: zodResolver(notificationFormSchema),
-    defaultValues: {
-      emailNotifications: true,
-      stockAlerts: true,
-      expiryAlerts: true,
-      movementAlerts: false,
-      dailyReports: false,
-    },
+    defaultValues: (() => {
+      // Try to load saved settings from localStorage
+      if (typeof window !== 'undefined' && user) {
+        const savedSettings = localStorage.getItem(`notifications_${user.id}`);
+        if (savedSettings) {
+          try {
+            return JSON.parse(savedSettings);
+          } catch (e) {
+            console.error('Error parsing saved notification settings', e);
+          }
+        }
+      }
+      // Default values if nothing saved
+      return {
+        emailNotifications: true,
+        stockAlerts: true,
+        expiryAlerts: true,
+        movementAlerts: false,
+        dailyReports: false,
+      };
+    })(),
   });
 
   // System settings form
   const systemForm = useForm<SystemFormValues>({
     resolver: zodResolver(systemFormSchema),
-    defaultValues: {
-      lowStockThreshold: "10",
-      expiryAlertDays: "30",
-      defaultCategory: "1",
-      companyName: "PharmStock",
-    },
+    defaultValues: (() => {
+      // Try to load saved settings from localStorage
+      if (typeof window !== 'undefined') {
+        const savedSettings = localStorage.getItem('system_settings');
+        if (savedSettings) {
+          try {
+            return JSON.parse(savedSettings);
+          } catch (e) {
+            console.error('Error parsing saved system settings', e);
+          }
+        }
+      }
+      // Default values if nothing saved
+      return {
+        lowStockThreshold: "10",
+        expiryAlertDays: "30",
+        defaultCategory: "1",
+        companyName: "PharmStock",
+      };
+    })(),
   });
 
   // Handle form submissions
@@ -191,6 +219,38 @@ export default function SettingsPage() {
       });
     }
   };
+  
+  // Effect to load security settings when the security tab is selected
+  useEffect(() => {
+    if (activeTab === "security" && typeof window !== 'undefined') {
+      try {
+        const securitySettings = localStorage.getItem('security_settings');
+        if (securitySettings) {
+          const settings = JSON.parse(securitySettings);
+          
+          // Find and set password length input
+          const passwordLengthInput = document.querySelector<HTMLInputElement>('input[type="number"][min="6"][max="20"]');
+          if (passwordLengthInput && settings.passwordLength) {
+            passwordLengthInput.value = String(settings.passwordLength);
+          }
+          
+          // Find and set password expiry input
+          const passwordExpiryInput = document.querySelector<HTMLInputElement>('input[type="number"][min="0"][defaultValue="90"]');
+          if (passwordExpiryInput && settings.passwordExpiry) {
+            passwordExpiryInput.value = String(settings.passwordExpiry);
+          }
+          
+          // Find and set two-factor switch
+          const twoFactorSwitch = document.querySelector<HTMLInputElement>('#two-factor-auth');
+          if (twoFactorSwitch && settings.twoFactorEnabled !== undefined) {
+            twoFactorSwitch.checked = settings.twoFactorEnabled;
+          }
+        }
+      } catch (error) {
+        console.error('Error loading security settings:', error);
+      }
+    }
+  }, [activeTab]);
 
   return (
     <MainLayout>
