@@ -33,6 +33,9 @@ export interface IStorage {
   getCategories(): Promise<Category[]>;
   getCategory(id: number): Promise<Category | undefined>;
   createCategory(category: InsertCategory): Promise<Category>;
+  updateCategory(id: number, category: Partial<Category>): Promise<Category | undefined>;
+  deleteCategory(id: number): Promise<boolean>;
+  getStockItemsByCategory(categoryId: number): Promise<StockItem[]>;
   
   // Stock item operations
   getStockItems(): Promise<StockItem[]>;
@@ -170,6 +173,24 @@ export class MemStorage implements IStorage {
     const newCategory: Category = { ...category, id };
     this.categoriesMap.set(id, newCategory);
     return newCategory;
+  }
+
+  async updateCategory(id: number, categoryData: Partial<Category>): Promise<Category | undefined> {
+    const category = this.categoriesMap.get(id);
+    if (!category) return undefined;
+    
+    const updatedCategory = { ...category, ...categoryData };
+    this.categoriesMap.set(id, updatedCategory);
+    return updatedCategory;
+  }
+  
+  async deleteCategory(id: number): Promise<boolean> {
+    return this.categoriesMap.delete(id);
+  }
+  
+  async getStockItemsByCategory(categoryId: number): Promise<StockItem[]> {
+    return Array.from(this.stockItemsMap.values())
+      .filter(item => item.categoryId === categoryId);
   }
   
   // Stock item operations
@@ -359,6 +380,24 @@ export class DatabaseStorage implements IStorage {
   async createCategory(category: InsertCategory): Promise<Category> {
     const [newCategory] = await db.insert(categories).values(category).returning();
     return newCategory;
+  }
+  
+  async updateCategory(id: number, categoryData: Partial<Category>): Promise<Category | undefined> {
+    const [updatedCategory] = await db
+      .update(categories)
+      .set(categoryData)
+      .where(eq(categories.id, id))
+      .returning();
+    return updatedCategory;
+  }
+  
+  async deleteCategory(id: number): Promise<boolean> {
+    const result = await db.delete(categories).where(eq(categories.id, id)).returning();
+    return result.length > 0;
+  }
+  
+  async getStockItemsByCategory(categoryId: number): Promise<StockItem[]> {
+    return db.select().from(stockItems).where(eq(stockItems.categoryId, categoryId));
   }
   
   // Stock item operations

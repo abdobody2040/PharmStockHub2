@@ -42,11 +42,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/categories/:id", isAuthenticated, async (req, res, next) => {
+    try {
+      const id = parseInt(req.params.id);
+      const category = await storage.getCategory(id);
+      
+      if (!category) {
+        return res.status(404).json({ message: "Category not found" });
+      }
+      
+      res.json(category);
+    } catch (error) {
+      next(error);
+    }
+  });
+
   app.post("/api/categories", isAuthenticated, hasPermission("canAddItems"), async (req, res, next) => {
     try {
       const categoryData = insertCategorySchema.parse(req.body);
       const category = await storage.createCategory(categoryData);
       res.status(201).json(category);
+    } catch (error) {
+      next(error);
+    }
+  });
+  
+  app.put("/api/categories/:id", isAuthenticated, hasPermission("canAddItems"), async (req, res, next) => {
+    try {
+      const id = parseInt(req.params.id);
+      const categoryData = insertCategorySchema.parse(req.body);
+      
+      // Check if the category exists first
+      const existingCategory = await storage.getCategory(id);
+      if (!existingCategory) {
+        return res.status(404).json({ message: "Category not found" });
+      }
+      
+      // Update the category
+      const updatedCategory = await storage.updateCategory(id, categoryData);
+      res.json(updatedCategory);
+    } catch (error) {
+      next(error);
+    }
+  });
+  
+  app.delete("/api/categories/:id", isAuthenticated, hasPermission("canAddItems"), async (req, res, next) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      // Check if category is being used by any stock items
+      const stockItems = await storage.getStockItemsByCategory(id);
+      if (stockItems.length > 0) {
+        return res.status(400).json({ 
+          message: "Cannot delete category that is in use by stock items" 
+        });
+      }
+      
+      // Delete the category
+      const success = await storage.deleteCategory(id);
+      if (!success) {
+        return res.status(404).json({ message: "Category not found" });
+      }
+      
+      res.status(204).end();
     } catch (error) {
       next(error);
     }
