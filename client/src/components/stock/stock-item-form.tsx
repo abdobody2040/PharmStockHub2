@@ -82,7 +82,16 @@ export function StockItemForm({ onSubmit, initialData, isLoading = false }: Stoc
     formData.append("quantity", values.quantity);
     
     if (values.expiry) {
-      formData.append("expiry", values.expiry);
+      // Ensure proper date format for server processing (ISO format)
+      try {
+        const dateObj = new Date(values.expiry);
+        if (!isNaN(dateObj.getTime())) {
+          formData.append("expiry", dateObj.toISOString());
+        }
+      } catch (e) {
+        // If date parsing fails, send the raw string
+        formData.append("expiry", values.expiry);
+      }
     }
     
     if (values.uniqueNumber) {
@@ -166,7 +175,14 @@ export function StockItemForm({ onSubmit, initialData, isLoading = false }: Stoc
             <FormItem>
               <FormLabel>Expiry Date</FormLabel>
               <FormControl>
-                <Input type="date" {...field} />
+                <Input 
+                  type="date" 
+                  {...field} 
+                  value={field.value || ''}
+                  onChange={(e) => {
+                    field.onChange(e.target.value);
+                  }}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
