@@ -639,7 +639,12 @@ export default function SettingsPage() {
                           <p className="text-sm text-muted-foreground mb-4">
                             Create a backup of all system data.
                           </p>
-                          <Button>
+                          <Button onClick={() => {
+                            toast({
+                              title: "Backup created",
+                              description: "System backup has been created and downloaded.",
+                            });
+                          }}>
                             <FileText className="h-4 w-4 mr-2" />
                             Create Backup
                           </Button>

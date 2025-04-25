@@ -120,13 +120,14 @@ export default function UserManagementPage() {
 
   // Update user mutation
   const updateUserMutation = useMutation({
-    mutationFn: async ({ id, userData }: { id: number, userData: Partial<User> }) => {
+    mutationFn: async ({ id, userData }: { id: number, userData: Partial<UserFormValues> }) => {
       const res = await apiRequest("PUT", `/api/users/${id}`, userData);
       return await res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
       setShowEditUserModal(false);
+      setSelectedUser(null);
       toast({
         title: "Success",
         description: "User updated successfully",
@@ -149,6 +150,7 @@ export default function UserManagementPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
       setShowDeleteConfirm(false);
+      setSelectedUser(null);
       toast({
         title: "Success",
         description: "User deleted successfully",
@@ -160,6 +162,8 @@ export default function UserManagementPage() {
         description: error.message,
         variant: "destructive",
       });
+      // Close the dialog even on error
+      setShowDeleteConfirm(false);
     },
   });
 
