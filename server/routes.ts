@@ -15,8 +15,9 @@ import { User } from "@shared/schema";
 // Add multer type extensions to Request
 declare global {
   namespace Express {
+    // Extend the Request interface to include file property from multer
     interface Request {
-      file?: multer.File;
+      file?: any; // Using any for simplicity, avoiding importing specific multer types
     }
   }
 }
@@ -131,11 +132,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     async (req, res, next) => {
       try {
         const id = parseInt(req.params.id);
-        let updateData = req.body;
         
-        // Convert numeric strings to numbers
-        if (updateData.quantity) updateData.quantity = parseInt(updateData.quantity);
-        if (updateData.categoryId) updateData.categoryId = parseInt(updateData.categoryId);
+        // Parse and convert form data
+        const updateData = {
+          ...req.body,
+          // Convert numeric strings to numbers if they exist
+          quantity: req.body.quantity !== undefined ? parseInt(req.body.quantity) : undefined,
+          categoryId: req.body.categoryId !== undefined ? parseInt(req.body.categoryId) : undefined,
+        };
         
         // Handle image upload
         if (req.file) {
@@ -151,6 +155,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
         
+        console.log("Updating stock item:", id, updateData);
+        
         const updatedItem = await storage.updateStockItem(id, updateData);
         
         if (!updatedItem) {
@@ -159,6 +165,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         res.json(updatedItem);
       } catch (error) {
+        console.error("Stock item update error:", error);
         next(error);
       }
     }
