@@ -297,7 +297,20 @@ export default function AnalyticsDashboard() {
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
   const { toast } = useToast();
-  const shareableLink = generateShareableLink(); // Placeholder - assuming this function exists elsewhere
+  
+  // Generate a shareable link for the analytics
+  const generateShareableLink = () => {
+    // In a real app, this would generate a unique URL with analytics parameters
+    const baseUrl = window.location.origin;
+    const encodedData = btoa(JSON.stringify({ 
+      type: 'analytics', 
+      timeRange,
+      timestamp: new Date().toISOString() 
+    }));
+    return `${baseUrl}/shared-analytics/${encodedData}`;
+  };
+  
+  const shareableLink = generateShareableLink();
 
   const handleDownloadReport = (format: 'pdf' | 'excel' | 'csv') => {
     const reportData = [
