@@ -31,7 +31,14 @@ export function Sidebar({ className }: SidebarProps) {
     'ceo', 'marketer', 'salesManager', 'stockManager', 'admin', 'medicalRep'
   ];
 
-  const menuItems = [
+  type MenuItem = {
+    title: string;
+    icon: React.ReactNode;
+    href: string;
+    requiredPermission: string | null;
+  };
+  
+  const menuItems: MenuItem[] = [
     {
       title: "Dashboard",
       icon: <LayoutDashboard className="mr-3 h-5 w-5" />,
@@ -109,7 +116,11 @@ export function Sidebar({ className }: SidebarProps) {
     // If we're in demo mode (activeRole is different from user's role)
     if (user?.role === 'ceo' && activeRole !== user.role) {
       // Simulate permissions for the selected role
-      const rolePermissions = {
+      type RolePermissions = {
+        [key in RoleType]: string[];
+      };
+      
+      const rolePermissions: RolePermissions = {
         'ceo': ['canMoveStock', 'canViewReports', 'canManageUsers', 'canAccessSettings'],
         'marketer': ['canMoveStock', 'canViewReports'],
         'salesManager': ['canMoveStock', 'canViewReports', 'canManageUsers'],
@@ -118,11 +129,12 @@ export function Sidebar({ className }: SidebarProps) {
         'medicalRep': []
       };
       
-      return rolePermissions[activeRole]?.includes(item.requiredPermission) || false;
+      const permissionList = rolePermissions[activeRole as keyof typeof rolePermissions] || [];
+      return permissionList.includes(item.requiredPermission as string) || false;
     }
     
     // Default behavior using actual permissions
-    return hasPermission(item.requiredPermission);
+    return item.requiredPermission ? hasPermission(item.requiredPermission) : true;
   });
 
   return (
@@ -147,8 +159,8 @@ export function Sidebar({ className }: SidebarProps) {
       >
         {/* Logo */}
         <div className="flex items-center justify-center h-16 px-4 bg-white border-b">
-          <Link href="/settings?tab=system">
-            <div className="flex items-center cursor-pointer group relative">
+          <div onClick={() => window.location.href = '/settings?tab=system'} className="cursor-pointer">
+            <div className="flex items-center group relative">
               {/* The red box around the logo for visual indication */}
               <div className="absolute -inset-1 border-2 border-red-500 rounded-md opacity-0 group-hover:opacity-100 transition-opacity"></div>
               {localStorage.getItem('system_settings') && 
@@ -166,11 +178,11 @@ export function Sidebar({ className }: SidebarProps) {
                   JSON.parse(localStorage.getItem('system_settings') || '{}').appName || 'PharmStock' 
                   : 'PharmStock'}
               </span>
-              <div className="absolute -bottom-5 left-0 right-0 text-xs text-center opacity-0 group-hover:opacity-100 transition-opacity text-primary">
-                Click to set logo (optimal: 64x64px)
+              <div className="absolute -bottom-5 left-0 right-0 text-xs text-center opacity-0 group-hover:opacity-100 transition-opacity text-primary flex items-center justify-center">
+                <span className="mr-1">Click to set logo (optimal: 64x64px)</span>
               </div>
             </div>
-          </Link>
+          </div>
         </div>
 
         <nav className="px-2 mt-5 space-y-1">
@@ -198,21 +210,22 @@ export function Sidebar({ className }: SidebarProps) {
 
           {/* Menu items */}
           {filteredMenuItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <a
-                className={cn(
-                  "flex items-center px-4 py-2 text-sm font-medium text-gray-700 rounded-md hover:bg-gray-100 cursor-pointer",
-                  location === item.href && "bg-primary-50 text-primary"
-                )}
+            <div key={item.href}>
+              <Link
+                href={item.href}
+                onClick={() => setIsMobileMenuOpen(false)}
               >
-                {item.icon}
-                {item.title}
-              </a>
-            </Link>
+                <div
+                  className={cn(
+                    "flex items-center px-4 py-2 text-sm font-medium text-gray-700 rounded-md hover:bg-gray-100 cursor-pointer",
+                    location === item.href && "bg-primary-50 text-primary"
+                  )}
+                >
+                  {item.icon}
+                  {item.title}
+                </div>
+              </Link>
+            </div>
           ))}
         </nav>
       </div>
