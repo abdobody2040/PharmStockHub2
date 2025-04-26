@@ -90,6 +90,34 @@ export default function SettingsPage() {
   const { user, hasPermission } = useAuth();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("profile");
+  
+  // State variables for data settings section
+  const [autoBackupEnabled, setAutoBackupEnabled] = useState(false);
+  const [backupFrequency, setBackupFrequency] = useState("daily");
+  const [retentionPeriod, setRetentionPeriod] = useState("30");
+  const [compressBackups, setCompressBackups] = useState(true);
+  const [encryptBackups, setEncryptBackups] = useState(false);
+  const [dataSettings, setDataSettings] = useState<any>(null);
+  
+  // Load saved data settings from localStorage when component mounts
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedSettings = localStorage.getItem('data_settings');
+      if (savedSettings) {
+        try {
+          const parsedSettings = JSON.parse(savedSettings);
+          setAutoBackupEnabled(parsedSettings.autoBackupEnabled);
+          setBackupFrequency(parsedSettings.backupFrequency);
+          setRetentionPeriod(parsedSettings.retentionPeriod.toString());
+          setCompressBackups(parsedSettings.compressBackups);
+          setEncryptBackups(parsedSettings.encryptBackups || false);
+          setDataSettings(parsedSettings);
+        } catch (error) {
+          console.error('Error parsing saved data settings:', error);
+        }
+      }
+    }
+  }, []);
 
   // Profile form - load stored values from localStorage if available
   const profileForm = useForm<ProfileFormValues>({
@@ -1211,7 +1239,7 @@ export default function SettingsPage() {
                   <div className="space-y-4 pt-6">
                     <h3 className="text-lg font-medium">Automated Backups</h3>
                     <div className="flex items-center space-x-2">
-                      <Switch id="auto-backup" defaultChecked />
+                      <Switch id="auto-backup" checked={autoBackupEnabled} onCheckedChange={setAutoBackupEnabled} />
                       <Label htmlFor="auto-backup">Enable automated backups</Label>
                     </div>
                     
@@ -1223,8 +1251,8 @@ export default function SettingsPage() {
                             How often to create backups
                           </p>
                         </div>
-                        <Select defaultValue="daily">
-                          <SelectTrigger className="w-32" id="backup-frequency-trigger">
+                        <Select value={backupFrequency} onValueChange={setBackupFrequency}>
+                          <SelectTrigger className="w-32">
                             <SelectValue placeholder="Select" />
                           </SelectTrigger>
                           <SelectContent>
@@ -1243,8 +1271,8 @@ export default function SettingsPage() {
                             How long to keep backups
                           </p>
                         </div>
-                        <Select defaultValue="30">
-                          <SelectTrigger className="w-32" id="retention-period-trigger">
+                        <Select value={retentionPeriod} onValueChange={setRetentionPeriod}>
+                          <SelectTrigger className="w-32">
                             <SelectValue placeholder="Select" />
                           </SelectTrigger>
                           <SelectContent>
@@ -1254,6 +1282,17 @@ export default function SettingsPage() {
                             <SelectItem value="365">1 year</SelectItem>
                           </SelectContent>
                         </Select>
+                      </div>
+                    </div>
+                    
+                    <div className="flex flex-col gap-4 mt-4">
+                      <div className="flex items-center space-x-2">
+                        <Switch checked={compressBackups} onCheckedChange={setCompressBackups} id="compress-backups" />
+                        <Label htmlFor="compress-backups">Compress backups</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Switch checked={encryptBackups} onCheckedChange={setEncryptBackups} id="encrypt-backups" />
+                        <Label htmlFor="encrypt-backups">Encrypt backups</Label>
                       </div>
                     </div>
                   </div>
