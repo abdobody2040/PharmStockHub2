@@ -249,9 +249,22 @@ export default function SettingsPage() {
 
   const onSystemSubmit = async (data: SystemFormValues) => {
     try {
+      // Create a copy of the data to modify before storage
+      const storageData = { ...data };
+      
+      // Handle company logo File object by creating a URL
+      if (data.companyLogo instanceof File) {
+        // Create blob URL for the company logo image
+        const companyLogoUrl = URL.createObjectURL(data.companyLogo);
+        
+        // Add a special property for the URL that's not in the form data structure
+        // @ts-ignore - We're adding a property not in the type
+        storageData.companyLogoUrl = companyLogoUrl;
+      }
+      
       // In a real app, we would save to backend storage
       // For now, store settings in localStorage for persistence
-      localStorage.setItem('system_settings', JSON.stringify(data));
+      localStorage.setItem('system_settings', JSON.stringify(storageData));
       
       toast({
         title: "System settings updated",

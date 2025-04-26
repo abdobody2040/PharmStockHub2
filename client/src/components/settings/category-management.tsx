@@ -395,7 +395,6 @@ export default function CategoryManagement() {
                           <div 
                             className="flex-1 h-8 rounded-md border cursor-pointer" 
                             style={{ backgroundColor: editColor || "#3b82f6" }}
-                            onClick={() => setSelectedCategory(selectedCategory ? { ...selectedCategory, color: `bg-[${editColor}]` } : null)}
                           />
                           <Button 
                             type="button" 
