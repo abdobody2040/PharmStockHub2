@@ -941,7 +941,7 @@ export default function SettingsPage() {
                             How often to create backups
                           </p>
                         </div>
-                        <Select defaultValue="daily" id="backup-frequency">
+                        <Select defaultValue="daily">
                           <SelectTrigger className="w-32" id="backup-frequency-trigger">
                             <SelectValue placeholder="Select" />
                           </SelectTrigger>
@@ -962,7 +962,7 @@ export default function SettingsPage() {
                           </p>
                         </div>
                         <Select defaultValue="30">
-                          <SelectTrigger className="w-32">
+                          <SelectTrigger className="w-32" id="retention-period-trigger">
                             <SelectValue placeholder="Select" />
                           </SelectTrigger>
                           <SelectContent>
@@ -1078,8 +1078,8 @@ export default function SettingsPage() {
                       try {
                         // Get values from DOM elements since they aren't in a React form
                         const autoBackupEnabled = document.querySelector<HTMLInputElement>('#auto-backup')?.checked || false;
-                        const backupFrequency = document.querySelector<HTMLDivElement>('[data-radix-select-trigger][class*="SelectTrigger"]')?.getAttribute('data-value') || "daily";
-                        const retentionPeriod = document.querySelectorAll<HTMLDivElement>('[data-radix-select-trigger][class*="SelectTrigger"]')[1]?.getAttribute('data-value') || "30";
+                        const backupFrequency = document.querySelector<HTMLDivElement>('#backup-frequency-trigger')?.getAttribute('data-value') || "daily";
+                        const retentionPeriod = document.querySelector<HTMLDivElement>('#retention-period-trigger')?.getAttribute('data-value') || "30";
                         
                         // In a real app, we would save to backend storage
                         // For now, store settings in localStorage for persistence
