@@ -37,26 +37,11 @@ app.use((req, res, next) => {
   next();
 });
 
-// Company identification middleware
-app.use(async (req, res, next) => {
-  try {
-    const host = req.get('host') || '';
-    const companyId = process.env.COMPANY_ID;
-    
-    if (!companyId) {
-      return res.status(400).json({ error: 'Company ID not configured' });
-    }
-
-    const company = await getCompanyFromDb(companyId);
-    if (!company) {
-      return res.status(404).json({ error: 'Company not found' });
-    }
-
-    req.orgConfig = company;
-    next();
-  } catch (error) {
-    next(error);
-  }
+// Organization-specific middleware
+app.use((req, res, next) => {
+  const orgId = req.headers['x-org-id'] as string;
+  req.orgConfig = getOrgConfig(orgId);
+  next();
 });
 
 
