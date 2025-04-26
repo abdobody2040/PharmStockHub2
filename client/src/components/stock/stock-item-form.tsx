@@ -36,6 +36,7 @@ const stockItemSchema = z.object({
   name: z.string().min(2, "Item name must be at least 2 characters"),
   categoryId: z.string().min(1, "Category is required"),
   quantity: z.string().min(1, "Quantity is required"),
+  price: z.string().default("0"),
   expiry: z.string().nullish(),
   uniqueNumber: z.string().optional(),
   imageFile: z.any().optional(),
@@ -55,6 +56,7 @@ export function StockItemForm({ onSubmit, initialData, isLoading = false }: Stoc
       name: initialData?.name || "",
       categoryId: initialData?.categoryId.toString() || "",
       quantity: initialData?.quantity.toString() || "",
+      price: initialData?.price ? initialData.price.toString() : "0",
       expiry: initialData?.expiry ? new Date(initialData.expiry).toISOString().substring(0, 10) : "",
       uniqueNumber: initialData?.uniqueNumber || "",
       notes: initialData?.notes || "",
@@ -67,6 +69,7 @@ export function StockItemForm({ onSubmit, initialData, isLoading = false }: Stoc
         name: initialData.name || "",
         categoryId: initialData.categoryId.toString() || "",
         quantity: initialData.quantity.toString() || "",
+        price: initialData.price ? initialData.price.toString() : "0",
         expiry: initialData.expiry ? new Date(initialData.expiry).toISOString().substring(0, 10) : "",
         uniqueNumber: initialData.uniqueNumber || "",
         notes: initialData.notes || "",
@@ -81,6 +84,11 @@ export function StockItemForm({ onSubmit, initialData, isLoading = false }: Stoc
     formData.append("name", values.name);
     formData.append("categoryId", values.categoryId);
     formData.append("quantity", values.quantity);
+    
+    // Convert dollar price to cents and store as integer
+    const price = parseFloat(values.price);
+    const priceInCents = isNaN(price) ? 0 : Math.round(price * 100);
+    formData.append("price", priceInCents.toString());
     
     // Handle expiry date properly
     if (values.expiry && values.expiry.trim() !== '') {
@@ -167,6 +175,26 @@ export function StockItemForm({ onSubmit, initialData, isLoading = false }: Stoc
               <FormLabel>Quantity*</FormLabel>
               <FormControl>
                 <Input type="number" min="0" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="price"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Unit Price ($)</FormLabel>
+              <FormControl>
+                <Input 
+                  type="number" 
+                  min="0" 
+                  step="0.01" 
+                  {...field} 
+                  placeholder="0.00"
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

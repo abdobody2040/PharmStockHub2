@@ -38,6 +38,7 @@ export const stockItems = pgTable("stock_items", {
   name: text("name").notNull(),
   categoryId: integer("category_id").notNull(),
   quantity: integer("quantity").notNull().default(0),
+  price: integer("price").default(0), // Price in cents (e.g. $10.99 = 1099)
   expiry: timestamp("expiry"),
   uniqueNumber: text("unique_number"),
   imageUrl: text("image_url"),
@@ -50,6 +51,7 @@ export const insertStockItemSchema = createInsertSchema(stockItems).pick({
   name: true,
   categoryId: true,
   quantity: true,
+  price: true,
   expiry: true,
   uniqueNumber: true,
   imageUrl: true,
@@ -106,6 +108,7 @@ export const extendedInsertStockItemSchema = insertStockItemSchema.extend({
   name: z.string().min(2, "Item name must be at least 2 characters"),
   categoryId: z.number().int().positive("Category is required"),
   quantity: z.number().int().min(0, "Quantity cannot be negative"),
+  price: z.number().int().min(0, "Price cannot be negative").default(0),
   // Allow null, empty strings, and Date objects for expiry
   expiry: z.union([
     z.date(),
