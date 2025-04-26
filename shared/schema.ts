@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, varchar } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, varchar, json } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -202,3 +202,20 @@ export const ROLE_PERMISSIONS = {
 };
 
 export type RoleType = keyof typeof ROLE_PERMISSIONS;
+
+
+export const companies = pgTable('companies', {
+  id: varchar('id').primaryKey(),
+  name: text('name').notNull(),
+  subdomain: text('subdomain').unique(),
+  customDomain: text('custom_domain').unique(),
+  config: json('config').$type<OrgConfig>().notNull(),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
+// Placeholder for OrgConfig type - needs to be defined elsewhere based on actual config structure
+type OrgConfig = {
+  // Add your company configuration properties here.  Example:
+  primaryColor: string;
+  companyName: string;
+};
