@@ -278,6 +278,61 @@ export default function SettingsPage() {
       });
     }
   };
+  
+  // Data management settings schema
+  const dataManagementSchema = z.object({
+    autoBackupEnabled: z.boolean().default(false),
+    backupFrequency: z.enum(["daily", "weekly", "monthly"]).default("weekly"),
+    retentionPeriod: z.string().or(z.number()).transform(val => Number(val)),
+    exportFormat: z.enum(["json", "csv", "excel"]).default("json"),
+    compressionEnabled: z.boolean().default(true),
+  });
+  
+  type DataManagementValues = z.infer<typeof dataManagementSchema>;
+  
+  // Data management form
+  const dataManagementForm = useForm<DataManagementValues>({
+    resolver: zodResolver(dataManagementSchema),
+    defaultValues: (() => {
+      // Try to load saved settings from localStorage
+      if (typeof window !== 'undefined') {
+        const savedSettings = localStorage.getItem('data_management_settings');
+        if (savedSettings) {
+          try {
+            return JSON.parse(savedSettings);
+          } catch (e) {
+            console.error('Error parsing saved data management settings', e);
+          }
+        }
+      }
+      // Default values if nothing saved
+      return {
+        autoBackupEnabled: false,
+        backupFrequency: "weekly",
+        retentionPeriod: 30,
+        exportFormat: "json",
+        compressionEnabled: true,
+      };
+    })(),
+  });
+  
+  // Data management form submit handler
+  const onDataManagementSubmit = async (data: DataManagementValues) => {
+    try {
+      localStorage.setItem('data_management_settings', JSON.stringify(data));
+      
+      toast({
+        title: "Data management settings updated",
+        description: "Your data management settings have been saved successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Update failed",
+        description: error instanceof Error ? error.message : "Failed to update data management settings",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <MainLayout>
@@ -652,141 +707,169 @@ export default function SettingsPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-medium">Password Policy</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="flex items-center justify-between rounded-lg border p-4">
-                        <div className="space-y-0.5">
-                          <Label className="text-base">Minimum Password Length</Label>
-                          <p className="text-sm text-muted-foreground">
-                            Minimum characters required
-                          </p>
+                  <Form {...securityForm}>
+                    <form onSubmit={securityForm.handleSubmit(onSecuritySubmit)} className="space-y-6">
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-medium">Password Policy</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <FormField
+                            control={securityForm.control}
+                            name="passwordLength"
+                            render={({ field }) => (
+                              <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                                <div className="space-y-0.5">
+                                  <FormLabel className="text-base">Minimum Password Length</FormLabel>
+                                  <FormDescription>
+                                    Minimum characters required
+                                  </FormDescription>
+                                </div>
+                                <FormControl>
+                                  <Input 
+                                    type="number" 
+                                    min="6" 
+                                    max="20" 
+                                    className="w-20" 
+                                    {...field}
+                                    value={field.value}
+                                    onChange={(e) => field.onChange(e.target.value)}
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+                            
+                          <FormField
+                            control={securityForm.control}
+                            name="passwordExpiry"
+                            render={({ field }) => (
+                              <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                                <div className="space-y-0.5">
+                                  <FormLabel className="text-base">Password Expiry</FormLabel>
+                                  <FormDescription>
+                                    Days before passwords expire
+                                  </FormDescription>
+                                </div>
+                                <FormControl>
+                                  <Input 
+                                    type="number" 
+                                    min="0" 
+                                    className="w-20" 
+                                    {...field}
+                                    value={field.value}
+                                    onChange={(e) => field.onChange(e.target.value)}
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
                         </div>
-                        <Input 
-                          type="number" 
-                          min="6" 
-                          max="20" 
-                          className="w-20" 
-                          defaultValue="8"
+                        
+                        <FormField
+                          control={securityForm.control}
+                          name="requireSpecialChars"
+                          render={({ field }) => (
+                            <FormItem className="flex items-center space-x-2 pt-2">
+                              <FormControl>
+                                <Switch 
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                  id="require-special-chars"
+                                />
+                              </FormControl>
+                              <FormLabel htmlFor="require-special-chars">Require special characters</FormLabel>
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={securityForm.control}
+                          name="requireUppercase"
+                          render={({ field }) => (
+                            <FormItem className="flex items-center space-x-2">
+                              <FormControl>
+                                <Switch 
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                  id="require-uppercase"
+                                />
+                              </FormControl>
+                              <FormLabel htmlFor="require-uppercase">Require uppercase letters</FormLabel>
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={securityForm.control}
+                          name="requireNumbers"
+                          render={({ field }) => (
+                            <FormItem className="flex items-center space-x-2">
+                              <FormControl>
+                                <Switch 
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                  id="require-numbers"
+                                />
+                              </FormControl>
+                              <FormLabel htmlFor="require-numbers">Require numbers</FormLabel>
+                            </FormItem>
+                          )}
                         />
                       </div>
                       
-                      <div className="flex items-center justify-between rounded-lg border p-4">
-                        <div className="space-y-0.5">
-                          <Label className="text-base">Password Expiry</Label>
-                          <p className="text-sm text-muted-foreground">
-                            Days before passwords expire
-                          </p>
+                      <div className="space-y-4 pt-4 border-t">
+                        <h3 className="text-lg font-medium">Session Settings</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <FormField
+                            control={securityForm.control}
+                            name="sessionTimeout"
+                            render={({ field }) => (
+                              <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                                <div className="space-y-0.5">
+                                  <FormLabel className="text-base">Session Timeout</FormLabel>
+                                  <FormDescription>
+                                    Minutes of inactivity before logout
+                                  </FormDescription>
+                                </div>
+                                <FormControl>
+                                  <Input 
+                                    type="number" 
+                                    min="5" 
+                                    max="120" 
+                                    className="w-20" 
+                                    {...field}
+                                    value={field.value}
+                                    onChange={(e) => field.onChange(e.target.value)}
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
                         </div>
-                        <Input 
-                          type="number" 
-                          min="0" 
-                          className="w-20" 
-                          defaultValue="90"
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2 pt-2">
-                      <Switch id="require-special-chars" />
-                      <Label htmlFor="require-special-chars">Require special characters</Label>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2">
-                      <Switch id="require-uppercase" defaultChecked />
-                      <Label htmlFor="require-uppercase">Require uppercase letters</Label>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2">
-                      <Switch id="require-numbers" defaultChecked />
-                      <Label htmlFor="require-numbers">Require numbers</Label>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-4 pt-4 border-t">
-                    <h3 className="text-lg font-medium">Session Settings</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="flex items-center justify-between rounded-lg border p-4">
-                        <div className="space-y-0.5">
-                          <Label className="text-base">Session Timeout</Label>
-                          <p className="text-sm text-muted-foreground">
-                            Minutes of inactivity before logout
-                          </p>
-                        </div>
-                        <Input 
-                          type="number" 
-                          min="5" 
-                          max="120" 
-                          className="w-20" 
-                          defaultValue="30"
+                        
+                        <FormField
+                          control={securityForm.control}
+                          name="twoFactorEnabled"
+                          render={({ field }) => (
+                            <FormItem className="flex items-center space-x-2 pt-2">
+                              <FormControl>
+                                <Switch 
+                                  checked={field.value} 
+                                  onCheckedChange={field.onChange}
+                                  id="two-factor-auth"
+                                />
+                              </FormControl>
+                              <FormLabel htmlFor="two-factor-auth">Enable Two-Factor Authentication</FormLabel>
+                            </FormItem>
+                          )}
                         />
                       </div>
                       
-                      <div className="flex items-center justify-between rounded-lg border p-4">
-                        <div className="space-y-0.5">
-                          <Label className="text-base">Max Login Attempts</Label>
-                          <p className="text-sm text-muted-foreground">
-                            Before account is locked
-                          </p>
-                        </div>
-                        <Input 
-                          type="number" 
-                          min="1" 
-                          max="10" 
-                          className="w-20" 
-                          defaultValue="5"
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2 pt-2">
-                      <Switch id="two-factor-auth" />
-                      <Label htmlFor="two-factor-auth">Enable Two-Factor Authentication</Label>
-                    </div>
-                  </div>
-                  
-                  <Button
-                    onClick={async () => {
-                      try {
-                        // Get values from DOM elements since they aren't in a React form
-                        const passwordLength = document.querySelector<HTMLInputElement>('input[type="number"][min="6"][max="20"]')?.value || "8";
-                        const passwordExpiry = document.querySelector<HTMLInputElement>('input[type="number"][min="0"]')?.value || "90";
-                        const twoFactorEnabled = document.querySelector<HTMLInputElement>('#two-factor-auth')?.checked || false;
-                        const requireSpecialChars = document.querySelector<HTMLInputElement>('#require-special-chars')?.checked || false;
-                        const requireUppercase = document.querySelector<HTMLInputElement>('#require-uppercase')?.checked || false;
-                        const requireNumbers = document.querySelector<HTMLInputElement>('#require-numbers')?.checked || false;
-                        const sessionTimeout = document.querySelector<HTMLInputElement>('input[type="number"][min="5"][max="120"]')?.value || "30";
-                        const maxLoginAttempts = document.querySelector<HTMLInputElement>('input[type="number"][min="1"][max="10"]')?.value || "5";
-                        
-                        // In a real app, we would save to backend storage
-                        // For now, store settings in localStorage for persistence
-                        localStorage.setItem('security_settings', JSON.stringify({
-                          passwordLength: Number(passwordLength),
-                          passwordExpiry: Number(passwordExpiry),
-                          twoFactorEnabled,
-                          requireSpecialChars,
-                          requireUppercase,
-                          requireNumbers,
-                          sessionTimeout: Number(sessionTimeout),
-                          maxLoginAttempts: Number(maxLoginAttempts)
-                        }));
-                        
-                        toast({
-                          title: "Security settings saved",
-                          description: "Your security settings have been updated successfully.",
-                        });
-                      } catch (error) {
-                        toast({
-                          title: "Update failed",
-                          description: error instanceof Error ? error.message : "Failed to update security settings",
-                          variant: "destructive",
-                        });
-                      }
-                    }}
-                  >
-                    <Save className="h-4 w-4 mr-2" />
-                    Save Security Settings
-                  </Button>
+                      <Button type="submit">
+                        <Save className="h-4 w-4 mr-2" />
+                        Save Security Settings
+                      </Button>
+                    </form>
+                  </Form>
                 </CardContent>
               </Card>
             </TabsContent>
