@@ -309,28 +309,29 @@ export default function SettingsPage() {
   // Data management form
   const dataManagementForm = useForm<DataManagementValues>({
     resolver: zodResolver(dataManagementSchema),
-    defaultValues: (() => {
-      // Try to load saved settings from localStorage
-      if (typeof window !== 'undefined') {
-        const savedSettings = localStorage.getItem('data_management_settings');
-        if (savedSettings) {
-          try {
-            return JSON.parse(savedSettings);
-          } catch (e) {
-            console.error('Error parsing saved data management settings', e);
-          }
+    defaultValues: {
+      autoBackupEnabled: false,
+      backupFrequency: "weekly",
+      retentionPeriod: 30,
+      exportFormat: "json",
+      compressionEnabled: true,
+    },
+  });
+  
+  // Load saved data management settings from localStorage if available
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedSettings = localStorage.getItem('data_management_settings');
+      if (savedSettings) {
+        try {
+          const parsedSettings = JSON.parse(savedSettings);
+          dataManagementForm.reset(parsedSettings);
+        } catch (error) {
+          console.error('Error parsing saved data management settings:', error);
         }
       }
-      // Default values if nothing saved
-      return {
-        autoBackupEnabled: false,
-        backupFrequency: "weekly",
-        retentionPeriod: 30,
-        exportFormat: "json",
-        compressionEnabled: true,
-      };
-    })(),
-  });
+    }
+  }, [dataManagementForm]);
   
   // Data management form submit handler
   const onDataManagementSubmit = async (data: DataManagementValues) => {

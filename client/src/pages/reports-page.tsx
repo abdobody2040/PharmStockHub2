@@ -1,13 +1,15 @@
 import { useState } from "react";
 import { MainLayout } from "@/components/layout/main-layout";
 import { ReportForm } from "@/components/reports/report-form";
+import { ReportShare } from "@/components/reports/report-share";
 import { 
   FileDown, 
   FileText,
   BarChart4,
   BarChart, 
   PieChart,
-  Clock
+  Clock,
+  Share2
 } from "lucide-react";
 import {
   Card,
@@ -16,6 +18,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { ButtonGroup } from "@/components/ui/button-group";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
