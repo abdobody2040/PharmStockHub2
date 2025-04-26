@@ -104,6 +104,16 @@ export const extendedInsertStockItemSchema = insertStockItemSchema.extend({
   name: z.string().min(2, "Item name must be at least 2 characters"),
   categoryId: z.number().int().positive("Category is required"),
   quantity: z.number().int().min(0, "Quantity cannot be negative"),
+  // Allow null, empty strings, and Date objects for expiry
+  expiry: z.union([
+    z.date(),
+    z.string().transform(val => {
+      if (!val) return null;
+      const date = new Date(val);
+      return isNaN(date.getTime()) ? null : date;
+    }),
+    z.null(),
+  ]).nullable().optional(),
 });
 
 // Types
