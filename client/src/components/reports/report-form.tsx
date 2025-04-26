@@ -77,16 +77,106 @@ export function ReportForm({ onGenerate, isLoading = false }: ReportFormProps) {
   };
 
   const handleSubmit = (values: FormValues) => {
-    const reportData = {
-      ...values,
-      generatedAt: new Date().toISOString(),
-    };
+    // Convert to FormData for the onGenerate callback
+    const formData = new FormData();
+    Object.entries(values).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        formData.append(key, String(value));
+      }
+    });
+    formData.append('generatedAt', new Date().toISOString());
+    
+    onGenerate(formData);
 
-    onGenerate(reportData);
-
+    // Generate the appropriate report format
     if (values.exportFormat === 'pdf') {
       generatePdfReport(values);
+    } else if (values.exportFormat === 'excel') {
+      generateExcelReport(values);
+    } else if (values.exportFormat === 'csv') {
+      generateCsvReport(values);
     }
+  };
+
+  // Helper function to get mock data based on report type
+  const getReportData = (reportType: string) => {
+    // This would be replaced with actual data from API calls in production
+    switch(reportType) {
+      case 'inventory':
+        return [
+          ["ID", "Name", "Category", "Quantity", "Expiry Date", "Status"],
+          ["1", "Sample Medicine", "Samples", "50", "2023-12-31", "Active"],
+          ["2", "Promotional Brochure", "Marketing", "200", "2024-06-30", "Active"],
+          ["3", "Product Leaflet", "Information", "150", "2024-03-15", "Active"],
+          ["4", "Demo Kit", "Samples", "25", "2023-11-30", "Low Stock"],
+          ["5", "Conference Materials", "Marketing", "75", "2024-01-31", "Active"]
+        ];
+      case 'movement':
+        return [
+          ["ID", "Item", "From", "To", "Quantity", "Date", "Status"],
+          ["1", "Sample Medicine", "Warehouse", "Med Rep A", "10", "2023-10-15", "Completed"],
+          ["2", "Promotional Brochure", "Marketing", "Sales Team", "50", "2023-10-20", "Completed"],
+          ["3", "Product Leaflet", "Warehouse", "Med Rep B", "30", "2023-10-22", "In Transit"],
+          ["4", "Demo Kit", "Warehouse", "Sales Manager", "5", "2023-10-25", "Completed"],
+          ["5", "Conference Materials", "Marketing", "CEO", "20", "2023-10-27", "Pending"]
+        ];
+      case 'expiry':
+        return [
+          ["ID", "Name", "Category", "Quantity", "Expiry Date", "Days Left", "Action Needed"],
+          ["1", "Sample Medicine A", "Samples", "15", "2023-11-15", "20", "Urgent Distribution"],
+          ["2", "Sample Medicine B", "Samples", "25", "2023-12-05", "40", "Plan Distribution"],
+          ["3", "Product Leaflet v1", "Information", "45", "2023-11-30", "35", "Plan Distribution"],
+          ["4", "Demo Kit Old Version", "Samples", "10", "2023-11-10", "15", "Urgent Distribution"],
+          ["5", "Brochure Summer Campaign", "Marketing", "30", "2023-12-15", "50", "Monitor"]
+        ];
+      case 'allocation':
+        return [
+          ["Rep ID", "Name", "Region", "Item", "Quantity", "Allocation Date", "Status"],
+          ["101", "Med Rep A", "North", "Sample Medicine", "20", "2023-10-01", "Active"],
+          ["102", "Med Rep B", "South", "Sample Medicine", "15", "2023-10-01", "Active"],
+          ["103", "Med Rep C", "East", "Product Leaflet", "50", "2023-10-05", "Active"],
+          ["104", "Med Rep D", "West", "Demo Kit", "5", "2023-10-10", "Low"],
+          ["105", "Med Rep E", "Central", "Conference Materials", "10", "2023-10-15", "Active"]
+        ];
+      default:
+        return [["No Data Available"]];
+    }
+  };
+
+  const generateCsvReport = (values: FormValues) => {
+    const reportData = getReportData(values.reportType);
+    const csvContent = reportData.map(row => row.join(",")).join("\n");
+    
+    // Create download for the CSV
+    const encodedUri = "data:text/csv;charset=utf-8," + encodeURIComponent(csvContent);
+    const downloadLink = document.createElement("a");
+    downloadLink.href = encodedUri;
+    downloadLink.download = `${values.reportType}-report-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+  };
+
+  const generateExcelReport = (values: FormValues) => {
+    // For Excel, we'll generate a CSV but with an .xlsx extension
+    // In a real implementation, you would use a proper Excel library
+    // like SheetJS/xlsx or exceljs, but for this prototype we'll simulate it
+    
+    const reportData = getReportData(values.reportType);
+    
+    // Create a "tab-separated values" file which Excel can open
+    const tsvContent = reportData.map(row => row.join("\t")).join("\n");
+    
+    // Create download for the Excel-compatible file
+    const blob = new Blob([tsvContent], { type: 'application/vnd.ms-excel' });
+    const url = window.URL.createObjectURL(blob);
+    const downloadLink = document.createElement("a");
+    downloadLink.href = url;
+    downloadLink.download = `${values.reportType}-report-${new Date().toISOString().split('T')[0]}.xlsx`;
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+    window.URL.revokeObjectURL(url);
   };
 
   const generatePdfReport = (values: FormValues) => {
