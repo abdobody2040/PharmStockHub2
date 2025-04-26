@@ -1,700 +1,729 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/main-layout";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { ResponsiveContainer, LineChart, Line, BarChart, Bar, PieChart, Pie, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Cell } from "recharts";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
-import { StockItem, StockMovement, Category } from "@shared/schema";
-import Chart from "chart.js/auto";
-import { BarChart, LineChart, TrendingUp, TrendingDown, Calendar, AlertCircle, Target, ChevronRight } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
-import { Separator } from "@/components/ui/separator";
+import { StockItem, StockMovement, User, Category } from "@shared/schema";
+import { Loader2, Download, ArrowDownRight, ArrowRight, ArrowUpRight, Package, MoveHorizontal, Users, Calendar, Truck, AlertTriangle } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
-import { getExpiryStatusColor, truncateText } from "@/lib/utils";
+import { getExpiryStatus } from "@/lib/utils";
+import { format, addMonths, addDays, isBefore, differenceInDays } from "date-fns";
 
 export default function AnalyticsDashboard() {
-  const { user } = useAuth();
-  const [timeRange, setTimeRange] = useState<"week" | "month" | "quarter" | "year">("month");
-  const [activeTab, setActiveTab] = useState("predictive");
-  const consumptionChartRef = useRef<HTMLCanvasElement>(null);
-  const allocationChartRef = useRef<HTMLCanvasElement>(null);
-  const predictionChartRef = useRef<HTMLCanvasElement>(null);
-  const consumptionChart = useRef<Chart | null>(null);
-  const allocationChart = useRef<Chart | null>(null);
-  const predictionChart = useRef<Chart | null>(null);
-
-  // Fetch data for analytics
-  const { data: stockItems = [] } = useQuery<StockItem[]>({
+  const [timeRange, setTimeRange] = useState("6m");
+  const [predictMonths, setPredictMonths] = useState(3);
+  
+  const { data: stockItems = [], isLoading: isLoadingItems } = useQuery<StockItem[]>({
     queryKey: ["/api/stock-items"],
   });
-
+  
   const { data: categories = [] } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
   });
-
+  
   const { data: movements = [] } = useQuery<StockMovement[]>({
     queryKey: ["/api/movements"],
   });
-
-  // Initialize charts whenever data or time range changes
-  useEffect(() => {
-    if (consumptionChartRef.current) {
-      // Clean up previous chart
-      if (consumptionChart.current) {
-        consumptionChart.current.destroy();
-      }
-
-      // Sample data for consumption trends
-      const labels = timeRange === "week" 
-        ? ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-        : timeRange === "month"
-        ? ["Week 1", "Week 2", "Week 3", "Week 4"]
-        : timeRange === "quarter"
-        ? ["Jan", "Feb", "Mar"]
-        : ["Q1", "Q2", "Q3", "Q4"];
-
-      // Get top categories
-      const topCategories = categories.slice(0, 3);
+  
+  const { data: users = [] } = useQuery<User[]>({
+    queryKey: ["/api/users"],
+  });
+  
+  const { data: expiringItems = [] } = useQuery<StockItem[]>({
+    queryKey: ["/api/stock-items/expiring"],
+  });
+  
+  // Filter movements by selected time range
+  const getTimeFilteredMovements = () => {
+    const now = new Date();
+    let startDate: Date;
+    
+    switch(timeRange) {
+      case "1m":
+        startDate = addMonths(now, -1);
+        break;
+      case "3m":
+        startDate = addMonths(now, -3);
+        break;
+      case "1y":
+        startDate = addMonths(now, -12);
+        break;
+      case "6m":
+      default:
+        startDate = addMonths(now, -6);
+    }
+    
+    return movements.filter(movement => {
+      const movementDate = movement.movedAt ? new Date(movement.movedAt) : new Date();
+      return isBefore(startDate, movementDate);
+    });
+  };
+  
+  const timeFilteredMovements = getTimeFilteredMovements();
+  
+  // Prepare data for stock level chart
+  const getStockLevelData = () => {
+    // Group by month and sum quantities
+    const monthlyData = new Map();
+    
+    timeFilteredMovements.forEach(movement => {
+      const date = movement.movedAt ? new Date(movement.movedAt) : new Date();
+      const monthKey = format(date, 'MMM yyyy');
       
-      // Simulate consumption data for each category
-      const datasets = topCategories.map((category, index) => {
-        // Generate random consumption data based on time range
-        const data = labels.map(() => Math.floor(Math.random() * 500) + 100);
+      if (!monthlyData.has(monthKey)) {
+        monthlyData.set(monthKey, { total: 0, in: 0, out: 0, month: monthKey });
+      }
+      
+      const entry = monthlyData.get(monthKey);
+      // Determine type based on userId fields - if fromUserId exists, it's a return; otherwise allocation
+      if (movement.fromUserId === null) {
+        entry.out += movement.quantity; // Allocation (going out)
+      } else {
+        entry.in += movement.quantity;  // Return (coming in)
+      }
+      
+      entry.total = entry.in - entry.out;
+    });
+    
+    // Sort by date
+    return Array.from(monthlyData.values()).sort((a, b) => {
+      const dateA = new Date(a.month);
+      const dateB = new Date(b.month);
+      return dateA.getTime() - dateB.getTime();
+    });
+  };
+  
+  // Prepare data for category distribution
+  const getCategoryDistributionData = () => {
+    const categoryMap = new Map();
+    
+    stockItems.forEach(item => {
+      const category = categories.find(c => c.id === item.categoryId);
+      if (category) {
+        const categoryName = category.name;
+        if (!categoryMap.has(categoryName)) {
+          categoryMap.set(categoryName, { name: categoryName, value: 0, color: category.color || "#cbd5e1" });
+        }
+        categoryMap.get(categoryName).value += item.quantity;
+      }
+    });
+    
+    return Array.from(categoryMap.values());
+  };
+  
+  // Generate predictive data
+  const generatePredictiveData = () => {
+    // Use simple linear regression for prediction
+    const stockLevelData = getStockLevelData();
+    
+    if (stockLevelData.length < 2) {
+      return [];
+    }
+    
+    // Calculate rate of change from historical data
+    const monthlyRateOfChange = stockLevelData.length > 1 
+      ? (stockLevelData[stockLevelData.length - 1].total - stockLevelData[0].total) / stockLevelData.length
+      : 0;
+    
+    const lastMonth = stockLevelData[stockLevelData.length - 1];
+    const predictedData = [];
+    
+    let lastTotal = lastMonth.total;
+    
+    // Generate future months
+    for (let i = 1; i <= predictMonths; i++) {
+      const currentDate = new Date();
+      const futureDate = addMonths(currentDate, i);
+      const monthKey = format(futureDate, 'MMM yyyy');
+      
+      lastTotal += monthlyRateOfChange;
+      
+      predictedData.push({
+        month: monthKey,
+        projected: Math.round(lastTotal),
+        isPrediction: true
+      });
+    }
+    
+    // Combine historical and predicted data
+    return [...stockLevelData, ...predictedData];
+  };
+  
+  // Calculate top movers (items with most movement activity)
+  const getTopMovers = () => {
+    const itemMovement = new Map();
+    
+    timeFilteredMovements.forEach(movement => {
+      const itemId = movement.stockItemId;
+      if (!itemMovement.has(itemId)) {
+        itemMovement.set(itemId, { 
+          id: itemId, 
+          totalMovements: 0,
+          totalQuantity: 0,
+          allocations: 0,
+          returns: 0
+        });
+      }
+      
+      const entry = itemMovement.get(itemId);
+      entry.totalMovements += 1;
+      entry.totalQuantity += movement.quantity;
+      
+      // Similar to before, determine movement type based on userId fields
+      if (movement.fromUserId === null) {
+        entry.allocations += movement.quantity; // Allocation (going out)
+      } else {
+        entry.returns += movement.quantity;     // Return (coming in)
+      }
+    });
+    
+    // Convert to array and add item details
+    const movementArray = Array.from(itemMovement.values()).map(entry => {
+      const item = stockItems.find(item => item.id === entry.id);
+      return {
+        ...entry,
+        name: item ? item.name : `Item ${entry.id}`,
+        currentStock: item ? item.quantity : 0
+      };
+    });
+    
+    // Sort by total movements (descending)
+    return movementArray.sort((a, b) => b.totalMovements - a.totalMovements).slice(0, 5);
+  };
+  
+  // Calculate inventory health metrics
+  const getInventoryHealthMetrics = () => {
+    if (stockItems.length === 0) return null;
+    
+    const totalItems = stockItems.length;
+    const lowStockItems = stockItems.filter(item => item.quantity < 10).length;
+    const outOfStockItems = stockItems.filter(item => item.quantity === 0).length;
+    const expiringItemsCount = expiringItems.length;
+    
+    const lowStockPercentage = Math.round((lowStockItems / totalItems) * 100);
+    const expiringPercentage = Math.round((expiringItemsCount / totalItems) * 100);
+    const outOfStockPercentage = Math.round((outOfStockItems / totalItems) * 100);
+    
+    // Calculate inventory turnover rate (simplified)
+    const totalAllocated = timeFilteredMovements
+      .filter(m => m.fromUserId === null) // Only allocations (outgoing)
+      .reduce((sum, m) => sum + m.quantity, 0);
+    
+    const avgInventory = stockItems.reduce((sum, item) => sum + item.quantity, 0) / 2; // Simplified average
+    const turnoverRate = avgInventory > 0 ? (totalAllocated / avgInventory).toFixed(2) : 0;
+    
+    return {
+      lowStockPercentage,
+      expiringPercentage,
+      outOfStockPercentage,
+      turnoverRate
+    };
+  };
+  
+  // Calculate user activity metrics
+  const getUserActivityMetrics = () => {
+    const userActivity = new Map();
+    
+    users.forEach(user => {
+      userActivity.set(user.id, { 
+        id: user.id,
+        name: user.name,
+        role: user.role,
+        movements: 0,
+        totalQuantity: 0
+      });
+    });
+    
+    timeFilteredMovements.forEach(movement => {
+      const userId = movement.fromUserId || movement.toUserId;
+      if (userId && userActivity.has(userId)) {
+        const user = userActivity.get(userId);
+        user.movements += 1;
+        user.totalQuantity += movement.quantity;
+      }
+    });
+    
+    return Array.from(userActivity.values())
+      .filter(user => user.movements > 0)
+      .sort((a, b) => b.movements - a.movements)
+      .slice(0, 5);
+  };
+  
+  // Generate restock recommendations
+  const getRestockRecommendations = () => {
+    return stockItems
+      .filter(item => item.quantity < 10)
+      .map(item => {
+        const movementsForItem = timeFilteredMovements.filter(m => m.stockItemId === item.id);
+        const allocationRate = movementsForItem
+          .filter(m => m.fromUserId === null) // Only count outgoing movements
+          .reduce((sum, m) => sum + m.quantity, 0) / (timeRange === '1m' ? 1 : timeRange === '3m' ? 3 : timeRange === '6m' ? 6 : 12);
         
-        // Colors for chart
-        const colors = [
-          { border: 'rgb(59, 130, 246)', background: 'rgba(59, 130, 246, 0.2)' }, // blue
-          { border: 'rgb(16, 185, 129)', background: 'rgba(16, 185, 129, 0.2)' }, // green
-          { border: 'rgb(139, 92, 246)', background: 'rgba(139, 92, 246, 0.2)' }, // purple
-        ];
+        const recommendedRestock = Math.ceil(allocationRate * 2); // 2 months supply
         
         return {
-          label: category.name,
-          data: data,
-          borderColor: colors[index].border,
-          backgroundColor: colors[index].background,
-          borderWidth: 2,
-          tension: 0.3,
-          fill: true
+          id: item.id,
+          name: item.name,
+          currentStock: item.quantity,
+          allocationRate: Math.round(allocationRate),
+          recommendedRestock: Math.max(recommendedRestock, 10) // Minimum 10 units
         };
-      });
-
-      // Create consumption chart
-      const ctx = consumptionChartRef.current.getContext('2d');
-      if (ctx) {
-        consumptionChart.current = new Chart(ctx, {
-          type: 'line',
-          data: {
-            labels: labels,
-            datasets: datasets
-          },
-          options: {
-            responsive: true,
-            plugins: {
-              legend: {
-                position: 'top',
-              },
-              title: {
-                display: true,
-                text: 'Consumption Trends by Category'
-              }
-            },
-            scales: {
-              y: {
-                beginAtZero: true,
-                title: {
-                  display: true,
-                  text: 'Units'
-                }
-              }
-            }
-          }
-        });
-      }
-    }
-
-    if (allocationChartRef.current) {
-      // Clean up previous chart
-      if (allocationChart.current) {
-        allocationChart.current.destroy();
-      }
-
-      // Sample data for allocations by region
-      const regions = ["North", "South", "East", "West", "Central"];
-      const allocations = regions.map(() => Math.floor(Math.random() * 1000) + 200);
-
-      // Create allocation chart
-      const ctx = allocationChartRef.current.getContext('2d');
-      if (ctx) {
-        allocationChart.current = new Chart(ctx, {
-          type: 'bar',
-          data: {
-            labels: regions,
-            datasets: [{
-              label: 'Allocated Units',
-              data: allocations,
-              backgroundColor: [
-                'rgba(59, 130, 246, 0.7)', // blue
-                'rgba(16, 185, 129, 0.7)', // green
-                'rgba(139, 92, 246, 0.7)', // purple
-                'rgba(245, 158, 11, 0.7)', // amber
-                'rgba(236, 72, 153, 0.7)', // pink
-              ],
-              borderWidth: 1
-            }]
-          },
-          options: {
-            responsive: true,
-            plugins: {
-              legend: {
-                display: false
-              },
-              title: {
-                display: true,
-                text: 'Allocations by Region'
-              }
-            },
-            scales: {
-              y: {
-                beginAtZero: true,
-                title: {
-                  display: true,
-                  text: 'Units'
-                }
-              }
-            }
-          }
-        });
-      }
-    }
-
-    if (predictionChartRef.current) {
-      // Clean up previous chart
-      if (predictionChart.current) {
-        predictionChart.current.destroy();
-      }
-
-      // Sample data for predictive analytics
-      let labels: string[] = [];
-      const currentMonth = new Date().getMonth();
-      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-      
-      // Show 3 months of historical data and 3 months of predictions
-      for (let i = -3; i <= 3; i++) {
-        const monthIndex = (currentMonth + i + 12) % 12; // Ensure we wrap around correctly
-        labels.push(months[monthIndex]);
-      }
-
-      // Historical data (past 3 months) and predicted data (next 3 months) for a product
-      const historicalData = [320, 350, 380]; // Last 3 months
-      const predictedData = [410, 435, 470, 500]; // Current month and future 3 months
-      
-      // Create prediction chart
-      const ctx = predictionChartRef.current.getContext('2d');
-      if (ctx) {
-        predictionChart.current = new Chart(ctx, {
-          type: 'line',
-          data: {
-            labels: labels,
-            datasets: [
-              {
-                label: 'Historical Demand',
-                data: [...historicalData, null, null, null, null], // Pad with nulls for future months
-                borderColor: 'rgb(59, 130, 246)', // blue
-                backgroundColor: 'rgba(59, 130, 246, 0.2)',
-                borderWidth: 2,
-                pointStyle: 'circle',
-                pointRadius: 5,
-                fill: true
-              },
-              {
-                label: 'Predicted Demand',
-                data: [null, null, null, ...predictedData], // Pad with nulls for past months
-                borderColor: 'rgb(236, 72, 153)', // pink
-                backgroundColor: 'rgba(236, 72, 153, 0.2)',
-                borderWidth: 2,
-                borderDash: [5, 5],
-                pointStyle: 'triangle',
-                pointRadius: 5,
-                fill: true
-              }
-            ]
-          },
-          options: {
-            responsive: true,
-            plugins: {
-              legend: {
-                position: 'top',
-              },
-              title: {
-                display: true,
-                text: 'Demand Prediction Analysis'
-              },
-              tooltip: {
-                callbacks: {
-                  title: function(context) {
-                    const index = context[0].dataIndex;
-                    const isHistorical = index < 3;
-                    return `${labels[index]} (${isHistorical ? 'Historical' : 'Predicted'})`;
-                  }
-                }
-              }
-            },
-            scales: {
-              y: {
-                beginAtZero: false,
-                title: {
-                  display: true,
-                  text: 'Units'
-                }
-              }
-            }
-          }
-        });
-      }
-    }
-
-    // Cleanup function
-    return () => {
-      if (consumptionChart.current) {
-        consumptionChart.current.destroy();
-      }
-      if (allocationChart.current) {
-        allocationChart.current.destroy();
-      }
-      if (predictionChart.current) {
-        predictionChart.current.destroy();
-      }
-    };
-  }, [timeRange, categories, stockItems, movements]);
-
-  // Calculate analytics metrics
-  const totalStock = stockItems.reduce((sum, item) => sum + item.quantity, 0);
-  const lowStockItems = stockItems.filter(item => item.quantity < 10).length;
-  const lowStockPercentage = (lowStockItems / (stockItems.length || 1)) * 100;
-
-  // Get top moving items based on movement records
-  const itemCounts = movements.reduce((acc, movement) => {
-    const itemId = movement.stockItemId;
-    acc[itemId] = (acc[itemId] || 0) + movement.quantity;
-    return acc;
-  }, {} as Record<number, number>);
-
-  const topMovingItems = Object.entries(itemCounts)
-    .map(([itemId, count]) => ({
-      item: stockItems.find(item => item.id === parseInt(itemId)),
-      count
-    }))
-    .filter(entry => entry.item) // Filter out undefined items
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 5);
-
+      })
+      .sort((a, b) => a.currentStock - b.currentStock); // Sort by lowest stock first
+  };
+  
+  // Inventory metrics
+  const inventoryHealth = getInventoryHealthMetrics();
+  const stockLevelData = getStockLevelData();
+  const categoryDistribution = getCategoryDistributionData();
+  const topMovers = getTopMovers();
+  const userActivity = getUserActivityMetrics();
+  const restockRecommendations = getRestockRecommendations();
+  const predictiveData = generatePredictiveData();
+  
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
+  
+  if (isLoadingItems) {
+    return (
+      <MainLayout>
+        <div className="flex items-center justify-center h-[80vh]">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </MainLayout>
+    );
+  }
+  
   return (
     <MainLayout>
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-800">Advanced Analytics</h2>
-        <Select value={timeRange} onValueChange={(value) => setTimeRange(value as any)}>
-          <SelectTrigger className="w-36">
-            <SelectValue placeholder="Select period" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-              <SelectLabel>Time Range</SelectLabel>
-              <SelectItem value="week">Last Week</SelectItem>
-              <SelectItem value="month">Last Month</SelectItem>
-              <SelectItem value="quarter">Last Quarter</SelectItem>
-              <SelectItem value="year">Last Year</SelectItem>
-            </SelectGroup>
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Key Metrics Overview */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="text-sm font-medium text-gray-500">Total Inventory</p>
-                <h3 className="text-2xl font-bold mt-1">{totalStock.toLocaleString()}</h3>
-              </div>
-              <div className="p-2 bg-blue-100 rounded-full">
-                <BarChart className="h-5 w-5 text-blue-600" />
-              </div>
-            </div>
-            <div className="mt-2 flex items-center">
-              <span className="text-xs text-green-600 flex items-center">
-                <TrendingUp className="h-3 w-3 mr-1" />
-                +12.5%
-              </span>
-              <span className="text-xs text-gray-500 ml-2">vs. previous period</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="text-sm font-medium text-gray-500">Stock Turnover</p>
-                <h3 className="text-2xl font-bold mt-1">4.2x</h3>
-              </div>
-              <div className="p-2 bg-green-100 rounded-full">
-                <LineChart className="h-5 w-5 text-green-600" />
-              </div>
-            </div>
-            <div className="mt-2 flex items-center">
-              <span className="text-xs text-red-600 flex items-center">
-                <TrendingDown className="h-3 w-3 mr-1" />
-                -3.2%
-              </span>
-              <span className="text-xs text-gray-500 ml-2">vs. previous period</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="text-sm font-medium text-gray-500">Low Stock Items</p>
-                <h3 className="text-2xl font-bold mt-1">{lowStockItems}</h3>
-              </div>
-              <div className="p-2 bg-amber-100 rounded-full">
-                <AlertCircle className="h-5 w-5 text-amber-600" />
-              </div>
-            </div>
-            <div className="mt-2">
-              <Progress value={lowStockPercentage} className="h-1" />
-              <span className="text-xs text-gray-500 mt-1 block">
-                {lowStockPercentage.toFixed(1)}% of total inventory
-              </span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="text-sm font-medium text-gray-500">Forecast Accuracy</p>
-                <h3 className="text-2xl font-bold mt-1">89.5%</h3>
-              </div>
-              <div className="p-2 bg-purple-100 rounded-full">
-                <Target className="h-5 w-5 text-purple-600" />
-              </div>
-            </div>
-            <div className="mt-2 flex items-center">
-              <span className="text-xs text-green-600 flex items-center">
-                <TrendingUp className="h-3 w-3 mr-1" />
-                +5.3%
-              </span>
-              <span className="text-xs text-gray-500 ml-2">vs. previous period</span>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Analytics Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid grid-cols-3 w-full sm:w-auto">
-          <TabsTrigger value="predictive" className="px-4">
-            Predictive Insights
-          </TabsTrigger>
-          <TabsTrigger value="trends" className="px-4">
-            Consumption Trends
-          </TabsTrigger>
-          <TabsTrigger value="allocation" className="px-4">
-            Allocation Analysis
-          </TabsTrigger>
-        </TabsList>
-
-        {/* Predictive Insights Tab */}
-        <TabsContent value="predictive">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Card className="lg:col-span-2">
-              <CardHeader className="pb-2">
-                <CardTitle>Demand Prediction</CardTitle>
-                <CardDescription>
-                  AI-powered forecast of future demand based on historical patterns
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="h-80">
-                  <canvas ref={predictionChartRef} height="320"></canvas>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle>Restock Recommendations</CardTitle>
-                <CardDescription>
-                  Smart suggestions based on predicted demand
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {categories.slice(0, 4).map((category, index) => (
-                    <div key={index} className="border rounded-lg p-3">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h4 className="font-medium text-sm">{category.name}</h4>
-                          <p className="text-xs text-gray-500 mt-1">
-                            Predicted to run low in {Math.floor(Math.random() * 30) + 5} days
-                          </p>
-                        </div>
-                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                          index % 2 === 0 ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'
-                        }`}>
-                          {index % 2 === 0 ? 'Critical' : 'Warning'}
-                        </span>
-                      </div>
-                      <div className="mt-2">
-                        <div className="flex justify-between text-xs text-gray-500">
-                          <span>Current: {Math.floor(Math.random() * 50) + 20} units</span>
-                          <span>Recommended: {Math.floor(Math.random() * 100) + 100} units</span>
-                        </div>
-                        <Progress 
-                          value={Math.floor(Math.random() * 40) + 10} 
-                          className="h-1.5 mt-1"
-                        />
-                      </div>
-                    </div>
-                  ))}
-                  
-                  <Button variant="outline" className="w-full mt-2 text-sm">
-                    View All Recommendations
-                    <ChevronRight className="h-4 w-4 ml-1" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Analytics Dashboard</h1>
+            <p className="text-muted-foreground">
+              View insights and predictive analytics for your inventory
+            </p>
           </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle>Seasonal Trends</CardTitle>
-                <CardDescription>
-                  Projected seasonal impact on demand
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex items-center">
-                    <Calendar className="h-5 w-5 text-gray-400 mr-2" />
-                    <h4 className="font-medium text-sm">Upcoming Peak Periods</h4>
-                  </div>
-                  <Separator />
-                  <div className="space-y-3">
-                    {["Summer Conference Season", "End of Year Reporting", "New Product Launch"].map((period, i) => (
-                      <div key={i} className="flex justify-between items-center">
-                        <div>
-                          <p className="text-sm font-medium">{period}</p>
-                          <span className="text-xs text-gray-500">{["Jun - Aug", "Oct - Dec", "Mar - Apr"][i]}</span>
-                        </div>
-                        <span className="text-sm font-medium text-green-600">
-                          +{Math.floor(Math.random() * 30) + 15}%
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle>Inventory Risk Assessment</CardTitle>
-                <CardDescription>
-                  AI analysis of potential stock issues
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {[
-                    { risk: "Stockout Risk", categories: ["Brochures", "Samples"], level: "High" },
-                    { risk: "Overstock Risk", categories: ["Posters", "USB Drives"], level: "Medium" },
-                    { risk: "Expiration Risk", categories: ["Dated Materials"], level: "Low" }
-                  ].map((risk, i) => (
-                    <div key={i} className="border-l-4 pl-3 py-1 mb-3" style={{
-                      borderColor: risk.level === "High" ? "#ef4444" : 
-                                 risk.level === "Medium" ? "#f59e0b" : "#10b981"
-                    }}>
-                      <p className="font-medium text-sm">{risk.risk}</p>
-                      <p className="text-xs text-gray-500">Categories: {risk.categories.join(", ")}</p>
-                      <div className="flex items-center mt-1">
-                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                          risk.level === "High" ? "bg-red-100 text-red-800" :
-                          risk.level === "Medium" ? "bg-yellow-100 text-yellow-800" :
-                          "bg-green-100 text-green-800"
-                        }`}>
-                          {risk.level} Risk
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle>AI Suggested Actions</CardTitle>
-                <CardDescription>
-                  Smart recommendations to optimize inventory
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {[
-                    "Increase Brochure stock by 30% to meet projected demand spike in June",
-                    "Reassign 15% of Central region USB drives to Western region to balance distribution",
-                    "Begin phasing out 2023 dated materials to minimize waste"
-                  ].map((action, i) => (
-                    <div key={i} className="bg-gray-50 p-3 rounded-lg">
-                      <div className="flex">
-                        <div className="p-1.5 bg-blue-100 rounded-full mr-2">
-                          <span className="text-blue-700 text-xs font-bold">{i + 1}</span>
-                        </div>
-                        <p className="text-sm">{action}</p>
-                      </div>
-                      <div className="flex justify-end mt-2">
-                        <Button variant="outline" size="sm" className="h-7 text-xs mr-2">
-                          Skip
-                        </Button>
-                        <Button size="sm" className="h-7 text-xs">
-                          Apply
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+          
+          <div className="flex items-center space-x-2">
+            <Select
+              value={timeRange}
+              onValueChange={setTimeRange}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Select time range" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectLabel>Time Range</SelectLabel>
+                  <SelectItem value="1m">Last Month</SelectItem>
+                  <SelectItem value="3m">Last 3 Months</SelectItem>
+                  <SelectItem value="6m">Last 6 Months</SelectItem>
+                  <SelectItem value="1y">Last Year</SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+            
+            <Button variant="outline" size="icon">
+              <Download className="h-4 w-4" />
+            </Button>
           </div>
-        </TabsContent>
-
-        {/* Consumption Trends Tab */}
-        <TabsContent value="trends">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Card className="lg:col-span-2">
-              <CardHeader className="pb-2">
-                <CardTitle>Consumption Patterns</CardTitle>
+        </div>
+        
+        {/* Overview cards */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Total Inventory
+              </CardTitle>
+              <Package className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {stockItems.reduce((sum, item) => sum + item.quantity, 0)}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {stockItems.length} unique items
+              </p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Movement Rate
+              </CardTitle>
+              <MoveHorizontal className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {inventoryHealth ? inventoryHealth.turnoverRate : "0.00"}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                <span className="text-green-500">
+                  <ArrowUpRight className="h-4 w-4 inline mr-1" />
+                  {timeFilteredMovements.length}
+                </span> movements in period
+              </p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Active Users
+              </CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {userActivity.length}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                of {users.length} total users
+              </p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Expiring Soon
+              </CardTitle>
+              <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {expiringItems.length}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {inventoryHealth && 
+                  <span className={inventoryHealth.expiringPercentage > 10 ? "text-red-500" : "text-orange-500"}>
+                    {inventoryHealth.expiringPercentage}% of inventory
+                  </span>
+                }
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+        
+        {/* Inventory health */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Inventory Health</CardTitle>
+            <CardDescription>
+              Key metrics about your current inventory status
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-8">
+            {inventoryHealth && (
+              <>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <div>Low Stock Items ({inventoryHealth.lowStockPercentage}%)</div>
+                    <div className="text-muted-foreground">{inventoryHealth.lowStockPercentage}/100</div>
+                  </div>
+                  <Progress value={inventoryHealth.lowStockPercentage} className="h-2" />
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <div>Expiring Items ({inventoryHealth.expiringPercentage}%)</div>
+                    <div className="text-muted-foreground">{inventoryHealth.expiringPercentage}/100</div>
+                  </div>
+                  <Progress value={inventoryHealth.expiringPercentage} className="h-2" />
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <div>Out of Stock ({inventoryHealth.outOfStockPercentage}%)</div>
+                    <div className="text-muted-foreground">{inventoryHealth.outOfStockPercentage}/100</div>
+                  </div>
+                  <Progress value={inventoryHealth.outOfStockPercentage} className="h-2" />
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+        
+        {/* Charts section */}
+        <Tabs defaultValue="inventory-trends">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="inventory-trends">Inventory Trends</TabsTrigger>
+            <TabsTrigger value="category-distribution">Category Distribution</TabsTrigger>
+            <TabsTrigger value="predictive-analytics">Predictive Analytics</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="inventory-trends" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Stock Level Trends</CardTitle>
                 <CardDescription>
-                  How different categories of promotional materials are being used over time
+                  Inventory levels over time
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="h-80">
-                  <canvas ref={consumptionChartRef} height="320"></canvas>
-                </div>
+              <CardContent className="h-[300px]">
+                {stockLevelData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      data={stockLevelData}
+                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Line type="monotone" dataKey="in" name="Incoming" stroke="#8884d8" />
+                      <Line type="monotone" dataKey="out" name="Outgoing" stroke="#82ca9d" />
+                      <Line type="monotone" dataKey="total" name="Net Change" stroke="#ff7300" />
+                    </LineChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-full">
+                    <p className="text-muted-foreground">No data available for selected time range</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
-
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle>Top Moving Items</CardTitle>
-                <CardDescription>
-                  Items with highest movement volume
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {topMovingItems.map((entry, idx) => entry.item && (
-                    <div key={idx} className="flex items-center py-2 border-b last:border-0">
-                      <div className="flex-shrink-0 w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center mr-3">
-                        <span className="text-xs font-medium">{idx + 1}</span>
-                      </div>
-                      <div className="flex-grow min-w-0">
-                        <p className="font-medium text-sm truncate">{entry.item.name}</p>
-                        <p className="text-xs text-gray-500">
-                          {categories.find(c => c.id === entry.item?.categoryId)?.name || "Uncategorized"}
-                        </p>
-                      </div>
-                      <div className="flex-shrink-0 text-right">
-                        <p className="font-medium">{entry.count}</p>
-                        <p className="text-xs text-gray-500">units</p>
-                      </div>
-                    </div>
-                  ))}
-                  
-                  {topMovingItems.length === 0 && (
-                    <div className="text-center py-6">
-                      <p className="text-gray-500">No movement data available</p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Top Movers</CardTitle>
+                  <CardDescription>
+                    Items with highest movement activity
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="h-[300px]">
+                  {topMovers.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={topMovers}
+                        margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                        layout="vertical"
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis type="number" />
+                        <YAxis type="category" dataKey="name" width={100} />
+                        <Tooltip />
+                        <Legend />
+                        <Bar dataKey="allocations" name="Allocated" fill="#8884d8" />
+                        <Bar dataKey="returns" name="Returned" fill="#82ca9d" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="flex items-center justify-center h-full">
+                      <p className="text-muted-foreground">No movement data available</p>
                     </div>
                   )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        {/* Allocation Analysis Tab */}
-        <TabsContent value="allocation">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Card className="lg:col-span-2">
-              <CardHeader className="pb-2">
-                <CardTitle>Allocation by Region</CardTitle>
-                <CardDescription>
-                  How promotional materials are distributed across regions
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="h-80">
-                  <canvas ref={allocationChartRef} height="320"></canvas>
-                </div>
-              </CardContent>
-            </Card>
-
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle>User Activity</CardTitle>
+                  <CardDescription>
+                    Most active users by movement count
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="h-[300px]">
+                  {userActivity.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={userActivity}
+                        margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip />
+                        <Legend />
+                        <Bar dataKey="movements" name="Movements" fill="#8884d8" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="flex items-center justify-center h-full">
+                      <p className="text-muted-foreground">No user activity data available</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="category-distribution">
             <Card>
-              <CardHeader className="pb-2">
-                <CardTitle>Allocation Efficiency</CardTitle>
+              <CardHeader>
+                <CardTitle>Inventory by Category</CardTitle>
                 <CardDescription>
-                  Material utilization by medical representatives
+                  Distribution of inventory across categories
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="h-[400px]">
+                {categoryDistribution.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={categoryDistribution}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={true}
+                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                        outerRadius={120}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {categoryDistribution.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-full">
+                    <p className="text-muted-foreground">No category data available</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="predictive-analytics" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div>
+                    <CardTitle>Projected Inventory Levels</CardTitle>
+                    <CardDescription>
+                      Predicted inventory levels for the next {predictMonths} months
+                    </CardDescription>
+                  </div>
+                  <Select
+                    value={predictMonths.toString()}
+                    onValueChange={(value) => setPredictMonths(parseInt(value))}
+                  >
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Prediction months" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        <SelectLabel>Prediction Period</SelectLabel>
+                        <SelectItem value="1">1 Month</SelectItem>
+                        <SelectItem value="3">3 Months</SelectItem>
+                        <SelectItem value="6">6 Months</SelectItem>
+                        <SelectItem value="12">12 Months</SelectItem>
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardHeader>
+              <CardContent className="h-[300px]">
+                {predictiveData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      data={predictiveData}
+                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Line 
+                        type="monotone" 
+                        dataKey="total" 
+                        name="Historical" 
+                        stroke="#8884d8"
+                        strokeWidth={2}
+                        dot={true}
+                      />
+                      <Line 
+                        type="monotone" 
+                        dataKey="projected" 
+                        name="Projected" 
+                        stroke="#ff7300" 
+                        strokeDasharray="5 5"
+                        strokeWidth={2}
+                        dot={true}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-full">
+                    <p className="text-muted-foreground">
+                      Not enough historical data for predictions
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+              <CardFooter>
+                <p className="text-sm text-muted-foreground">
+                  Predictions are based on historical data patterns and may not account for seasonal variations or market changes
+                </p>
+              </CardFooter>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Restock Recommendations</CardTitle>
+                <CardDescription>
+                  AI-driven recommendations for low stock items
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {["North", "South", "East", "West", "Central"].map((region, idx) => {
-                    const efficiency = Math.floor(Math.random() * 40) + 60; // Random number between 60-100
-                    return (
-                      <div key={idx} className="space-y-1">
+                {restockRecommendations.length > 0 ? (
+                  <div className="space-y-4">
+                    {restockRecommendations.slice(0, 5).map((item) => (
+                      <div key={item.id} className="border rounded-lg p-4">
                         <div className="flex justify-between items-center">
-                          <span className="text-sm font-medium">{region} Region</span>
-                          <span className="text-sm font-medium">{efficiency}%</span>
+                          <h3 className="font-medium">{item.name}</h3>
+                          <Button size="sm" variant="outline">
+                            <Truck className="mr-2 h-4 w-4" />
+                            Restock
+                          </Button>
                         </div>
-                        <Progress value={efficiency} className="h-2" />
-                        <p className="text-xs text-gray-500">
-                          {efficiency >= 80 ? "Highly efficient" : 
-                           efficiency >= 70 ? "Efficient" : 
-                           "Needs improvement"}
-                        </p>
+                        <div className="mt-2 grid grid-cols-3 gap-2 text-sm">
+                          <div>
+                            <p className="text-muted-foreground">Current Stock</p>
+                            <p className={item.currentStock < 5 ? "text-red-500 font-medium" : ""}>
+                              {item.currentStock} units
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Usage Rate</p>
+                            <p>{item.allocationRate} units/month</p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Recommended</p>
+                            <p className="text-primary font-medium">{item.recommendedRestock} units</p>
+                          </div>
+                        </div>
                       </div>
-                    );
-                  })}
-                </div>
+                    ))}
+                    
+                    {restockRecommendations.length > 5 && (
+                      <Button variant="link" className="w-full">
+                        View All Recommendations
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">No restock recommendations available</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
-          </div>
-        </TabsContent>
-      </Tabs>
+          </TabsContent>
+        </Tabs>
+      </div>
     </MainLayout>
   );
 }

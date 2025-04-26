@@ -9,7 +9,9 @@ import {
   Users,
   Settings,
   Menu,
-  FlaskRound
+  FlaskRound,
+  BarChart3,
+  LineChart
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -52,6 +54,12 @@ export function Sidebar({ className }: SidebarProps) {
       title: "Reports",
       icon: <FileChartColumn className="mr-3 h-5 w-5" />,
       href: "/reports",
+      requiredPermission: "canViewReports"
+    },
+    {
+      title: "Analytics",
+      icon: <BarChart3 className="mr-3 h-5 w-5" />,
+      href: "/analytics",
       requiredPermission: "canViewReports"
     },
     {

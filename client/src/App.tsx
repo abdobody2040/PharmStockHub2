@@ -14,6 +14,7 @@ import ReportsPage from "@/pages/reports-page";
 import AnalyticsDashboard from "@/pages/analytics-dashboard";
 import UserManagementPage from "@/pages/user-management-page";
 import SettingsPage from "@/pages/settings-page";
+import MobileApp from "@/pages/mobile-app";
 import { ProtectedRoute } from "@/lib/protected-route";
 
 function Router() {
@@ -24,8 +25,11 @@ function Router() {
       <ProtectedRoute path="/inventory" component={InventoryPage} />
       <ProtectedRoute path="/stock-movement" component={StockMovementPage} />
       <ProtectedRoute path="/reports" component={ReportsPage} />
+      <ProtectedRoute path="/analytics" component={AnalyticsDashboard} />
       <ProtectedRoute path="/users" component={UserManagementPage} />
       <ProtectedRoute path="/settings" component={SettingsPage} />
+      <ProtectedRoute path="/mobile" component={MobileApp} />
+      <ProtectedRoute path="/mobile/:rest*" component={MobileApp} />
       <Route component={NotFound} />
     </Switch>
   );
