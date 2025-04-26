@@ -7,8 +7,6 @@ export type OrgConfig = {
     primaryColor: string;
     logo: string;
   };
-  companyId: string;
-  deploymentUrl?: string;
 }
 
 export interface CompanyData {
