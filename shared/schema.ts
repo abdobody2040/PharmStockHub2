@@ -84,6 +84,7 @@ export const stockMovements = pgTable("stock_movements", {
   notes: text("notes"),
   movedAt: timestamp("moved_at").defaultNow(),
   movedBy: integer("moved_by").notNull(), // User ID who initiated the move
+  type: text("type").default('allocation').notNull(), // 'allocation' or 'return'
 });
 
 export const insertStockMovementSchema = createInsertSchema(stockMovements).pick({
@@ -93,6 +94,7 @@ export const insertStockMovementSchema = createInsertSchema(stockMovements).pick
   quantity: true,
   notes: true,
   movedBy: true,
+  type: true,
 });
 
 // Extended schemas with validation
