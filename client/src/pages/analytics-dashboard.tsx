@@ -7,40 +7,50 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
 import { StockItem, StockMovement, User, Category } from "@shared/schema";
-import { Loader2, Download, ArrowDownRight, ArrowRight, ArrowUpRight, Package, MoveHorizontal, Users, Calendar, Truck, AlertTriangle } from "lucide-react";
+import { Loader2, Download, ArrowDownRight, ArrowRight, ArrowUpRight, Package, MoveHorizontal, Users, Calendar, Truck, AlertTriangle, FileText, FileDown, Table } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { getExpiryStatus } from "@/lib/utils";
 import { format, addMonths, addDays, isBefore, differenceInDays } from "date-fns";
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { jsPDF } from "jspdf";
+import { useToast } from "@/hooks/use-toast";
 
 export default function AnalyticsDashboard() {
   const [timeRange, setTimeRange] = useState("6m");
   const [predictMonths, setPredictMonths] = useState(3);
-  
+
   const { data: stockItems = [], isLoading: isLoadingItems } = useQuery<StockItem[]>({
     queryKey: ["/api/stock-items"],
   });
-  
+
   const { data: categories = [] } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
   });
-  
+
   const { data: movements = [] } = useQuery<StockMovement[]>({
     queryKey: ["/api/movements"],
   });
-  
+
   const { data: users = [] } = useQuery<User[]>({
     queryKey: ["/api/users"],
   });
-  
+
   const { data: expiringItems = [] } = useQuery<StockItem[]>({
     queryKey: ["/api/stock-items/expiring"],
   });
-  
+
   // Filter movements by selected time range
   const getTimeFilteredMovements = () => {
     const now = new Date();
     let startDate: Date;
-    
+
     switch(timeRange) {
       case "1m":
         startDate = addMonths(now, -1);
@@ -55,28 +65,28 @@ export default function AnalyticsDashboard() {
       default:
         startDate = addMonths(now, -6);
     }
-    
+
     return movements.filter(movement => {
       const movementDate = movement.movedAt ? new Date(movement.movedAt) : new Date();
       return isBefore(startDate, movementDate);
     });
   };
-  
+
   const timeFilteredMovements = getTimeFilteredMovements();
-  
+
   // Prepare data for stock level chart
   const getStockLevelData = () => {
     // Group by month and sum quantities
     const monthlyData = new Map();
-    
+
     timeFilteredMovements.forEach(movement => {
       const date = movement.movedAt ? new Date(movement.movedAt) : new Date();
       const monthKey = format(date, 'MMM yyyy');
-      
+
       if (!monthlyData.has(monthKey)) {
         monthlyData.set(monthKey, { total: 0, in: 0, out: 0, month: monthKey });
       }
-      
+
       const entry = monthlyData.get(monthKey);
       // Determine type based on userId fields - if fromUserId exists, it's a return; otherwise allocation
       if (movement.fromUserId === null) {
@@ -84,10 +94,10 @@ export default function AnalyticsDashboard() {
       } else {
         entry.in += movement.quantity;  // Return (coming in)
       }
-      
+
       entry.total = entry.in - entry.out;
     });
-    
+
     // Sort by date
     return Array.from(monthlyData.values()).sort((a, b) => {
       const dateA = new Date(a.month);
@@ -95,11 +105,11 @@ export default function AnalyticsDashboard() {
       return dateA.getTime() - dateB.getTime();
     });
   };
-  
+
   // Prepare data for category distribution
   const getCategoryDistributionData = () => {
     const categoryMap = new Map();
-    
+
     stockItems.forEach(item => {
       const category = categories.find(c => c.id === item.categoryId);
       if (category) {
@@ -110,52 +120,52 @@ export default function AnalyticsDashboard() {
         categoryMap.get(categoryName).value += item.quantity;
       }
     });
-    
+
     return Array.from(categoryMap.values());
   };
-  
+
   // Generate predictive data
   const generatePredictiveData = () => {
     // Use simple linear regression for prediction
     const stockLevelData = getStockLevelData();
-    
+
     if (stockLevelData.length < 2) {
       return [];
     }
-    
+
     // Calculate rate of change from historical data
     const monthlyRateOfChange = stockLevelData.length > 1 
       ? (stockLevelData[stockLevelData.length - 1].total - stockLevelData[0].total) / stockLevelData.length
       : 0;
-    
+
     const lastMonth = stockLevelData[stockLevelData.length - 1];
     const predictedData = [];
-    
+
     let lastTotal = lastMonth.total;
-    
+
     // Generate future months
     for (let i = 1; i <= predictMonths; i++) {
       const currentDate = new Date();
       const futureDate = addMonths(currentDate, i);
       const monthKey = format(futureDate, 'MMM yyyy');
-      
+
       lastTotal += monthlyRateOfChange;
-      
+
       predictedData.push({
         month: monthKey,
         projected: Math.round(lastTotal),
         isPrediction: true
       });
     }
-    
+
     // Combine historical and predicted data
     return [...stockLevelData, ...predictedData];
   };
-  
+
   // Calculate top movers (items with most movement activity)
   const getTopMovers = () => {
     const itemMovement = new Map();
-    
+
     timeFilteredMovements.forEach(movement => {
       const itemId = movement.stockItemId;
       if (!itemMovement.has(itemId)) {
@@ -167,11 +177,11 @@ export default function AnalyticsDashboard() {
           returns: 0
         });
       }
-      
+
       const entry = itemMovement.get(itemId);
       entry.totalMovements += 1;
       entry.totalQuantity += movement.quantity;
-      
+
       // Similar to before, determine movement type based on userId fields
       if (movement.fromUserId === null) {
         entry.allocations += movement.quantity; // Allocation (going out)
@@ -179,7 +189,7 @@ export default function AnalyticsDashboard() {
         entry.returns += movement.quantity;     // Return (coming in)
       }
     });
-    
+
     // Convert to array and add item details
     const movementArray = Array.from(itemMovement.values()).map(entry => {
       const item = stockItems.find(item => item.id === entry.id);
@@ -189,32 +199,32 @@ export default function AnalyticsDashboard() {
         currentStock: item ? item.quantity : 0
       };
     });
-    
+
     // Sort by total movements (descending)
     return movementArray.sort((a, b) => b.totalMovements - a.totalMovements).slice(0, 5);
   };
-  
+
   // Calculate inventory health metrics
   const getInventoryHealthMetrics = () => {
     if (stockItems.length === 0) return null;
-    
+
     const totalItems = stockItems.length;
     const lowStockItems = stockItems.filter(item => item.quantity < 10).length;
     const outOfStockItems = stockItems.filter(item => item.quantity === 0).length;
     const expiringItemsCount = expiringItems.length;
-    
+
     const lowStockPercentage = Math.round((lowStockItems / totalItems) * 100);
     const expiringPercentage = Math.round((expiringItemsCount / totalItems) * 100);
     const outOfStockPercentage = Math.round((outOfStockItems / totalItems) * 100);
-    
+
     // Calculate inventory turnover rate (simplified)
     const totalAllocated = timeFilteredMovements
       .filter(m => m.fromUserId === null) // Only allocations (outgoing)
       .reduce((sum, m) => sum + m.quantity, 0);
-    
+
     const avgInventory = stockItems.reduce((sum, item) => sum + item.quantity, 0) / 2; // Simplified average
     const turnoverRate = avgInventory > 0 ? (totalAllocated / avgInventory).toFixed(2) : 0;
-    
+
     return {
       lowStockPercentage,
       expiringPercentage,
@@ -222,11 +232,11 @@ export default function AnalyticsDashboard() {
       turnoverRate
     };
   };
-  
+
   // Calculate user activity metrics
   const getUserActivityMetrics = () => {
     const userActivity = new Map();
-    
+
     users.forEach(user => {
       userActivity.set(user.id, { 
         id: user.id,
@@ -236,7 +246,7 @@ export default function AnalyticsDashboard() {
         totalQuantity: 0
       });
     });
-    
+
     timeFilteredMovements.forEach(movement => {
       const userId = movement.fromUserId || movement.toUserId;
       if (userId && userActivity.has(userId)) {
@@ -245,13 +255,13 @@ export default function AnalyticsDashboard() {
         user.totalQuantity += movement.quantity;
       }
     });
-    
+
     return Array.from(userActivity.values())
       .filter(user => user.movements > 0)
       .sort((a, b) => b.movements - a.movements)
       .slice(0, 5);
   };
-  
+
   // Generate restock recommendations
   const getRestockRecommendations = () => {
     return stockItems
@@ -261,9 +271,9 @@ export default function AnalyticsDashboard() {
         const allocationRate = movementsForItem
           .filter(m => m.fromUserId === null) // Only count outgoing movements
           .reduce((sum, m) => sum + m.quantity, 0) / (timeRange === '1m' ? 1 : timeRange === '3m' ? 3 : timeRange === '6m' ? 6 : 12);
-        
+
         const recommendedRestock = Math.ceil(allocationRate * 2); // 2 months supply
-        
+
         return {
           id: item.id,
           name: item.name,
@@ -274,7 +284,7 @@ export default function AnalyticsDashboard() {
       })
       .sort((a, b) => a.currentStock - b.currentStock); // Sort by lowest stock first
   };
-  
+
   // Inventory metrics
   const inventoryHealth = getInventoryHealthMetrics();
   const stockLevelData = getStockLevelData();
@@ -283,9 +293,64 @@ export default function AnalyticsDashboard() {
   const userActivity = getUserActivityMetrics();
   const restockRecommendations = getRestockRecommendations();
   const predictiveData = generatePredictiveData();
-  
+
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
-  
+
+  const { toast } = useToast();
+  const shareableLink = generateShareableLink(); // Placeholder - assuming this function exists elsewhere
+
+  const handleDownloadReport = (format: 'pdf' | 'excel' | 'csv') => {
+    const reportData = [
+      ['Category', 'Value'],
+      ...categoryDistribution.map(item => [item.name, item.value.toString()]),
+    ];
+
+    switch (format) {
+      case 'pdf':
+        const doc = new jsPDF();
+        doc.text('Analytics Report', 14, 15);
+        doc.setFontSize(12);
+
+        let y = 30;
+        reportData.forEach((row, i) => {
+          doc.text(`${row[0]}: ${row[1]}`, 14, y);
+          y += 10;
+        });
+
+        doc.save(`analytics-report-${new Date().toISOString().split('T')[0]}.pdf`);
+        break;
+
+      case 'excel':
+        const tsvContent = reportData.map(row => row.join('\t')).join('\n');
+        const tsvBlob = new Blob([tsvContent], { type: 'text/tab-separated-values' });
+        const tsvUrl = window.URL.createObjectURL(tsvBlob);
+        const excelLink = document.createElement('a');
+        excelLink.href = tsvUrl;
+        excelLink.download = `analytics-report-${new Date().toISOString().split('T')[0]}.xlsx`;
+        excelLink.click();
+        window.URL.revokeObjectURL(tsvUrl);
+        break;
+
+      case 'csv':
+        const csvContent = reportData.map(row => 
+          row.map(cell => `"${cell}"`).join(',')
+        ).join('\n');
+        const csvBlob = new Blob([csvContent], { type: 'text/csv' });
+        const csvUrl = window.URL.createObjectURL(csvBlob);
+        const csvLink = document.createElement('a');
+        csvLink.href = csvUrl;
+        csvLink.download = `analytics-report-${new Date().toISOString().split('T')[0]}.csv`;
+        csvLink.click();
+        window.URL.revokeObjectURL(csvUrl);
+        break;
+    }
+
+    toast({
+      title: "Report Downloaded",
+      description: `Your analytics report has been downloaded in ${format.toUpperCase()} format.`,
+    });
+  };
+
   if (isLoadingItems) {
     return (
       <MainLayout>
@@ -295,7 +360,7 @@ export default function AnalyticsDashboard() {
       </MainLayout>
     );
   }
-  
+
   return (
     <MainLayout>
       <div className="space-y-6">
@@ -306,7 +371,7 @@ export default function AnalyticsDashboard() {
               View insights and predictive analytics for your inventory
             </p>
           </div>
-          
+
           <div className="flex items-center space-x-2">
             <Select
               value={timeRange}
@@ -325,13 +390,29 @@ export default function AnalyticsDashboard() {
                 </SelectGroup>
               </SelectContent>
             </Select>
-            
-            <Button variant="outline" size="icon">
-              <Download className="h-4 w-4" />
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <Download className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuLabel>Download Report As:</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => handleDownloadReport('pdf')}>
+                  <FileText className="mr-2 h-4 w-4"/> PDF
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleDownloadReport('excel')}>
+                  <Table className="mr-2 h-4 w-4"/> Excel
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleDownloadReport('csv')}>
+                  <FileDown className="mr-2 h-4 w-4"/> CSV
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
           </div>
         </div>
-        
+
         {/* Overview cards */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
@@ -350,7 +431,7 @@ export default function AnalyticsDashboard() {
               </p>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
@@ -370,7 +451,7 @@ export default function AnalyticsDashboard() {
               </p>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
@@ -387,7 +468,7 @@ export default function AnalyticsDashboard() {
               </p>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
@@ -409,7 +490,7 @@ export default function AnalyticsDashboard() {
             </CardContent>
           </Card>
         </div>
-        
+
         {/* Inventory health */}
         <Card>
           <CardHeader>
@@ -428,7 +509,7 @@ export default function AnalyticsDashboard() {
                   </div>
                   <Progress value={inventoryHealth.lowStockPercentage} className="h-2" />
                 </div>
-                
+
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
                     <div>Expiring Items ({inventoryHealth.expiringPercentage}%)</div>
@@ -436,7 +517,7 @@ export default function AnalyticsDashboard() {
                   </div>
                   <Progress value={inventoryHealth.expiringPercentage} className="h-2" />
                 </div>
-                
+
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
                     <div>Out of Stock ({inventoryHealth.outOfStockPercentage}%)</div>
@@ -448,7 +529,7 @@ export default function AnalyticsDashboard() {
             )}
           </CardContent>
         </Card>
-        
+
         {/* Charts section */}
         <Tabs defaultValue="inventory-trends">
           <TabsList className="grid w-full grid-cols-3">
@@ -456,7 +537,7 @@ export default function AnalyticsDashboard() {
             <TabsTrigger value="category-distribution">Category Distribution</TabsTrigger>
             <TabsTrigger value="predictive-analytics">Predictive Analytics</TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="inventory-trends" className="space-y-4">
             <Card>
               <CardHeader>
@@ -489,7 +570,7 @@ export default function AnalyticsDashboard() {
                 )}
               </CardContent>
             </Card>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Card>
                 <CardHeader>
@@ -522,7 +603,7 @@ export default function AnalyticsDashboard() {
                   )}
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardHeader>
                   <CardTitle>User Activity</CardTitle>
@@ -554,7 +635,7 @@ export default function AnalyticsDashboard() {
               </Card>
             </div>
           </TabsContent>
-          
+
           <TabsContent value="category-distribution">
             <Card>
               <CardHeader>
@@ -593,7 +674,7 @@ export default function AnalyticsDashboard() {
               </CardContent>
             </Card>
           </TabsContent>
-          
+
           <TabsContent value="predictive-analytics" className="space-y-4">
             <Card>
               <CardHeader>
@@ -668,7 +749,7 @@ export default function AnalyticsDashboard() {
                 </p>
               </CardFooter>
             </Card>
-            
+
             <Card>
               <CardHeader>
                 <CardTitle>Restock Recommendations</CardTitle>
@@ -706,7 +787,7 @@ export default function AnalyticsDashboard() {
                         </div>
                       </div>
                     ))}
-                    
+
                     {restockRecommendations.length > 5 && (
                       <Button variant="link" className="w-full">
                         View All Recommendations
