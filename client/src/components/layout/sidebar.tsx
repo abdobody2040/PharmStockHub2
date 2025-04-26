@@ -149,7 +149,11 @@ export function Sidebar({ className }: SidebarProps) {
         <div className="flex items-center justify-center h-16 px-4 bg-white border-b">
           <div className="flex items-center">
             <FlaskRound className="w-8 h-8 text-primary" />
-            <span className="ml-2 text-xl font-semibold text-gray-800">PharmStock</span>
+            <span className="ml-2 text-xl font-semibold text-gray-800">
+              {localStorage.getItem('system_settings') ? 
+                JSON.parse(localStorage.getItem('system_settings') || '{}').appName || 'PharmStock' 
+                : 'PharmStock'}
+            </span>
           </div>
         </div>
 

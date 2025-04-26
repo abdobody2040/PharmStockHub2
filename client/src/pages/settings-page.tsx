@@ -697,6 +697,23 @@ export default function SettingsPage() {
                       
                       <FormField
                         control={systemForm.control}
+                        name="appName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Application Name</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormDescription>
+                              The name shown in the sidebar and throughout the app
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={systemForm.control}
                         name="companyName"
                         render={({ field }) => (
                           <FormItem>
