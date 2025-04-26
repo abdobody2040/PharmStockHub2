@@ -711,6 +711,11 @@ export default function SettingsPage() {
                         />
                       </div>
                     </div>
+                    
+                    <div className="flex items-center space-x-2 pt-2">
+                      <Switch id="two-factor-auth" />
+                      <Label htmlFor="two-factor-auth">Enable Two-Factor Authentication</Label>
+                    </div>
                   </div>
                   
                   <Button
