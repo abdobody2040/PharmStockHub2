@@ -941,8 +941,8 @@ export default function SettingsPage() {
                             How often to create backups
                           </p>
                         </div>
-                        <Select defaultValue="daily">
-                          <SelectTrigger className="w-32">
+                        <Select defaultValue="daily" id="backup-frequency">
+                          <SelectTrigger className="w-32" id="backup-frequency-trigger">
                             <SelectValue placeholder="Select" />
                           </SelectTrigger>
                           <SelectContent>
