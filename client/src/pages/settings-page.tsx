@@ -220,37 +220,64 @@ export default function SettingsPage() {
     }
   };
   
-  // Effect to load security settings when the security tab is selected
-  useEffect(() => {
-    if (activeTab === "security" && typeof window !== 'undefined') {
-      try {
-        const securitySettings = localStorage.getItem('security_settings');
-        if (securitySettings) {
-          const settings = JSON.parse(securitySettings);
-          
-          // Find and set password length input
-          const passwordLengthInput = document.querySelector<HTMLInputElement>('input[type="number"][min="6"][max="20"]');
-          if (passwordLengthInput && settings.passwordLength) {
-            passwordLengthInput.value = String(settings.passwordLength);
-          }
-          
-          // Find and set password expiry input
-          const passwordExpiryInput = document.querySelector<HTMLInputElement>('input[type="number"][min="0"][defaultValue="90"]');
-          if (passwordExpiryInput && settings.passwordExpiry) {
-            passwordExpiryInput.value = String(settings.passwordExpiry);
-          }
-          
-          // Find and set two-factor switch
-          const twoFactorSwitch = document.querySelector<HTMLInputElement>('#two-factor-auth');
-          if (twoFactorSwitch && settings.twoFactorEnabled !== undefined) {
-            twoFactorSwitch.checked = settings.twoFactorEnabled;
+  // Security settings schema
+  const securityFormSchema = z.object({
+    passwordLength: z.string().or(z.number()).transform(val => Number(val)),
+    passwordExpiry: z.string().or(z.number()).transform(val => Number(val)),
+    requireSpecialChars: z.boolean().default(false),
+    requireUppercase: z.boolean().default(true),
+    requireNumbers: z.boolean().default(true),
+    twoFactorEnabled: z.boolean().default(false),
+    sessionTimeout: z.string().or(z.number()).transform(val => Number(val)),
+  });
+
+  type SecurityFormValues = z.infer<typeof securityFormSchema>;
+
+  // Security form
+  const securityForm = useForm<SecurityFormValues>({
+    resolver: zodResolver(securityFormSchema),
+    defaultValues: (() => {
+      // Try to load saved settings from localStorage
+      if (typeof window !== 'undefined') {
+        const savedSettings = localStorage.getItem('security_settings');
+        if (savedSettings) {
+          try {
+            return JSON.parse(savedSettings);
+          } catch (e) {
+            console.error('Error parsing saved security settings', e);
           }
         }
-      } catch (error) {
-        console.error('Error loading security settings:', error);
       }
+      // Default values if nothing saved
+      return {
+        passwordLength: 8,
+        passwordExpiry: 90,
+        requireSpecialChars: false,
+        requireUppercase: true,
+        requireNumbers: true,
+        twoFactorEnabled: false,
+        sessionTimeout: 30,
+      };
+    })(),
+  });
+
+  // Security form submit handler
+  const onSecuritySubmit = async (data: SecurityFormValues) => {
+    try {
+      localStorage.setItem('security_settings', JSON.stringify(data));
+      
+      toast({
+        title: "Security settings updated",
+        description: "Your security settings have been saved successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Update failed",
+        description: error instanceof Error ? error.message : "Failed to update security settings",
+        variant: "destructive",
+      });
     }
-  }, [activeTab]);
+  };
 
   return (
     <MainLayout>
