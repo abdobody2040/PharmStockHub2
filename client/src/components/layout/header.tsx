@@ -92,12 +92,14 @@ export function Header({ onSearch }: HeaderProps) {
               size="icon"
               className="p-1 text-gray-500 rounded-full hover:bg-gray-100 focus:outline-none"
             >
-              <Bell className="w-6 h-6" />
-              {notificationCount > 0 && (
-                <span className="absolute -top-1 -right-1 flex items-center justify-center w-4 h-4 text-xs text-white bg-red-500 rounded-full">
-                  {notificationCount}
-                </span>
-              )}
+              <div className="relative">
+                <Bell className="w-6 h-6" />
+                {notificationCount > 0 && (
+                  <span className="absolute -top-2 -right-2 flex items-center justify-center w-4 h-4 text-xs text-white bg-red-500 rounded-full">
+                    {notificationCount}
+                  </span>
+                )}
+              </div>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-80">
