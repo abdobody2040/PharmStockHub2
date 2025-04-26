@@ -723,15 +723,25 @@ export default function SettingsPage() {
                       try {
                         // Get values from DOM elements since they aren't in a React form
                         const passwordLength = document.querySelector<HTMLInputElement>('input[type="number"][min="6"][max="20"]')?.value || "8";
-                        const passwordExpiry = document.querySelector<HTMLInputElement>('input[type="number"][min="0"][defaultValue="90"]')?.value || "90";
+                        const passwordExpiry = document.querySelector<HTMLInputElement>('input[type="number"][min="0"]')?.value || "90";
                         const twoFactorEnabled = document.querySelector<HTMLInputElement>('#two-factor-auth')?.checked || false;
+                        const requireSpecialChars = document.querySelector<HTMLInputElement>('#require-special-chars')?.checked || false;
+                        const requireUppercase = document.querySelector<HTMLInputElement>('#require-uppercase')?.checked || false;
+                        const requireNumbers = document.querySelector<HTMLInputElement>('#require-numbers')?.checked || false;
+                        const sessionTimeout = document.querySelector<HTMLInputElement>('input[type="number"][min="5"][max="120"]')?.value || "30";
+                        const maxLoginAttempts = document.querySelector<HTMLInputElement>('input[type="number"][min="1"][max="10"]')?.value || "5";
                         
                         // In a real app, we would save to backend storage
                         // For now, store settings in localStorage for persistence
                         localStorage.setItem('security_settings', JSON.stringify({
                           passwordLength: Number(passwordLength),
                           passwordExpiry: Number(passwordExpiry),
-                          twoFactorEnabled
+                          twoFactorEnabled,
+                          requireSpecialChars,
+                          requireUppercase,
+                          requireNumbers,
+                          sessionTimeout: Number(sessionTimeout),
+                          maxLoginAttempts: Number(maxLoginAttempts)
                         }));
                         
                         toast({

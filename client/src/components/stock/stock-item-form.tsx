@@ -36,7 +36,7 @@ const stockItemSchema = z.object({
   name: z.string().min(2, "Item name must be at least 2 characters"),
   categoryId: z.string().min(1, "Category is required"),
   quantity: z.string().min(1, "Quantity is required"),
-  expiry: z.string().optional(),
+  expiry: z.string().nullish(),
   uniqueNumber: z.string().optional(),
   imageFile: z.any().optional(),
   notes: z.string().optional(),
@@ -82,7 +82,8 @@ export function StockItemForm({ onSubmit, initialData, isLoading = false }: Stoc
     formData.append("categoryId", values.categoryId);
     formData.append("quantity", values.quantity);
     
-    if (values.expiry) {
+    // Handle expiry date properly
+    if (values.expiry && values.expiry.trim() !== '') {
       // Ensure proper date format for server processing (ISO format)
       try {
         const dateObj = new Date(values.expiry);
@@ -93,6 +94,9 @@ export function StockItemForm({ onSubmit, initialData, isLoading = false }: Stoc
         // If date parsing fails, send the raw string
         formData.append("expiry", values.expiry);
       }
+    } else {
+      // Explicitly set to null if empty
+      formData.append("expiry", "");
     }
     
     if (values.uniqueNumber) {
