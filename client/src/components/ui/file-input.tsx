@@ -12,17 +12,21 @@ import { Label } from "@/components/ui/label";
 import { Upload, X, Image } from "lucide-react";
 
 interface FileInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  previewUrl?: string;
+  previewUrl?: string | null;
   onClear?: () => void;
 }
 
 const FileInput = React.forwardRef<HTMLInputElement, FileInputProps>(
   ({ className, previewUrl, onClear, ...props }, ref) => {
-    const [preview, setPreview] = React.useState<string | undefined>(previewUrl);
+    // Convert null to undefined for the state
+    const initialPreview = typeof previewUrl === 'string' ? previewUrl : undefined;
+    const [preview, setPreview] = React.useState<string | undefined>(initialPreview);
     const inputRef = React.useRef<HTMLInputElement | null>(null);
     
     React.useEffect(() => {
-      setPreview(previewUrl);
+      // Update preview when previewUrl changes
+      const newPreview = typeof previewUrl === 'string' ? previewUrl : undefined;
+      setPreview(newPreview);
     }, [previewUrl]);
     
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
