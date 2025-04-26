@@ -11,6 +11,7 @@ import DashboardPage from "@/pages/dashboard-page";
 import InventoryPage from "@/pages/inventory-page";
 import StockMovementPage from "@/pages/stock-movement-page";
 import ReportsPage from "@/pages/reports-page";
+import AnalyticsDashboard from "@/pages/analytics-dashboard";
 import UserManagementPage from "@/pages/user-management-page";
 import SettingsPage from "@/pages/settings-page";
 import { ProtectedRoute } from "@/lib/protected-route";

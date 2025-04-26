@@ -18,7 +18,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ButtonGroup } from "@/components/ui/button-group";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
@@ -38,6 +37,8 @@ export default function ReportsPage() {
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const [reportType, setReportType] = useState("inventory");
   const [dateRange, setDateRange] = useState("month");
+  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
+  const [currentReportData, setCurrentReportData] = useState<any[][]>([]);
   const inventoryChartRef = useRef<HTMLCanvasElement>(null);
   const categoryChartRef = useRef<HTMLCanvasElement>(null);
   const inventoryChart = useRef<Chart | null>(null);
@@ -251,6 +252,9 @@ export default function ReportsPage() {
         reportData = [["No data available for this report type"]];
     }
     
+    // Store the current report data for sharing
+    setCurrentReportData(reportData);
+    
     // Generate the report in the requested format
     setTimeout(() => {
       if (exportFormat === 'pdf') {
@@ -394,11 +398,34 @@ export default function ReportsPage() {
     };
   });
 
+  // Handle opening the share dialog
+  const handleShareReport = () => {
+    if (currentReportData.length === 0) {
+      toast({
+        title: "No report to share",
+        description: "Please generate a report first before sharing.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setIsShareDialogOpen(true);
+  };
+
   return (
     <MainLayout>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-gray-800">Reports</h2>
-        {/* We'll handle exports via the form now, no need for a separate button */}
+        <div className="flex space-x-2">
+          <Button 
+            onClick={handleShareReport}
+            variant="outline"
+            className="flex items-center"
+            disabled={currentReportData.length === 0}
+          >
+            <Share2 className="h-4 w-4 mr-2" />
+            Share Report
+          </Button>
+        </div>
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
@@ -602,6 +629,14 @@ export default function ReportsPage() {
           )}
         </div>
       </div>
+      
+      {/* Report Share Dialog */}
+      <ReportShare
+        isOpen={isShareDialogOpen}
+        onClose={() => setIsShareDialogOpen(false)}
+        reportType={reportType}
+        reportData={currentReportData}
+      />
     </MainLayout>
   );
 }

@@ -73,7 +73,7 @@ export function ReportShare({ isOpen, onClose, reportType, reportData }: ReportS
   const shareNatively = async () => {
     const reportTitle = `${reportType.charAt(0).toUpperCase() + reportType.slice(1)} Report`;
     
-    if (navigator.share) {
+    if (typeof navigator !== 'undefined' && 'share' in navigator) {
       try {
         await navigator.share({
           title: reportTitle,
@@ -193,7 +193,7 @@ export function ReportShare({ isOpen, onClose, reportType, reportData }: ReportS
                 </div>
               </div>
               
-              {navigator.share && (
+              {typeof navigator !== 'undefined' && 'share' in navigator && (
                 <div className="pt-4">
                   <Button onClick={shareNatively} className="w-full">
                     <Share2 className="h-4 w-4 mr-2" />
