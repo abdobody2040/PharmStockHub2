@@ -62,16 +62,19 @@ export default function DashboardPage() {
   
   // Calculate total stock value based on actual price data
   const totalStockValue = stockItems.reduce((sum, item) => {
-    // Use actual price (stored in cents) or fallback to estimate if not available
-    const itemPrice = item.price || (item.quantity * 1000); // default $10 per item (1000 cents)
+    // Use actual price (stored in cents) or default to 0 if not available
+    const itemPrice = item.price || 0; // in cents
     return sum + (item.quantity * itemPrice);
   }, 0);
   
-  // Convert from cents to dollars and format
+  // Convert from cents to dollars and format with proper grouping
   const totalValueInDollars = totalStockValue / 100;
-  const formattedStockValue = totalValueInDollars >= 1000 
-    ? (totalValueInDollars / 1000).toFixed(1) + "k"
-    : totalValueInDollars.toFixed(0);
+  const formattedStockValue = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: 0,
+    notation: totalValueInDollars >= 10000 ? 'compact' : 'standard'
+  }).format(totalValueInDollars);
   
   // Count of medical reps (will be needed for the table section)
   const medicalRepsCount = users.filter(u => u.role === 'medicalRep').length;
@@ -227,7 +230,7 @@ export default function DashboardPage() {
         <StatsCard
           icon={TrendingUp}
           title="Inventory Value"
-          value={`$${formattedStockValue}`}
+          value={formattedStockValue}
           change={{ value: "7%", isPositive: true, text: "from last month" }}
           iconColor="bg-emerald-100 text-emerald-600"
         />
