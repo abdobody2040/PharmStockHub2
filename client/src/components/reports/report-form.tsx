@@ -86,16 +86,8 @@ export function ReportForm({ onGenerate, isLoading = false }: ReportFormProps) {
     });
     formData.append('generatedAt', new Date().toISOString());
     
+    // Let the parent component handle the report generation
     onGenerate(formData);
-
-    // Generate the appropriate report format
-    if (values.exportFormat === 'pdf') {
-      generatePdfReport(values);
-    } else if (values.exportFormat === 'excel') {
-      generateExcelReport(values);
-    } else if (values.exportFormat === 'csv') {
-      generateCsvReport(values);
-    }
   };
 
   // Helper function to get mock data based on report type

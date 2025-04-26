@@ -91,7 +91,7 @@ export default function SettingsPage() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("profile");
 
-  // Profile form
+  // Profile form - load stored values from localStorage if available
   const profileForm = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
@@ -100,6 +100,19 @@ export default function SettingsPage() {
       region: user?.region || "",
     },
   });
+  
+  // Load saved profile settings from localStorage if available
+  useEffect(() => {
+    const savedProfileSettings = localStorage.getItem('profileSettings');
+    if (savedProfileSettings) {
+      try {
+        const parsedSettings = JSON.parse(savedProfileSettings);
+        profileForm.reset(parsedSettings);
+      } catch (error) {
+        console.error('Error parsing saved profile settings:', error);
+      }
+    }
+  }, [profileForm]);
 
   // Notification form
   const notificationForm = useForm<NotificationFormValues>({
@@ -162,6 +175,9 @@ export default function SettingsPage() {
         name: data.name,
         region: data.region
       });
+      
+      // Save profile settings to localStorage for persistence
+      localStorage.setItem('profileSettings', JSON.stringify(data));
       
       toast({
         title: "Profile updated",
