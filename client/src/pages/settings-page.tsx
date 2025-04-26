@@ -1358,18 +1358,21 @@ export default function SettingsPage() {
                   <Button
                     onClick={async () => {
                       try {
-                        // Get values from DOM elements since they aren't in a React form
-                        const autoBackupEnabled = document.querySelector<HTMLInputElement>('#auto-backup')?.checked || false;
-                        const backupFrequency = document.querySelector<HTMLDivElement>('#backup-frequency-trigger')?.getAttribute('data-value') || "daily";
-                        const retentionPeriod = document.querySelector<HTMLDivElement>('#retention-period-trigger')?.getAttribute('data-value') || "30";
+                        // Get values from state variables
+                        const settings = {
+                          autoBackupEnabled: autoBackupEnabled,
+                          backupFrequency: backupFrequency,
+                          retentionPeriod: Number(retentionPeriod),
+                          compressBackups: compressBackups,
+                          encryptBackups: encryptBackups
+                        };
                         
                         // In a real app, we would save to backend storage
                         // For now, store settings in localStorage for persistence
-                        localStorage.setItem('data_settings', JSON.stringify({
-                          autoBackupEnabled,
-                          backupFrequency,
-                          retentionPeriod: Number(retentionPeriod)
-                        }));
+                        localStorage.setItem('data_settings', JSON.stringify(settings));
+                        
+                        // Force the component to update after saving
+                        setDataSettings(settings);
                         
                         toast({
                           title: "Settings saved",
