@@ -1,6 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { getOrgConfig } from './config';
 
 const app = express();
 app.use(express.json());
@@ -35,6 +36,14 @@ app.use((req, res, next) => {
 
   next();
 });
+
+// Organization-specific middleware
+app.use((req, res, next) => {
+  const orgId = req.headers['x-org-id'] as string;
+  req.orgConfig = getOrgConfig(orgId);
+  next();
+});
+
 
 (async () => {
   const server = await registerRoutes(app);
