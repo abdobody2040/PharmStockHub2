@@ -84,6 +84,20 @@ export function StockItemCard({
           </Badge>
           <span className="text-sm font-medium text-gray-900">Qty: {item.quantity}</span>
         </div>
+
+        <div className="mt-2 flex justify-between items-center">
+          <span className="text-sm text-gray-700">Unit Price:</span>
+          <span className="text-sm font-medium text-gray-900">
+            ${item.price ? (item.price / 100).toFixed(2) : '0.00'}
+          </span>
+        </div>
+
+        <div className="mt-1 flex justify-between items-center">
+          <span className="text-sm text-gray-700">Total Value:</span>
+          <span className="text-sm font-medium text-emerald-600">
+            ${item.price ? ((item.price * item.quantity) / 100).toFixed(2) : '0.00'}
+          </span>
+        </div>
         
         <div className="mt-3 flex justify-between items-center">
           <div className="flex flex-col">
