@@ -60,14 +60,18 @@ export default function DashboardPage() {
   
   const stockTransfersCount = movements.length;
   
-  // Calculate total stock value - estimate based on quantity
+  // Calculate total stock value based on actual price data
   const totalStockValue = stockItems.reduce((sum, item) => {
-    // Estimate value based on quantity (assuming $10 per item)
-    return sum + (item.quantity * 10);
+    // Use actual price (stored in cents) or fallback to estimate if not available
+    const itemPrice = item.price || (item.quantity * 1000); // default $10 per item (1000 cents)
+    return sum + (item.quantity * itemPrice);
   }, 0);
   
-  // Format the value in thousands
-  const formattedStockValue = (totalStockValue / 1000).toFixed(1) + "k";
+  // Convert from cents to dollars and format
+  const totalValueInDollars = totalStockValue / 100;
+  const formattedStockValue = totalValueInDollars >= 1000 
+    ? (totalValueInDollars / 1000).toFixed(1) + "k"
+    : totalValueInDollars.toFixed(0);
   
   // Count of medical reps (will be needed for the table section)
   const medicalRepsCount = users.filter(u => u.role === 'medicalRep').length;

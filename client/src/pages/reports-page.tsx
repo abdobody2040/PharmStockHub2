@@ -179,17 +179,21 @@ export default function ReportsPage() {
     switch(reportType) {
       case 'inventory':
         reportData = [
-          ["ID", "Name", "Category", "Quantity", "Expiry Date", "Status"],
+          ["ID", "Name", "Category", "Quantity", "Unit Price ($)", "Total Value ($)", "Expiry Date", "Status"],
           ...stockItems.map(item => {
             const category = categories.find(c => c.id === item.categoryId)?.name || 'Unknown';
             const status = item.quantity < 10 ? 'Low Stock' : 'Active';
             const expiryDate = item.expiry ? new Date(item.expiry).toISOString().split('T')[0] : 'N/A';
+            const unitPrice = item.price ? (item.price / 100).toFixed(2) : '0.00';
+            const totalValue = item.price ? ((item.price * item.quantity) / 100).toFixed(2) : '0.00';
             
             return [
               item.id.toString(),
               item.name,
               category,
               item.quantity.toString(),
+              unitPrice,
+              totalValue,
               expiryDate,
               status
             ];
@@ -199,13 +203,27 @@ export default function ReportsPage() {
         
       case 'movement':
         reportData = [
-          ["ID", "Item", "From User", "To User", "Quantity", "Date"],
+          ["ID", "Item", "From User", "To User", "Quantity", "Unit Price ($)", "Total Value ($)", "Date", "Status"],
           ...movements.map(movement => {
-            const item = stockItems.find(i => i.id === movement.stockItemId)?.name || 'Unknown';
+            const stockItem = stockItems.find(i => i.id === movement.stockItemId);
+            const item = stockItem?.name || 'Unknown';
             const fromUser = movement.fromUserId ? 
               (users.find(u => u.id === movement.fromUserId)?.name || 'Unknown') : 'Warehouse';
             const toUser = movement.toUserId ? 
               (users.find(u => u.id === movement.toUserId)?.name || 'Unknown') : 'Warehouse';
+            const unitPrice = stockItem?.price ? (stockItem.price / 100).toFixed(2) : '0.00';
+            const totalValue = stockItem?.price ? ((stockItem.price * movement.quantity) / 100).toFixed(2) : '0.00';
+            const moveDate = movement.movedAt ? new Date(movement.movedAt).toISOString().split('T')[0] : 'N/A';
+            
+            // Calculate status based on time since movement
+            let status = 'Completed';
+            if (movement.movedAt) {
+              const daysSinceMove = Math.floor((Date.now() - new Date(movement.movedAt).getTime()) / (1000 * 60 * 60 * 24));
+              if (daysSinceMove < 1) status = 'Recent';
+              else if (daysSinceMove < 7) status = 'Last Week';
+              else if (daysSinceMove < 30) status = 'Last Month';
+              else status = 'Archive';
+            }
             
             return [
               movement.id.toString(),
@@ -213,7 +231,10 @@ export default function ReportsPage() {
               fromUser,
               toUser,
               movement.quantity.toString(),
-              movement.movedAt ? new Date(movement.movedAt).toISOString().split('T')[0] : 'N/A'
+              unitPrice,
+              totalValue,
+              moveDate,
+              status
             ];
           })
         ];
@@ -221,20 +242,34 @@ export default function ReportsPage() {
         
       case 'expiry':
         reportData = [
-          ["ID", "Name", "Category", "Quantity", "Expiry Date", "Days Remaining"],
+          ["ID", "Name", "Category", "Quantity", "Unit Price ($)", "Total Value ($)", "Expiry Date", "Days Remaining", "Risk Level"],
           ...expiringItems.map(item => {
             const category = categories.find(c => c.id === item.categoryId)?.name || 'Unknown';
             const expiryDate = item.expiry ? new Date(item.expiry).toISOString().split('T')[0] : 'N/A';
             const daysRemaining = item.expiry ? 
               Math.ceil((new Date(item.expiry).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : 'N/A';
+            const unitPrice = item.price ? (item.price / 100).toFixed(2) : '0.00';
+            const totalValue = item.price ? ((item.price * item.quantity) / 100).toFixed(2) : '0.00';
+            
+            // Determine risk level
+            let riskLevel = 'Low';
+            if (typeof daysRemaining === 'number') {
+              if (daysRemaining <= 0) riskLevel = 'Expired';
+              else if (daysRemaining <= 14) riskLevel = 'Critical';
+              else if (daysRemaining <= 30) riskLevel = 'High';
+              else if (daysRemaining <= 60) riskLevel = 'Medium';
+            }
             
             return [
               item.id.toString(),
               item.name,
               category,
               item.quantity.toString(),
+              unitPrice,
+              totalValue,
               expiryDate,
-              typeof daysRemaining === 'number' ? daysRemaining.toString() : daysRemaining
+              typeof daysRemaining === 'number' ? daysRemaining.toString() : daysRemaining,
+              riskLevel
             ];
           })
         ];
