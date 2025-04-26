@@ -890,7 +890,152 @@ export default function SettingsPage() {
                   </div>
                   
                   <div className="space-y-4">
-                    <h3 className="text-lg font-medium">Backup & Export</h3>
+                    <h3 className="text-lg font-medium">Backup & Export Settings</h3>
+                    <Form {...dataManagementForm}>
+                      <form onSubmit={dataManagementForm.handleSubmit(onDataManagementSubmit)} className="space-y-6">
+                        <div className="space-y-4 border-b pb-6">
+                          <FormField
+                            control={dataManagementForm.control}
+                            name="autoBackupEnabled"
+                            render={({ field }) => (
+                              <FormItem className="flex flex-row items-center justify-between">
+                                <div className="space-y-0.5">
+                                  <FormLabel className="text-base">Automatic Backups</FormLabel>
+                                  <FormDescription>
+                                    Enable scheduled automatic backups
+                                  </FormDescription>
+                                </div>
+                                <FormControl>
+                                  <Switch
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+                          
+                          {dataManagementForm.watch("autoBackupEnabled") && (
+                            <>
+                              <FormField
+                                control={dataManagementForm.control}
+                                name="backupFrequency"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Backup Frequency</FormLabel>
+                                    <Select 
+                                      onValueChange={field.onChange} 
+                                      defaultValue={field.value}
+                                    >
+                                      <FormControl>
+                                        <SelectTrigger>
+                                          <SelectValue placeholder="Select frequency" />
+                                        </SelectTrigger>
+                                      </FormControl>
+                                      <SelectContent>
+                                        <SelectItem value="daily">Daily</SelectItem>
+                                        <SelectItem value="weekly">Weekly</SelectItem>
+                                        <SelectItem value="monthly">Monthly</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                    <FormDescription>
+                                      How often backups should be created
+                                    </FormDescription>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              
+                              <FormField
+                                control={dataManagementForm.control}
+                                name="retentionPeriod"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Retention Period (Days)</FormLabel>
+                                    <FormControl>
+                                      <Input 
+                                        type="number" 
+                                        min="1" 
+                                        {...field}
+                                        value={field.value}
+                                        onChange={(e) => field.onChange(e.target.value)}
+                                      />
+                                    </FormControl>
+                                    <FormDescription>
+                                      Number of days to keep backups before deletion
+                                    </FormDescription>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            </>
+                          )}
+                        </div>
+                        
+                        <div className="space-y-4">
+                          <h4 className="text-md font-medium">Export Settings</h4>
+                          
+                          <FormField
+                            control={dataManagementForm.control}
+                            name="exportFormat"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Default Export Format</FormLabel>
+                                <Select 
+                                  onValueChange={field.onChange} 
+                                  defaultValue={field.value}
+                                >
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Select format" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="json">JSON</SelectItem>
+                                    <SelectItem value="csv">CSV</SelectItem>
+                                    <SelectItem value="excel">Excel</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <FormDescription>
+                                  Default format used when exporting data
+                                </FormDescription>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={dataManagementForm.control}
+                            name="compressionEnabled"
+                            render={({ field }) => (
+                              <FormItem className="flex flex-row items-center justify-between">
+                                <div className="space-y-0.5">
+                                  <FormLabel className="text-base">Enable Compression</FormLabel>
+                                  <FormDescription>
+                                    Compress exported files to reduce size
+                                  </FormDescription>
+                                </div>
+                                <FormControl>
+                                  <Switch
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                        
+                        <Button type="submit">
+                          <Save className="h-4 w-4 mr-2" />
+                          Save Data Settings
+                        </Button>
+                      </form>
+                    </Form>
+                  </div>
+                  
+                  <div className="space-y-4 pt-6 border-t">
+                    <h3 className="text-lg font-medium">Backup & Export Actions</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <Card>
                         <CardHeader className="pb-2">
