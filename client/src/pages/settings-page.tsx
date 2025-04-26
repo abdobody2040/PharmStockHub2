@@ -80,6 +80,7 @@ const systemFormSchema = z.object({
   defaultCategory: z.string(),
   companyName: z.string(),
   companyLogo: z.any().optional(),
+  appName: z.string().optional(),
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
@@ -189,6 +190,7 @@ export default function SettingsPage() {
         expiryAlertDays: "30",
         defaultCategory: "1",
         companyName: "PharmStock",
+        appName: "PharmStock Pro",
       };
     })(),
   });
