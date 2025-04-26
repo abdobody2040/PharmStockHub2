@@ -16,7 +16,10 @@ import {
   Clock, 
   ArrowLeftRight, 
   Users,
-  ChevronRight
+  ChevronRight,
+  Layers,
+  ShoppingCart,
+  TrendingUp
 } from "lucide-react";
 import Chart from 'chart.js/auto';
 import 'chartjs-adapter-date-fns';
@@ -57,6 +60,16 @@ export default function DashboardPage() {
   
   const stockTransfersCount = movements.length;
   
+  // Calculate total stock value - estimate based on quantity
+  const totalStockValue = stockItems.reduce((sum, item) => {
+    // Estimate value based on quantity (assuming $10 per item)
+    return sum + (item.quantity * 10);
+  }, 0);
+  
+  // Format the value in thousands
+  const formattedStockValue = (totalStockValue / 1000).toFixed(1) + "k";
+  
+  // Count of medical reps (will be needed for the table section)
   const medicalRepsCount = users.filter(u => u.role === 'medicalRep').length;
 
   // Calculate category distribution for the chart
@@ -208,11 +221,11 @@ export default function DashboardPage() {
         />
 
         <StatsCard
-          icon={Users}
-          title="Medical Reps"
-          value={medicalRepsCount}
-          change={{ value: "5%", isPositive: true, text: "from last quarter" }}
-          iconColor="bg-purple-100 text-purple-600"
+          icon={TrendingUp}
+          title="Inventory Value"
+          value={`$${formattedStockValue}`}
+          change={{ value: "7%", isPositive: true, text: "from last month" }}
+          iconColor="bg-emerald-100 text-emerald-600"
         />
       </div>
 
