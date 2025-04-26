@@ -80,15 +80,50 @@ export function Sidebar({ className }: SidebarProps) {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
 
-  // Only used for demo/display purposes to see different role views
+  // Used for demo/display purposes to see different role views
   const handleRoleChange = (role: RoleType) => {
+    // Set active role for display
     setActiveRole(role);
+    
+    // Update filtered menu items based on role permissions
+    // This is just for demo/visualization purposes
+    // In a real app, this would be handled by the backend
+    const toast = document.createElement('div');
+    toast.className = 'fixed bottom-4 right-4 bg-primary text-white px-4 py-2 rounded-md shadow-lg';
+    toast.textContent = `Switched to ${getRoleName(role)} view`;
+    document.body.appendChild(toast);
+    
+    // Remove toast after 2 seconds
+    setTimeout(() => {
+      document.body.removeChild(toast);
+    }, 2000);
+    
     setIsMobileMenuOpen(false);
   };
 
-  const filteredMenuItems = menuItems.filter(item => 
-    !item.requiredPermission || hasPermission(item.requiredPermission)
-  );
+  // For demo purposes, we're filtering based on activeRole instead of the actual user role
+  // This allows the CEO to "preview" what other roles would see
+  const filteredMenuItems = menuItems.filter(item => {
+    if (!item.requiredPermission) return true;
+    
+    // If we're in demo mode (activeRole is different from user's role)
+    if (user?.role === 'ceo' && activeRole !== user.role) {
+      // Simulate permissions for the selected role
+      const rolePermissions = {
+        'ceo': ['canMoveStock', 'canViewReports', 'canManageUsers', 'canAccessSettings'],
+        'marketer': ['canMoveStock', 'canViewReports'],
+        'salesManager': ['canMoveStock', 'canViewReports', 'canManageUsers'],
+        'stockManager': ['canMoveStock', 'canAccessSettings'],
+        'admin': ['canManageUsers', 'canAccessSettings'],
+        'medicalRep': []
+      };
+      
+      return rolePermissions[activeRole]?.includes(item.requiredPermission) || false;
+    }
+    
+    // Default behavior using actual permissions
+    return hasPermission(item.requiredPermission);
+  });
 
   return (
     <>
@@ -131,7 +166,8 @@ export function Sidebar({ className }: SidebarProps) {
                     activeRole === role && "bg-gray-100"
                   )}
                 >
-                  <div className={cn("w-3 h-3 mr-3 rounded-full", getRoleColor(role))}></div>
+                  <div className={cn("w-3 h-3 mr-3 rounded-full", getRoleColor(role))} 
+                    style={{width: '12px', height: '12px', display: 'inline-block'}}></div>
                   <span>{getRoleName(role)}</span>
                 </button>
               ))}

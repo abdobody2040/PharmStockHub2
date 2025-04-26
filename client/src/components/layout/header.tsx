@@ -21,7 +21,7 @@ interface HeaderProps {
 export function Header({ onSearch }: HeaderProps) {
   const { user, logoutMutation } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
-  const [notificationCount] = useState(5); // Demo data
+  const [notificationCount] = useState(2); // Set notification count to display badge
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
