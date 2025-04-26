@@ -313,46 +313,220 @@ export default function AnalyticsDashboard() {
   const shareableLink = generateShareableLink();
 
   const handleDownloadReport = (format: 'pdf' | 'excel' | 'csv') => {
-    const reportData = [
-      ['Category', 'Value'],
-      ...categoryDistribution.map(item => [item.name, item.value.toString()]),
+    // Enhanced report with more comprehensive data
+    const reportTitle = `PharmStock Analytics Report - ${new Date().toLocaleDateString()}`;
+    const reportDate = new Date().toISOString().split('T')[0];
+    
+    // Collect all relevant data for the report
+    const categoryData = categoryDistribution.map(item => [item.name, item.value.toString()]);
+    const stockLevelTrends = stockLevelData.map(item => [
+      item.month, 
+      item.in.toString(),
+      item.out.toString(), 
+      item.total.toString()
+    ]);
+    const inventoryHealthData = inventoryHealth ? [
+      ['Low Stock Items', `${inventoryHealth.lowStockPercentage}%`],
+      ['Expiring Items', `${inventoryHealth.expiringPercentage}%`],
+      ['Out of Stock', `${inventoryHealth.outOfStockPercentage}%`],
+      ['Turnover Rate', inventoryHealth.turnoverRate.toString()]
+    ] : [];
+    
+    const stockItemsCount = stockItems.reduce((sum, item) => sum + item.quantity, 0);
+    const expiringItemsCount = expiringItems.length;
+    const summaryData = [
+      ['Total Inventory Items', stockItemsCount.toString()],
+      ['Unique Items', stockItems.length.toString()],
+      ['Expiring Items', expiringItemsCount.toString()],
+      ['Active Users', userActivity.length.toString()],
+      ['Total Users', users.length.toString()],
+      ['Time Range', timeRange]
     ];
 
     switch (format) {
       case 'pdf':
         const doc = new jsPDF();
-        doc.text('Analytics Report', 14, 15);
+        
+        // Title and header styling
+        doc.setFillColor(41, 128, 185); // Blue header
+        doc.rect(0, 0, 210, 20, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(18);
+        doc.text(reportTitle, 105, 12, { align: 'center' });
+        
+        // Reset text color for content
+        doc.setTextColor(0, 0, 0);
         doc.setFontSize(12);
-
+        
+        // Summary section
         let y = 30;
-        reportData.forEach((row, i) => {
+        doc.setFontSize(14);
+        doc.text('Summary', 14, y);
+        doc.line(14, y + 2, 195, y + 2);
+        y += 10;
+        doc.setFontSize(10);
+        
+        summaryData.forEach(row => {
           doc.text(`${row[0]}: ${row[1]}`, 14, y);
-          y += 10;
+          y += 6;
         });
-
-        doc.save(`analytics-report-${new Date().toISOString().split('T')[0]}.pdf`);
+        
+        // Category Distribution section 
+        y += 5;
+        doc.setFontSize(14);
+        doc.text('Category Distribution', 14, y);
+        doc.line(14, y + 2, 195, y + 2);
+        y += 10;
+        doc.setFontSize(10);
+        
+        categoryData.forEach(row => {
+          doc.text(`${row[0]}: ${row[1]}`, 14, y);
+          y += 6;
+        });
+        
+        // Inventory Health section
+        y += 5;
+        doc.setFontSize(14);
+        doc.text('Inventory Health', 14, y);
+        doc.line(14, y + 2, 195, y + 2);
+        y += 10;
+        doc.setFontSize(10);
+        
+        if (inventoryHealthData.length > 0) {
+          inventoryHealthData.forEach(row => {
+            doc.text(`${row[0]}: ${row[1]}`, 14, y);
+            y += 6;
+          });
+        } else {
+          doc.text("No inventory health data available", 14, y);
+          y += 6;
+        }
+        
+        // Stock Level Trends section
+        y += 5;
+        doc.setFontSize(14);
+        doc.text('Stock Level Trends', 14, y);
+        doc.line(14, y + 2, 195, y + 2);
+        y += 10;
+        doc.setFontSize(10);
+        
+        if (stockLevelTrends.length > 0) {
+          doc.text('Month', 14, y);
+          doc.text('In', 50, y);
+          doc.text('Out', 80, y);
+          doc.text('Net Change', 110, y);
+          y += 6;
+          
+          stockLevelTrends.forEach(row => {
+            doc.text(row[0], 14, y);
+            doc.text(row[1], 50, y);
+            doc.text(row[2], 80, y);
+            doc.text(row[3], 110, y);
+            y += 6;
+          });
+        } else {
+          doc.text("No stock level trends data available", 14, y);
+        }
+        
+        // Add footer with date and page number
+        // For jsPDF v2.x
+        if (typeof doc.internal.getNumberOfPages === 'function') {
+          const pageCount = doc.internal.getNumberOfPages();
+          for(let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            doc.setFontSize(8);
+            doc.text(`Generated on ${new Date().toLocaleString()} - Page ${i} of ${pageCount}`, 
+              105, 287, { align: 'center' });
+          }
+        } else {
+          // Fallback for jsPDF v1.x
+          doc.setFontSize(8);
+          doc.text(`Generated on ${new Date().toLocaleString()}`, 
+            105, 287, { align: 'center' });
+        }
+        
+        doc.save(`pharmateria-analytics-report-${reportDate}.pdf`);
         break;
 
       case 'excel':
-        const tsvContent = reportData.map(row => row.join('\t')).join('\n');
+        // Build a comprehensive Excel report with multiple sections
+        const excelContent = [
+          [reportTitle],
+          ['Generated on', new Date().toLocaleString()],
+          [''],
+          
+          // Summary section
+          ['SUMMARY'],
+          ...summaryData,
+          [''],
+          
+          // Category Distribution
+          ['CATEGORY DISTRIBUTION'],
+          ['Category', 'Value'],
+          ...categoryData,
+          [''],
+          
+          // Inventory Health
+          ['INVENTORY HEALTH'],
+          ...inventoryHealthData,
+          [''],
+          
+          // Stock Level Trends
+          ['STOCK LEVEL TRENDS'],
+          ['Month', 'In', 'Out', 'Net Change'],
+          ...stockLevelTrends,
+        ];
+        
+        // Convert to TSV (tab-separated values) for Excel
+        const tsvContent = excelContent.map((row: (string | number)[]) => row.join('\t')).join('\n');
         const tsvBlob = new Blob([tsvContent], { type: 'text/tab-separated-values' });
         const tsvUrl = window.URL.createObjectURL(tsvBlob);
         const excelLink = document.createElement('a');
         excelLink.href = tsvUrl;
-        excelLink.download = `analytics-report-${new Date().toISOString().split('T')[0]}.xlsx`;
+        excelLink.download = `pharmateria-analytics-report-${reportDate}.xlsx`;
         excelLink.click();
         window.URL.revokeObjectURL(tsvUrl);
         break;
 
       case 'csv':
-        const csvContent = reportData.map(row => 
-          row.map(cell => `"${cell}"`).join(',')
+        // Build a comprehensive CSV report with multiple sections
+        const csvRows = [
+          [reportTitle],
+          ['Generated on', new Date().toLocaleString()],
+          [''],
+          
+          // Summary section
+          ['SUMMARY'],
+          ...summaryData,
+          [''],
+          
+          // Category Distribution
+          ['CATEGORY DISTRIBUTION'],
+          ['Category', 'Value'],
+          ...categoryData,
+          [''],
+          
+          // Inventory Health
+          ['INVENTORY HEALTH'],
+          ...inventoryHealthData,
+          [''],
+          
+          // Stock Level Trends
+          ['STOCK LEVEL TRENDS'],
+          ['Month', 'In', 'Out', 'Net Change'],
+          ...stockLevelTrends,
+        ];
+        
+        // Convert to CSV
+        const csvContent = csvRows.map((row: (string | number)[]) => 
+          row.map((cell: string | number) => `"${cell}"`).join(',')
         ).join('\n');
+        
         const csvBlob = new Blob([csvContent], { type: 'text/csv' });
         const csvUrl = window.URL.createObjectURL(csvBlob);
         const csvLink = document.createElement('a');
         csvLink.href = csvUrl;
-        csvLink.download = `analytics-report-${new Date().toISOString().split('T')[0]}.csv`;
+        csvLink.download = `pharmateria-analytics-report-${reportDate}.csv`;
         csvLink.click();
         window.URL.revokeObjectURL(csvUrl);
         break;
