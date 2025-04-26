@@ -14,19 +14,10 @@ export type OrgConfig = {
 export interface CompanyData {
   id: string;
   config: OrgConfig;
-  subdomain?: string;
-  customDomain?: string;
 }
 
-// Store companies in PostgreSQL database for persistence
-import { db } from './db';
-import { companies } from '@shared/schema';
-import { eq } from 'drizzle-orm';
-
-const getCompanyFromDb = async (id: string): Promise<OrgConfig | null> => {
-  const result = await db.select().from(companies).where(eq(companies.id, id));
-  return result[0] || null;
-};
+// Store companies in memory (in production this would be in a database)
+const companiesMap = new Map<string, OrgConfig>();
 
 export const registerCompany = (id: string, config: OrgConfig) => {
   companiesMap.set(id, config);
