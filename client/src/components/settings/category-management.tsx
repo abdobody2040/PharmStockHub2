@@ -393,20 +393,18 @@ export default function CategoryManagement() {
                         />
                         <div className="flex mt-2">
                           <div 
-                            className="flex-1 h-8 rounded-md border cursor-pointer" 
+                            className="flex-1 h-8 rounded-md border" 
                             style={{ backgroundColor: editColor || "#3b82f6" }}
-                            onClick={() => setSelectedCategory(selectedCategory ? { ...selectedCategory, color: `bg-[${editColor}]` } : null)}
                           />
                           <Button 
                             type="button" 
                             size="sm"
                             className="ml-2"
                             onClick={() => {
-                              const colorClass = `bg-[${editColor}]`;
-                              if (selectedCategory) {
-                                setSelectedCategory({ ...selectedCategory, color: colorClass });
-                                setShowEditColorPicker(false);
-                              }
+                              // Convert hex to tailwind-like class format or use inline style
+                              const colorClass = `bg-[${editColor}]`; 
+                              setSelectedCategory({ ...selectedCategory, color: colorClass });
+                              setShowEditColorPicker(false);
                             }}
                           >
                             <Check className="h-4 w-4 mr-1" />
