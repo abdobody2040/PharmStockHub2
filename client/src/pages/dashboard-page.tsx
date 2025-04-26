@@ -338,33 +338,53 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Top Medical Reps */}
-        <Card>
-          <CardHeader className="px-6 py-5 border-b border-gray-200">
-            <CardTitle className="text-lg font-medium">Top Medical Reps</CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            <ul className="divide-y divide-gray-200">
-              {topMedicalReps.map((rep) => (
-                <li key={rep.id} className="py-3 flex justify-between items-center">
-                  <div className="flex items-center">
-                    <Avatar>
-                      <AvatarImage src={rep.avatar || getPlaceholderAvatar(rep.name)} />
-                      <AvatarFallback>{rep.name.substring(0, 2).toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                    <div className="ml-3">
-                      <p className="text-sm font-medium text-gray-900">{rep.name}</p>
-                      <p className="text-sm text-gray-500">{rep.region || "No region"}</p>
+        {/* Inventory Metrics */}
+        <div className="space-y-4">
+          {/* Low Stock Items */}
+          <Card>
+            <CardHeader className="px-6 py-4 border-b border-gray-200">
+              <CardTitle className="text-lg font-medium">Low Stock Items</CardTitle>
+            </CardHeader>
+            <CardContent className="p-4">
+              <ul className="space-y-3">
+                {stockItems.filter(item => item.quantity <= 10).slice(0, 3).map((item) => (
+                  <li key={item.id} className="flex justify-between items-center">
+                    <div className="flex items-center">
+                      <div className="h-8 w-8 rounded bg-red-100 flex items-center justify-center">
+                        <Package className="h-4 w-4 text-red-600" />
+                      </div>
+                      <div className="ml-3">
+                        <p className="text-sm font-medium text-gray-900">{item.name}</p>
+                        <p className="text-xs text-red-600">Only {item.quantity} left</p>
+                      </div>
                     </div>
-                  </div>
-                  <Badge className="bg-green-100 text-green-800">
-                    {Math.floor(Math.random() * 150) + 50} items
-                  </Badge>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
+                    <Badge variant="destructive">Low Stock</Badge>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+
+          {/* Category Distribution */}
+          <Card>
+            <CardHeader className="px-6 py-4 border-b border-gray-200">
+              <CardTitle className="text-lg font-medium">Category Distribution</CardTitle>
+            </CardHeader>
+            <CardContent className="p-4">
+              <ul className="space-y-2">
+                {categoryCounts.slice(0, 3).map((cat) => (
+                  <li key={cat.category} className="flex justify-between items-center">
+                    <div className="flex items-center">
+                      <div className={`h-3 w-3 rounded-full bg-${cat.color}-500 mr-2`} />
+                      <span className="text-sm text-gray-600">{cat.category}</span>
+                    </div>
+                    <span className="text-sm font-medium">{cat.quantity} items</span>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </MainLayout>
   );
