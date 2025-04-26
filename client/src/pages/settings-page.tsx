@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { MainLayout } from "@/components/layout/main-layout";
 import CategoryManagement from "@/components/settings/category-management";
 import { Button } from "@/components/ui/button";
@@ -732,21 +732,118 @@ export default function SettingsPage() {
                       <FormField
                         control={systemForm.control}
                         name="companyLogo"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Company Logo</FormLabel>
-                            <FormControl>
-                              <Input type="file" accept="image/*" onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                field.onChange(file);
-                              }} />
-                            </FormControl>
-                            <FormDescription>
-                              Used in reports and branding. Max size 2MB.
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
+                        render={({ field }) => {
+                          // State to track the preview URL
+                          const [previewUrl, setPreviewUrl] = useState<string | null>(
+                            field.value instanceof File 
+                              ? URL.createObjectURL(field.value)
+                              : typeof field.value === 'string' 
+                                ? field.value
+                                : null
+                          );
+                          
+                          // File input ref to allow resetting
+                          const fileInputRef = useRef<HTMLInputElement>(null);
+                          
+                          // Handle file selection
+                          const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              // Revoke previous object URL to avoid memory leaks
+                              if (previewUrl && previewUrl.startsWith('blob:')) {
+                                URL.revokeObjectURL(previewUrl);
+                              }
+                              
+                              // Create a preview URL for the selected file
+                              const objectUrl = URL.createObjectURL(file);
+                              setPreviewUrl(objectUrl);
+                              
+                              // Update the form field
+                              field.onChange(file);
+                            }
+                          };
+                          
+                          // Reset the file input and preview
+                          const handleReset = () => {
+                            // Revoke object URL if exists
+                            if (previewUrl && previewUrl.startsWith('blob:')) {
+                              URL.revokeObjectURL(previewUrl);
+                            }
+                            
+                            setPreviewUrl(null);
+                            field.onChange(null);
+                            
+                            // Reset the file input
+                            if (fileInputRef.current) {
+                              fileInputRef.current.value = '';
+                            }
+                          };
+                          
+                          // Clean up on unmount
+                          useEffect(() => {
+                            return () => {
+                              if (previewUrl && previewUrl.startsWith('blob:')) {
+                                URL.revokeObjectURL(previewUrl);
+                              }
+                            };
+                          }, [previewUrl]);
+                          
+                          return (
+                            <FormItem>
+                              <FormLabel>Company Logo</FormLabel>
+                              <div className="space-y-4">
+                                {previewUrl && (
+                                  <div className="mt-2">
+                                    <div className="w-32 h-32 rounded border overflow-hidden">
+                                      <img 
+                                        src={previewUrl} 
+                                        alt="Company logo preview" 
+                                        className="w-full h-full object-contain"
+                                      />
+                                    </div>
+                                    <Button 
+                                      type="button" 
+                                      variant="outline" 
+                                      size="sm" 
+                                      onClick={handleReset}
+                                      className="mt-2"
+                                    >
+                                      Remove Logo
+                                    </Button>
+                                  </div>
+                                )}
+                                
+                                <FormControl>
+                                  <div className="flex items-center">
+                                    <Input 
+                                      ref={fileInputRef}
+                                      type="file" 
+                                      accept="image/*" 
+                                      onChange={handleFileChange}
+                                      className={previewUrl ? "hidden" : ""}
+                                    />
+                                    {!previewUrl && (
+                                      <Button 
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className="ml-2"
+                                      >
+                                        <Upload className="mr-2 h-4 w-4" />
+                                        Upload Logo
+                                      </Button>
+                                    )}
+                                  </div>
+                                </FormControl>
+                                
+                                <FormDescription>
+                                  Used in reports and branding. Max size 2MB.
+                                </FormDescription>
+                                <FormMessage />
+                              </div>
+                            </FormItem>
+                          );
+                        }}
                       />
                       
                       <Button type="submit">
