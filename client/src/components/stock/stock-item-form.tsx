@@ -255,7 +255,7 @@ export function StockItemForm({ onSubmit, initialData, isLoading = false }: Stoc
               form={form}
               name="imageFile"
               label="Item Image"
-              previewUrl={initialData?.imageUrl}
+              previewUrl={initialData?.imageUrl || undefined}
             />
           )}
         />

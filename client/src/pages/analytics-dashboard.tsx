@@ -430,12 +430,15 @@ export default function AnalyticsDashboard() {
         
         // Add footer with date and page number
         // For jsPDF v2.x
-        if (typeof doc.internal.getNumberOfPages === 'function') {
-          const pageCount = doc.internal.getNumberOfPages();
+        // This is a workaround for TypeScript's limitations with jsPDF
+        // Using a type assertion to access the internal methods
+        const pdfDoc = doc as any;
+        if (pdfDoc.internal && typeof pdfDoc.internal.getNumberOfPages === 'function') {
+          const pageCount = pdfDoc.internal.getNumberOfPages();
           for(let i = 1; i <= pageCount; i++) {
-            doc.setPage(i);
-            doc.setFontSize(8);
-            doc.text(`Generated on ${new Date().toLocaleString()} - Page ${i} of ${pageCount}`, 
+            pdfDoc.setPage(i);
+            pdfDoc.setFontSize(8);
+            pdfDoc.text(`Generated on ${new Date().toLocaleString()} - Page ${i} of ${pageCount}`, 
               105, 287, { align: 'center' });
           }
         } else {

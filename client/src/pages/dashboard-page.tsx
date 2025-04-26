@@ -106,7 +106,9 @@ export default function DashboardPage() {
 
       // Group movements by date
       const movementsByDate = movements.reduce((acc: Record<string, number>, movement) => {
-        const date = new Date(movement.movedAt).toLocaleDateString();
+        // Handle null or undefined movedAt safely
+        const movedAtDate = movement.movedAt ? new Date(movement.movedAt) : new Date();
+        const date = movedAtDate.toLocaleDateString();
         acc[date] = (acc[date] || 0) + 1;
         return acc;
       }, {});
