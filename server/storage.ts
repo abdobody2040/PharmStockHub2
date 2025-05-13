@@ -419,14 +419,46 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createStockItem(item: InsertStockItem): Promise<StockItem> {
-    const [newItem] = await db.insert(stockItems).values(item).returning();
+    // Create a clean data object to ensure proper date handling
+    const cleanData: InsertStockItem = { ...item };
+    
+    // Handle expiry date explicitly if it exists
+    if (cleanData.expiry !== undefined) {
+      try {
+        if (typeof cleanData.expiry === 'string') {
+          // Convert string date to Date object
+          cleanData.expiry = new Date(cleanData.expiry);
+        }
+      } catch (e) {
+        console.error("Failed to parse expiry date:", e);
+        // If conversion fails, we'll keep the original value
+      }
+    }
+    
+    const [newItem] = await db.insert(stockItems).values(cleanData).returning();
     return newItem;
   }
 
   async updateStockItem(id: number, itemData: Partial<StockItem>): Promise<StockItem | undefined> {
+    // Create a clean data object to ensure proper date handling
+    const cleanData: Partial<StockItem> = { ...itemData };
+    
+    // Handle expiry date explicitly - convert to a proper Date object if it's a string
+    if (cleanData.expiry !== undefined) {
+      try {
+        if (typeof cleanData.expiry === 'string') {
+          // Convert string date to Date object
+          cleanData.expiry = new Date(cleanData.expiry);
+        }
+      } catch (e) {
+        console.error("Failed to parse expiry date:", e);
+        delete cleanData.expiry; // Remove the invalid field
+      }
+    }
+    
     const [updatedItem] = await db
       .update(stockItems)
-      .set(itemData)
+      .set(cleanData)
       .where(eq(stockItems.id, id))
       .returning();
     return updatedItem;
