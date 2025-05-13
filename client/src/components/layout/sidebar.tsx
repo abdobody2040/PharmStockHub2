@@ -165,18 +165,21 @@ export function Sidebar({ className }: SidebarProps) {
               <div className="w-8 h-8 flex items-center justify-center">
                 {(() => {
                   const settings = JSON.parse(localStorage.getItem('system_settings') || '{}');
-                  const logoPath = settings.companyLogoUrl;
+                  const logoUrl = settings.companyLogoUrl;
                   
-                  if (logoPath && logoPath.startsWith('/uploads/')) {
+                  if (logoUrl) {
                     return (
                       <img 
-                        src={logoPath}
+                        src={logoUrl}
                         alt={settings.companyName || 'Company Logo'} 
                         className="w-8 h-8 object-contain"
                         onError={(e) => {
-                          e.currentTarget.src = '';
-                          e.currentTarget.onerror = null;
-                          localStorage.removeItem('system_settings');
+                          const target = e.target as HTMLImageElement;
+                          target.onerror = null;
+                          target.src = '';
+                          const settings = JSON.parse(localStorage.getItem('system_settings') || '{}');
+                          delete settings.companyLogoUrl;
+                          localStorage.setItem('system_settings', JSON.stringify(settings));
                         }}
                       />
                     );
