@@ -478,7 +478,7 @@ export default function InventoryPage() {
       
       {/* Add Item Modal */}
       <Dialog open={showAddItemModal} onOpenChange={setShowAddItemModal}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Add New Stock Item</DialogTitle>
             <DialogDescription>
@@ -486,10 +486,12 @@ export default function InventoryPage() {
             </DialogDescription>
           </DialogHeader>
           
-          <StockItemForm
-            onSubmit={handleAddItem}
-            isLoading={createItemMutation.isPending}
-          />
+          <div className="py-4">
+            <StockItemForm
+              onSubmit={handleAddItem}
+              isLoading={createItemMutation.isPending}
+            />
+          </div>
           
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowAddItemModal(false)}>
@@ -501,13 +503,13 @@ export default function InventoryPage() {
       
       {/* View Item Modal */}
       <Dialog open={showViewItemModal} onOpenChange={setShowViewItemModal}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>{currentItem?.name}</DialogTitle>
           </DialogHeader>
           
           {currentItem && (
-            <div className="mt-4">
+            <div className="mt-4 py-2">
               <div className="flex flex-col sm:flex-row">
                 <div className="mb-4 sm:mb-0 sm:mr-4">
                   {currentItem.imageUrl ? (
@@ -541,21 +543,44 @@ export default function InventoryPage() {
                       <dd className="mt-1 text-sm text-gray-900">{currentItem.quantity}</dd>
                     </div>
                     <div>
-                      <dt className="text-sm font-medium text-gray-500">Expiry Date</dt>
-                      <dd className="mt-1 text-sm text-gray-900">{formatDate(currentItem.expiry)}</dd>
+                      <dt className="text-sm font-medium text-gray-500">Price</dt>
+                      <dd className="mt-1 text-sm text-gray-900">${currentItem.price ? (currentItem.price / 100).toFixed(2) : '0.00'}</dd>
                     </div>
+                    <div>
+                      <dt className="text-sm font-medium text-gray-500">Expiry Date</dt>
+                      <dd className="mt-1 text-sm text-gray-900 flex items-center">
+                        {formatDate(currentItem.expiry)}
+                        {currentItem.expiry && (
+                          <Badge variant="outline" className={cn(
+                            "ml-2",
+                            getExpiryStatusColor(getExpiryStatus(currentItem.expiry))
+                          )}>
+                            {getExpiryStatus(currentItem.expiry) === 'expired' 
+                              ? 'Expired' 
+                              : `${calculateDaysRemaining(currentItem.expiry)} days`
+                            }
+                          </Badge>
+                        )}
+                      </dd>
+                    </div>
+                    {currentItem.notes && (
+                      <div className="sm:col-span-2">
+                        <dt className="text-sm font-medium text-gray-500">Notes</dt>
+                        <dd className="mt-1 text-sm text-gray-900 whitespace-pre-wrap">{currentItem.notes}</dd>
+                      </div>
+                    )}
                   </dl>
                 </div>
               </div>
               
               <div className="mt-6">
                 <h4 className="text-sm font-medium text-gray-700 mb-2">Stock Movement History</h4>
-                <div className="mt-2 border rounded-md overflow-hidden">
+                <div className="mt-2 border rounded-md overflow-x-auto">
                   {getItemMovementHistory(currentItem.id).length > 0 ? (
                     <ul className="divide-y divide-gray-200">
                       {getItemMovementHistory(currentItem.id).map((movement) => (
                         <li key={movement.id} className="px-4 py-3">
-                          <div className="flex justify-between">
+                          <div className="flex flex-col sm:flex-row sm:justify-between">
                             <div>
                               <span className="text-sm font-medium text-gray-900">
                                 {getUserName(movement.fromUserId)} → {getUserName(movement.toUserId)}
@@ -564,7 +589,7 @@ export default function InventoryPage() {
                                 {movement.notes || "No notes"}
                               </p>
                             </div>
-                            <div className="text-right">
+                            <div className="text-left sm:text-right mt-1 sm:mt-0">
                               <span className="text-sm text-gray-500">
                                 {formatDate(movement.movedAt)}
                               </span>
@@ -617,7 +642,7 @@ export default function InventoryPage() {
       
       {/* Edit Item Modal */}
       <Dialog open={showEditItemModal} onOpenChange={setShowEditItemModal}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Edit Stock Item</DialogTitle>
             <DialogDescription>
@@ -625,13 +650,15 @@ export default function InventoryPage() {
             </DialogDescription>
           </DialogHeader>
           
-          {currentItem && (
-            <StockItemForm
-              initialData={currentItem}
-              onSubmit={handleUpdateItem}
-              isLoading={updateItemMutation.isPending}
-            />
-          )}
+          <div className="py-4">
+            {currentItem && (
+              <StockItemForm
+                initialData={currentItem}
+                onSubmit={handleUpdateItem}
+                isLoading={updateItemMutation.isPending}
+              />
+            )}
+          </div>
           
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowEditItemModal(false)}>

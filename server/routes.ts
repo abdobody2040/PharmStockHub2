@@ -201,6 +201,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
           price: req.body.price !== undefined ? parseInt(req.body.price) : undefined,
         };
         
+        // Handle expiry date properly - make sure it's a valid date
+        if (updateData.expiry) {
+          try {
+            // Check if it's already a valid date string in ISO format
+            if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(updateData.expiry)) {
+              // If not in ISO format, try to convert it
+              updateData.expiry = new Date(updateData.expiry).toISOString();
+            }
+          } catch (e) {
+            // If date conversion fails, remove the expiry field to prevent errors
+            console.error("Date conversion error:", e);
+            delete updateData.expiry;
+          }
+        }
+        
         // Handle image upload
         if (req.file) {
           updateData.imageUrl = `/uploads/${req.file.filename}`;
