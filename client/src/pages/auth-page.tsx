@@ -23,7 +23,6 @@ const registerSchema = z.object({
   name: z.string().min(2, "Name is required"),
   username: z.string().min(3, "Username must be at least 3 characters"),
   password: z.string().min(6, "Password must be at least 6 characters"),
-  role: z.enum(["ceo", "marketer", "salesManager", "stockManager", "admin", "medicalRep"] as [RoleType, ...RoleType[]]),
   region: z.string().optional(),
 });
 
@@ -58,7 +57,6 @@ export default function AuthPage() {
       name: "",
       username: "",
       password: "",
-      role: "medicalRep",
       region: "",
     },
   });
@@ -176,29 +174,7 @@ export default function AuthPage() {
                         </FormItem>
                       )}
                     />
-                    <FormField
-                      control={registerForm.control}
-                      name="role"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Role</FormLabel>
-                          <FormControl>
-                            <select
-                              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                              {...field}
-                            >
-                              <option value="ceo">CEO</option>
-                              <option value="marketer">Marketer</option>
-                              <option value="salesManager">Sales Manager</option>
-                              <option value="stockManager">Stock Manager</option>
-                              <option value="admin">Admin</option>
-                              <option value="medicalRep">Medical Rep</option>
-                            </select>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    
                     <FormField
                       control={registerForm.control}
                       name="region"

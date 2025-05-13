@@ -4,6 +4,29 @@ import { setupVite, serveStatic, log } from "./vite";
 import { getOrgConfig } from './config';
 
 const app = express();
+
+// Create default admin user if it doesn't exist
+async function createDefaultAdmin() {
+  try {
+    const adminExists = await storage.getUserByUsername('admin');
+    if (!adminExists) {
+      const hashedPassword = await hashPassword('admin123');
+      await storage.createUser({
+        username: 'admin',
+        password: hashedPassword,
+        name: 'Administrator',
+        role: 'admin',
+        region: '',
+        avatar: '',
+      });
+      console.log('Default admin user created');
+    }
+  } catch (error) {
+    console.error('Error creating default admin:', error);
+  }
+}
+
+createDefaultAdmin();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 

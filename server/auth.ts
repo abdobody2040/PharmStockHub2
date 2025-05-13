@@ -137,11 +137,12 @@ export function setupAuth(app: Express) {
       }
 
       const hashedPassword = await hashPassword(password);
+      // Set default role to medicalRep for all new registrations
       const user = await storage.createUser({
         username,
         password: hashedPassword,
         name,
-        role,
+        role: "medicalRep", // Default role
         region,
         avatar: "",
       });
