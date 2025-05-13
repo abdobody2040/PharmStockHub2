@@ -306,13 +306,26 @@ export class MemStorage implements IStorage {
 // Database storage implementation
 export class DatabaseStorage implements IStorage {
   sessionStore: ReturnType<typeof createMemoryStore>;
+  private systemSettings: Map<string, any>;
 
   constructor() {
     this.sessionStore = new PostgresSessionStore({ 
       pool, 
       createTableIfMissing: true 
     });
+    this.systemSettings = new Map();
     this.initializeData();
+  }
+
+  // System settings methods
+  async getSystemSettings(): Promise<any> {
+    return Object.fromEntries(this.systemSettings);
+  }
+
+  async updateSystemSettings(settings: any): Promise<void> {
+    Object.entries(settings).forEach(([key, value]) => {
+      this.systemSettings.set(key, value);
+    });
   }
 
   // Initialize with default data if needed

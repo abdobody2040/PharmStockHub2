@@ -163,22 +163,27 @@ export function Sidebar({ className }: SidebarProps) {
             <div className="flex items-center group relative">
               <div className="absolute -inset-1 border-2 border-primary/50 rounded-md opacity-0 group-hover:opacity-100 transition-opacity"></div>
               <div className="w-8 h-8 flex items-center justify-center">
-                {localStorage.getItem('system_settings') ? (
-                  (() => {
-                    const settings = JSON.parse(localStorage.getItem('system_settings') || '{}');
-                    return settings.companyLogoUrl ? (
+                {(() => {
+                  const settings = JSON.parse(localStorage.getItem('system_settings') || '{}');
+                  const logoPath = settings.companyLogoUrl;
+                  
+                  if (logoPath && logoPath.startsWith('/uploads/')) {
+                    return (
                       <img 
-                        src={settings.companyLogoUrl} 
+                        src={logoPath}
                         alt={settings.companyName || 'Company Logo'} 
                         className="w-8 h-8 object-contain"
+                        onError={(e) => {
+                          e.currentTarget.src = '';
+                          e.currentTarget.onerror = null;
+                          localStorage.removeItem('system_settings');
+                        }}
                       />
-                    ) : (
-                      <FlaskRound className="w-8 h-8 text-primary" />
                     );
-                  })()
-                ) : (
-                  <FlaskRound className="w-8 h-8 text-primary" />
-                )}
+                  }
+                  
+                  return <FlaskRound className="w-8 h-8 text-primary" />;
+                })()}
               </div>
               <span className="ml-2 text-xl font-semibold text-gray-800">
                 {(() => {
