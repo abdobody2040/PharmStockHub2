@@ -158,7 +158,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Ensure numeric fields are properly converted
           quantity: req.body.quantity ? parseInt(req.body.quantity) : undefined,
           categoryId: req.body.categoryId ? parseInt(req.body.categoryId) : undefined,
-          price: req.body.price ? parseInt(req.body.price) : 0,
+          // Convert price from dollars to cents (stored as integer)
+          price: req.body.price ? Math.round(parseFloat(req.body.price) * 100) : 0,
           // Add the current user as creator
           createdBy: (req.user as User).id
         };
@@ -198,7 +199,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Convert numeric strings to numbers if they exist
           quantity: req.body.quantity !== undefined ? parseInt(req.body.quantity) : undefined,
           categoryId: req.body.categoryId !== undefined ? parseInt(req.body.categoryId) : undefined,
-          price: req.body.price !== undefined ? parseInt(req.body.price) : undefined,
+          // Convert price from dollars to cents (stored as integer)
+          price: req.body.price !== undefined ? Math.round(parseFloat(req.body.price) * 100) : undefined,
         };
         
         // Handle expiry date properly - make sure it's a valid date
