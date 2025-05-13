@@ -159,30 +159,41 @@ export function Sidebar({ className }: SidebarProps) {
       >
         {/* Logo */}
         <div className="flex items-center justify-center h-16 px-4 bg-white border-b">
-          <div onClick={() => window.location.href = '/settings?tab=system'} className="cursor-pointer">
+          <Link href="/settings?tab=system" className="cursor-pointer">
             <div className="flex items-center group relative">
-              {/* The red box around the logo for visual indication */}
-              <div className="absolute -inset-1 border-2 border-red-500 rounded-md opacity-0 group-hover:opacity-100 transition-opacity"></div>
-              {localStorage.getItem('system_settings') && 
-                JSON.parse(localStorage.getItem('system_settings') || '{}').companyLogoUrl ? (
-                <img 
-                  src={JSON.parse(localStorage.getItem('system_settings') || '{}').companyLogoUrl} 
-                  alt="Company Logo" 
-                  className="w-8 h-8 object-contain"
-                />
-              ) : (
-                <FlaskRound className="w-8 h-8 text-primary" />
-              )}
+              <div className="absolute -inset-1 border-2 border-primary/50 rounded-md opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <div className="w-8 h-8 flex items-center justify-center">
+                {localStorage.getItem('system_settings') ? (
+                  (() => {
+                    const settings = JSON.parse(localStorage.getItem('system_settings') || '{}');
+                    return settings.companyLogoUrl ? (
+                      <img 
+                        src={settings.companyLogoUrl} 
+                        alt={settings.companyName || 'Company Logo'} 
+                        className="w-8 h-8 object-contain"
+                      />
+                    ) : (
+                      <FlaskRound className="w-8 h-8 text-primary" />
+                    );
+                  })()
+                ) : (
+                  <FlaskRound className="w-8 h-8 text-primary" />
+                )}
+              </div>
               <span className="ml-2 text-xl font-semibold text-gray-800">
-                {localStorage.getItem('system_settings') ? 
-                  JSON.parse(localStorage.getItem('system_settings') || '{}').appName || 'PharmStock' 
-                  : 'PharmStock'}
+                {(() => {
+                  if (localStorage.getItem('system_settings')) {
+                    const settings = JSON.parse(localStorage.getItem('system_settings') || '{}');
+                    return settings.appName || 'PharmStock';
+                  }
+                  return 'PharmStock';
+                })()}
               </span>
-              <div className="absolute -bottom-5 left-0 right-0 text-xs text-center opacity-0 group-hover:opacity-100 transition-opacity text-primary flex items-center justify-center">
-                <span className="mr-1">Click to set logo (optimal: 64x64px)</span>
+              <div className="absolute -bottom-5 left-0 right-0 text-xs text-center opacity-0 group-hover:opacity-100 transition-opacity text-primary">
+                Click to update logo
               </div>
             </div>
-          </div>
+          </Link>
         </div>
 
         <nav className="px-2 mt-5 space-y-1">
