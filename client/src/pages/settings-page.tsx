@@ -636,7 +636,6 @@ export default function SettingsPage() {
           <>
             <TabsContent value="system">
               {(user?.role === 'ceo' || user?.role === 'admin') ? (
-              {(user?.role === 'ceo' || user?.role === 'admin') ? (
                 <Card>
                   <CardHeader>
                     <CardTitle>System Settings</CardTitle>
