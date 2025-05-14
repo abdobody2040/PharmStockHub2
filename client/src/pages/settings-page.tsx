@@ -52,77 +52,60 @@ import {
   Shield,
   Database,
   User,
-  FileText,
-  Info,
-  Upload
+  FileOutput,
+  LogOut
 } from "lucide-react";
 
+// Form Schemas
 const profileFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   username: z.string().min(3, "Username must be at least 3 characters"),
   region: z.string().optional(),
+  avatar: z.any().optional(),
 });
 
 const notificationFormSchema = z.object({
-  emailNotifications: z.boolean().default(true),
   stockAlerts: z.boolean().default(true),
   expiryAlerts: z.boolean().default(true),
   movementAlerts: z.boolean().default(false),
-  dailyReports: z.boolean().default(false),
+  expiryAlertDays: z.string().refine((val) => !isNaN(Number(val)), {
+    message: "Must be a valid number",
+  }),
 });
 
 const systemFormSchema = z.object({
-  lowStockThreshold: z.string().refine((val) => !isNaN(Number(val)), {
-    message: "Must be a number",
-  }),
-  expiryAlertDays: z.string().refine((val) => !isNaN(Number(val)), {
-    message: "Must be a number",
-  }),
-  defaultCategory: z.string(),
-  companyName: z.string(),
-  companyLogo: z.any().optional(),
-  appName: z.string().optional(),
+  theme: z.enum(["light", "dark", "system"]),
+  language: z.string().min(1, "Please select a language"),
+  autoLogout: z.boolean(),
+  expandSidebar: z.boolean(),
 });
 
-type ProfileFormValues = z.infer<typeof profileFormSchema>;
-type NotificationFormValues = z.infer<typeof notificationFormSchema>;
-type SystemFormValues = z.infer<typeof systemFormSchema>;
+const securityFormSchema = z.object({
+  passwordLength: z.string().min(1, "Required"),
+  passwordExpiry: z.string().min(1, "Required"),
+  sessionTimeout: z.string().min(1, "Required"),
+  twoFactorEnabled: z.boolean(),
+});
+
+const dataManagementSchema = z.object({
+  autoBackupEnabled: z.boolean(),
+  backupFrequency: z.string().min(1, "Required"),
+  backupRetention: z.string().min(1, "Required"),
+  autoExportEnabled: z.boolean(),
+  exportFormat: z.string().min(1, "Required"),
+});
 
 export default function SettingsPage() {
+  const [activeTab, setActiveTab] = useState("profile");
   const { user, hasPermission } = useAuth();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState("profile");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(
+    user?.avatar || null
+  );
 
-  // State variables for data settings section
-  const [autoBackupEnabled, setAutoBackupEnabled] = useState(false);
-  const [backupFrequency, setBackupFrequency] = useState("daily");
-  const [retentionPeriod, setRetentionPeriod] = useState("30");
-  const [compressBackups, setCompressBackups] = useState(true);
-  const [encryptBackups, setEncryptBackups] = useState(false);
-  const [dataSettings, setDataSettings] = useState<any>(null);
-
-  // Load saved data settings from localStorage when component mounts
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedSettings = localStorage.getItem('data_settings');
-      if (savedSettings) {
-        try {
-          const parsedSettings = JSON.parse(savedSettings);
-          setAutoBackupEnabled(parsedSettings.autoBackupEnabled);
-          setBackupFrequency(parsedSettings.backupFrequency);
-          setRetentionPeriod(parsedSettings.retentionPeriod.toString());
-          setCompressBackups(parsedSettings.compressBackups);
-          setEncryptBackups(parsedSettings.encryptBackups || false);
-          setDataSettings(parsedSettings);
-        } catch (error) {
-          console.error('Error parsing saved data settings:', error);
-        }
-      }
-    }
-  }, []);
-
-  // Profile form - load stored values from localStorage if available
-  const profileForm = useForm<ProfileFormValues>({
+  // Profile Form
+  const profileForm = useForm<z.infer<typeof profileFormSchema>>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
       name: user?.name || "",
@@ -131,1109 +114,295 @@ export default function SettingsPage() {
     },
   });
 
-  // Load saved profile settings from localStorage if available
-  useEffect(() => {
-    const savedProfileSettings = localStorage.getItem('profileSettings');
-    if (savedProfileSettings) {
-      try {
-        const parsedSettings = JSON.parse(savedProfileSettings);
-        profileForm.reset(parsedSettings);
-      } catch (error) {
-        console.error('Error parsing saved profile settings:', error);
-      }
-    }
-  }, [profileForm]);
-
-  // Notification form
-  const notificationForm = useForm<NotificationFormValues>({
+  // Notification Form
+  const notificationForm = useForm<z.infer<typeof notificationFormSchema>>({
     resolver: zodResolver(notificationFormSchema),
-    defaultValues: (() => {
-      // Try to load saved settings from localStorage
-      if (typeof window !== 'undefined' && user) {
-        const savedSettings = localStorage.getItem(`notifications_${user.id}`);
-        if (savedSettings) {
-          try {
-            return JSON.parse(savedSettings);
-          } catch (e) {
-            console.error('Error parsing saved notification settings', e);
-          }
-        }
-      }
-      // Default values if nothing saved
-      return {
-        emailNotifications: true,
-        stockAlerts: true,
-        expiryAlerts: true,
-        movementAlerts: false,
-        dailyReports: false,
-      };
-    })(),
-  });
-
-  // System settings form
-  const systemForm = useForm<SystemFormValues>({
-    resolver: zodResolver(systemFormSchema),
-    defaultValues: (() => {
-      // Try to load saved settings from localStorage
-      if (typeof window !== 'undefined') {
-        const savedSettings = localStorage.getItem('system_settings');
-        if (savedSettings) {
-          try {
-            return JSON.parse(savedSettings);
-          } catch (e) {
-            console.error('Error parsing saved system settings', e);
-          }
-        }
-      }
-      // Default values if nothing saved
-      return {
-        lowStockThreshold: "10",
-        expiryAlertDays: "30",
-        defaultCategory: "1",
-        companyName: "PharmStock",
-        appName: "PharmStock Pro",
-      };
-    })(),
-  });
-
-  // Handle form submissions
-  const onProfileSubmit = async (data: ProfileFormValues) => {
-    try {
-      if (!user) return;
-
-      // Send updated profile data to the server
-      await apiRequest("PATCH", `/api/users/${user.id}`, {
-        name: data.name,
-        region: data.region
-      });
-
-      // Save profile settings to localStorage for persistence
-      localStorage.setItem('profileSettings', JSON.stringify(data));
-
-      toast({
-        title: "Profile updated",
-        description: "Your profile information has been updated successfully.",
-      });
-
-      // Update the local cache
-      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
-    } catch (error) {
-      toast({
-        title: "Update failed",
-        description: error instanceof Error ? error.message : "Failed to update profile",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const onNotificationSubmit = async (data: NotificationFormValues) => {
-    try {
-      if (!user) return;
-
-      // In a real app, we would save to backend storage
-      // For now, store settings in localStorage for persistence
-      localStorage.setItem(`notifications_${user.id}`, JSON.stringify(data));
-
-      toast({
-        title: "Notification preferences updated",
-        description: "Your notification preferences have been saved.",
-      });
-    } catch (error) {
-      toast({
-        title: "Update failed",
-        description: error instanceof Error ? error.message : "Failed to update notification settings",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const onSystemSubmit = async (data: SystemFormValues) => {
-    try {
-      // Create a copy of the data to modify before storage
-      const storageData = { ...data };
-
-      // Handle company logo File object by creating a URL
-      if (data.companyLogo instanceof File) {
-        // Create blob URL for the company logo image
-        const companyLogoUrl = URL.createObjectURL(data.companyLogo);
-
-        // Add a special property for the URL that's not in the form data structure
-        // @ts-ignore - We're adding a property not in the type
-        storageData.companyLogoUrl = companyLogoUrl;
-      }
-
-      // In a real app, we would save to backend storage
-      // For now, store settings in localStorage for persistence
-      localStorage.setItem('system_settings', JSON.stringify(storageData));
-
-      toast({
-        title: "System settings updated",
-        description: "System settings have been updated successfully.",
-      });
-    } catch (error) {
-      toast({
-        title: "Update failed",
-        description: error instanceof Error ? error.message : "Failed to update system settings",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Security settings schema
-  const securityFormSchema = z.object({
-    passwordLength: z.string().or(z.number()).transform(val => Number(val)),
-    passwordExpiry: z.string().or(z.number()).transform(val => Number(val)),
-    requireSpecialChars: z.boolean().default(false),
-    requireUppercase: z.boolean().default(true),
-    requireNumbers: z.boolean().default(true),
-    twoFactorEnabled: z.boolean().default(false),
-    sessionTimeout: z.string().or(z.number()).transform(val => Number(val)),
-  });
-
-  type SecurityFormValues = z.infer<typeof securityFormSchema>;
-
-  // Security form
-  const securityForm = useForm<SecurityFormValues>({
-    resolver: zodResolver(securityFormSchema),
-    defaultValues: (() => {
-      // Try to load saved settings from localStorage
-      if (typeof window !== 'undefined') {
-        const savedSettings = localStorage.getItem('security_settings');
-        if (savedSettings) {
-          try {
-            return JSON.parse(savedSettings);
-          } catch (e) {
-            console.error('Error parsing saved security settings', e);
-          }
-        }
-      }
-      // Default values if nothing saved
-      return {
-        passwordLength: 8,
-        passwordExpiry: 90,
-        requireSpecialChars: false,
-        requireUppercase: true,
-        requireNumbers: true,
-        twoFactorEnabled: false,
-        sessionTimeout: 30,
-      };
-    })(),
-  });
-
-  // Security form submit handler
-  const onSecuritySubmit = async (data: SecurityFormValues) => {
-    try {
-      localStorage.setItem('security_settings', JSON.stringify(data));
-
-      toast({
-        title: "Security settings updated",
-        description: "Your security settings have been saved successfully.",
-      });
-    } catch (error) {
-      toast({
-        title: "Update failed",
-        description: error instanceof Error ? error.message : "Failed to update security settings",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Data management settings schema
-  const dataManagementSchema = z.object({
-    autoBackupEnabled: z.boolean().default(false),
-    backupFrequency: z.enum(["daily", "weekly", "monthly"]).default("weekly"),
-    retentionPeriod: z.string().or(z.number()).transform(val => Number(val)),
-    exportFormat: z.enum(["json", "csv", "excel"]).default("json"),
-    compressionEnabled: z.boolean().default(true),
-  });
-
-  type DataManagementValues = z.infer<typeof dataManagementSchema>;
-
-  // Data management form
-  const dataManagementForm = useForm<DataManagementValues>({
-    resolver: zodResolver(dataManagementSchema),
     defaultValues: {
-      autoBackupEnabled: false,
-      backupFrequency: "weekly",
-      retentionPeriod: 30,
-      exportFormat: "json",
-      compressionEnabled: true,
+      stockAlerts: true,
+      expiryAlerts: true,
+      movementAlerts: false,
+      expiryAlertDays: "30",
     },
   });
 
-  // Load saved data management settings from localStorage if available
+  // System Form
+  const systemForm = useForm<z.infer<typeof systemFormSchema>>({
+    resolver: zodResolver(systemFormSchema),
+    defaultValues: {
+      theme: "system",
+      language: "en",
+      autoLogout: true,
+      expandSidebar: true,
+    },
+  });
+
+  // Security Form
+  const securityForm = useForm<z.infer<typeof securityFormSchema>>({
+    resolver: zodResolver(securityFormSchema),
+    defaultValues: {
+      passwordLength: "8",
+      passwordExpiry: "90",
+      sessionTimeout: "30",
+      twoFactorEnabled: false,
+    },
+  });
+
+  // Data Management Form
+  const dataManagementForm = useForm<z.infer<typeof dataManagementSchema>>({
+    resolver: zodResolver(dataManagementSchema),
+    defaultValues: {
+      autoBackupEnabled: true,
+      backupFrequency: "7",
+      backupRetention: "90",
+      autoExportEnabled: false,
+      exportFormat: "xlsx",
+    },
+  });
+
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedSettings = localStorage.getItem('data_management_settings');
-      if (savedSettings) {
-        try {
-          const parsedSettings = JSON.parse(savedSettings);
-          dataManagementForm.reset(parsedSettings);
-        } catch (error) {
-          console.error('Error parsing saved data management settings:', error);
-        }
-      }
-    }
-  }, [dataManagementForm]);
-
-  // Data management form submit handler
-  const onDataManagementSubmit = async (data: DataManagementValues) => {
-    try {
-      localStorage.setItem('data_management_settings', JSON.stringify(data));
-
-      toast({
-        title: "Data management settings updated",
-        description: "Your data management settings have been saved successfully.",
+    if (user) {
+      profileForm.reset({
+        name: user.name || "",
+        username: user.username || "",
+        region: user.region || "",
       });
+      setAvatarPreview(user.avatar || null);
+    }
+  }, [user, profileForm]);
+
+  const onProfileSubmit = async (data: z.infer<typeof profileFormSchema>) => {
+    try {
+      const formData = new FormData();
+      formData.append("name", data.name);
+      formData.append("username", data.username);
+      if (data.region) {
+        formData.append("region", data.region);
+      }
+      if (data.avatar && data.avatar instanceof FileList && data.avatar.length > 0) {
+        formData.append("avatar", data.avatar[0]);
+      }
+
+      const response = await apiRequest("PUT", `/api/users/${user?.id}`, formData, true);
+      if (response.ok) {
+        toast({
+          title: "Profile Updated",
+          description: "Your profile information has been updated successfully.",
+        });
+        // Invalidate user query to update user data
+        queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      } else {
+        throw new Error("Failed to update profile");
+      }
     } catch (error) {
       toast({
-        title: "Update failed",
-        description: error instanceof Error ? error.message : "Failed to update data management settings",
+        title: "Update Failed",
+        description: "There was an error updating your profile.",
         variant: "destructive",
       });
+    }
+  };
+
+  const onNotificationSubmit = async (data: z.infer<typeof notificationFormSchema>) => {
+    toast({
+      title: "Notification Settings Updated",
+      description: "Your notification preferences have been saved.",
+    });
+  };
+
+  const onSystemSubmit = async (data: z.infer<typeof systemFormSchema>) => {
+    toast({
+      title: "System Settings Updated",
+      description: "Your system preferences have been saved.",
+    });
+  };
+
+  const onSecuritySubmit = async (data: z.infer<typeof securityFormSchema>) => {
+    toast({
+      title: "Security Settings Updated",
+      description: "Your security preferences have been saved.",
+    });
+  };
+
+  const onDataManagementSubmit = async (data: z.infer<typeof dataManagementSchema>) => {
+    toast({
+      title: "Data Management Settings Updated",
+      description: "Your data management preferences have been saved.",
+    });
+  };
+
+  const handleAvatarClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      profileForm.setValue("avatar", event.target.files);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setAvatarPreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
   return (
     <MainLayout>
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-800">Settings</h2>
-      </div>
+      <div className="container py-6">
+        <div className="flex flex-col md:flex-row gap-6">
+          {/* Settings Navigation */}
+          <div className="md:w-1/4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Settings</CardTitle>
+                <CardDescription>
+                  Manage your account settings and preferences.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Tabs
+                  defaultValue="profile"
+                  className="w-full"
+                  orientation="vertical"
+                  value={activeTab}
+                  onValueChange={setActiveTab}
+                >
+                  <TabsList className="flex flex-col items-start space-y-1 w-full">
+                    <TabsTrigger value="profile" className="w-full justify-start">
+                      <User className="h-4 w-4 mr-2" />
+                      Profile
+                    </TabsTrigger>
+                    <TabsTrigger value="notifications" className="w-full justify-start">
+                      <Bell className="h-4 w-4 mr-2" />
+                      Notifications
+                    </TabsTrigger>
+                    <TabsTrigger value="system" className="w-full justify-start">
+                      <Settings className="h-4 w-4 mr-2" />
+                      System
+                    </TabsTrigger>
+                    <TabsTrigger value="security" className="w-full justify-start">
+                      <Shield className="h-4 w-4 mr-2" />
+                      Security
+                    </TabsTrigger>
+                    <TabsTrigger value="data" className="w-full justify-start">
+                      <Database className="h-4 w-4 mr-2" />
+                      Data Management
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </CardContent>
+            </Card>
+          </div>
 
-      <Tabs 
-        defaultValue="profile" 
-        value={activeTab} 
-        onValueChange={setActiveTab}
-        className="space-y-4"
-      >
-        <TabsList className="grid grid-cols-3 lg:grid-cols-5 w-full">
-          <TabsTrigger value="profile" className="flex items-center gap-2">
-            <User className="h-4 w-4" />
-            <span className="hidden sm:inline">Profile</span>
-          </TabsTrigger>
-          <TabsTrigger value="notifications" className="flex items-center gap-2">
-            <Bell className="h-4 w-4" />
-            <span className="hidden sm:inline">Notifications</span>
-          </TabsTrigger>
-          {hasPermission("canAccessSettings") && (
-            <>
-              <TabsTrigger value="system" className="flex items-center gap-2">
-                <Settings className="h-4 w-4" />
-                <span className="hidden sm:inline">System</span>
-              </TabsTrigger>
-              <TabsTrigger value="security" className="flex items-center gap-2">
-                <Shield className="h-4 w-4" />
-                <span className="hidden sm:inline">Security</span>
-              </TabsTrigger>
-              <TabsTrigger value="data" className="flex items-center gap-2">
-                <Database className="h-4 w-4" />
-                <span className="hidden sm:inline">Data</span>
-              </TabsTrigger>
-            </>
-          )}
-        </TabsList>
-
-        {/* Profile Settings */}
-        <TabsContent value="profile">
-          <Card>
-            <CardHeader>
-              <CardTitle>Profile Settings</CardTitle>
-              <CardDescription>
-                Manage your personal information and preferences.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Form {...profileForm}>
-                <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-6">
-                  <FormField
-                    control={profileForm.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Full Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Your full name" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={profileForm.control}
-                    name="username"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Username</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Your username" {...field} disabled />
-                        </FormControl>
-                        <FormDescription>
-                          Username cannot be changed once account is created.
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={profileForm.control}
-                    name="region"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Region</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Your region" {...field} />
-                        </FormControl>
-                        <FormDescription>
-                          This information helps with stock allocation and reporting.
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <Button type="submit">
-                    <Save className="h-4 w-4 mr-2" />
-                    Save Profile
-                  </Button>
-                </form>
-              </Form>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Notification Settings */}
-        <TabsContent value="notifications">
-          <Card>
-            <CardHeader>
-              <CardTitle>Notification Settings</CardTitle>
-              <CardDescription>
-                Configure how you want to receive notifications and alerts.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Form {...notificationForm}>
-                <form onSubmit={notificationForm.handleSubmit(onNotificationSubmit)} className="space-y-6">
-                  <FormField
-                    control={notificationForm.control}
-                    name="emailNotifications"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                        <div className="space-y-0.5">
-                          <FormLabel className="text-base">Email Notifications</FormLabel>
-                          <FormDescription>
-                            Receive system notifications via email
-                          </FormDescription>
-                        </div>
-                        <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={notificationForm.control}
-                    name="stockAlerts"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                        <div className="space-y-0.5">
-                          <FormLabel className="text-base">Low Stock Alerts</FormLabel>
-                          <FormDescription>
-                            Get notified when stock items are running low
-                          </FormDescription>
-                        </div>
-                        <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={notificationForm.control}
-                    name="expiryAlerts"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                        <div className="space-y-0.5">
-                          <FormLabel className="text-base">Expiry Alerts</FormLabel>
-                          <FormDescription>
-                            Get notified when items are about to expire
-                          </FormDescription>
-                        </div>
-                        <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={notificationForm.control}
-                    name="movementAlerts"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                        <div className="space-y-0.5">
-                          <FormLabel className="text-base">Stock Movement Alerts</FormLabel>
-                          <FormDescription>
-                            Get notified when stock is transferred
-                          </FormDescription>
-                        </div>
-                        <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={notificationForm.control}
-                    name="dailyReports"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                        <div className="space-y-0.5">
-                          <FormLabel className="text-base">Daily Reports</FormLabel>
-                          <FormDescription>
-                            Receive daily summary reports
-                          </FormDescription>
-                        </div>
-                        <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-
-                  <Button type="submit">
-                    <Save className="h-4 w-4 mr-2" />
-                    Save Notification Settings
-                  </Button>
-                </form>
-              </Form>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* System Settings - Only for certain roles */}
-        {hasPermission("canAccessSettings") && (
-          <>
-            <TabsContent value="system">
-              {(user?.role === 'ceo' || user?.role === 'admin') ? (
+          {/* Settings Content */}
+          <div className="md:w-3/4">
+            <Tabs
+              defaultValue="profile"
+              value={activeTab}
+              className="w-full"
+              onValueChange={setActiveTab}
+            >
+              {/* Profile Settings */}
+              <TabsContent value="profile">
                 <Card>
                   <CardHeader>
-                    <CardTitle>System Settings</CardTitle>
+                    <CardTitle>Profile</CardTitle>
                     <CardDescription>
-                      Configure global system settings and preferences.
+                      Manage your personal information and account settings.
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                  <Form {...systemForm}>
-                    <form onSubmit={systemForm.handleSubmit(onSystemSubmit)} className="space-y-6">
-                      <FormField
-                        control={systemForm.control}
-                        name="lowStockThreshold"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Low Stock Threshold</FormLabel>
-                            <FormControl>
-                              <Input type="number" min="0" {...field} />
-                            </FormControl>
-                            <FormDescription>
-                              Items with quantity below this value will be flagged as low stock
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={systemForm.control}
-                        name="expiryAlertDays"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Expiry Alert Days</FormLabel>
-                            <FormControl>
-                              <Input type="number" min="1" {...field} />
-                            </FormControl>
-                            <FormDescription>
-                              Number of days before expiry to display warnings
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={systemForm.control}
-                        name="defaultCategory"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Default Category</FormLabel>
-                            <Select 
-                              onValueChange={field.onChange} 
-                              defaultValue={field.value}
+                    <Form {...profileForm}>
+                      <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-6">
+                        <div className="space-y-6">
+                          <div className="flex flex-col items-center space-y-4">
+                            <div
+                              className="relative w-24 h-24 rounded-full overflow-hidden bg-gray-100 cursor-pointer"
+                              onClick={handleAvatarClick}
                             >
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select default category" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="1">Brochures</SelectItem>
-                                <SelectItem value="2">Samples</SelectItem>
-                                <SelectItem value="3">Gifts</SelectItem>
-                                <SelectItem value="4">Banners</SelectItem>
-                                <SelectItem value="5">Digital Media</SelectItem>
-                                <SelectItem value="6">Other</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormDescription>
-                              Default category for new stock items
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={systemForm.control}
-                        name="appName"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Application Name</FormLabel>
-                            <FormControl>
-                              <Input {...field} />
-                            </FormControl>
-                            <FormDescription>
-                              The name shown in the sidebar and throughout the app
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={systemForm.control}
-                        name="companyName"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Company Name</FormLabel>
-                            <FormControl>
-                              <Input {...field} />
-                            </FormControl>
-                            <FormDescription>
-                              Used in reports and branding
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={systemForm.control}
-                        name="companyLogo"
-                        render={({ field }) => {
-                          // State to track the preview URL
-                          const [previewUrl, setPreviewUrl] = useState<string | null>(
-                            field.value instanceof File 
-                              ? URL.createObjectURL(field.value)
-                              : typeof field.value === 'string' 
-                                ? field.value
-                                : null
-                          );
-
-                          // File input ref to allow resetting
-                          const fileInputRef = useRef<HTMLInputElement>(null);
-
-                          // Handle file selection
-                          const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              // Revoke previous object URL to avoid memory leaks
-                              if (previewUrl && previewUrl.startsWith('blob:')) {
-                                URL.revokeObjectURL(previewUrl);
-                              }
-
-                              // Create a preview URL for the selected file
-                              const objectUrl = URL.createObjectURL(file);
-                              setPreviewUrl(objectUrl);
-
-                              // Update the form field
-                              field.onChange(file);
-                            }
-                          };
-
-                          // Reset the file input and preview
-                          const handleReset = () => {
-                            // Revoke object URL if exists
-                            if (previewUrl && previewUrl.startsWith('blob:')) {
-                              URL.revokeObjectURL(previewUrl);
-                            }
-
-                            setPreviewUrl(null);
-                            field.onChange(null);
-
-                            // Reset the file input
-                            if (fileInputRef.current) {
-                              fileInputRef.current.value = '';
-                            }
-                          };
-
-                          // Clean up on unmount
-                          useEffect(() => {
-                            return () => {
-                              if (previewUrl && previewUrl.startsWith('blob:')) {
-                                URL.revokeObjectURL(previewUrl);
-                              }
-                            };
-                          }, [previewUrl]);
-
-                          return (
-                            <FormItem>
-                              <FormLabel>Company Logo</FormLabel>
-                              <div className="space-y-4">
-                                {previewUrl && (
-                                  <div className="mt-2">
-                                    <div className="w-32 h-32 rounded border overflow-hidden">
-                                      <img 
-                                        src={previewUrl} 
-                                        alt="Company logo preview" 
-                                        className="w-full h-full object-contain"
-                                      />
-                                    </div>
-                                    <Button 
-                                      type="button" 
-                                      variant="outline" 
-                                      size="sm" 
-                                      onClick={handleReset}
-                                      className="mt-2"
-                                    >
-                                      Remove Logo
-                                    </Button>
-                                  </div>
-                                )}
-
-                                <FormControl>
-                                  <div className="flex items-center">
-                                    <Input 
-                                      ref={fileInputRef}
-                                      type="file" 
-                                      accept="image/*" 
-                                      onChange={handleFileChange}
-                                      className={previewUrl ? "hidden" : ""}
-                                    />
-                                    {!previewUrl && (
-                                      <Button 
-                                        type="button"
-                                        variant="outline"
-                                        onClick={() => fileInputRef.current?.click()}
-                                        className="ml-2"
-                                      >
-                                        <Upload className="mr-2 h-4 w-4" />
-                                        Upload Logo
-                                      </Button>
-                                    )}
-                                  </div>
-                                </FormControl>
-
-                                <FormDescription>
-                                  Used in reports and branding. Max size 2MB.
-                                </FormDescription>
-                                <FormMessage />
-                              </div>
-                            </FormItem>
-                          );
-                        }}
-                      />
-
-                      <Button type="submit">
-                        <Save className="h-4 w-4 mr-2" />
-                        Save System Settings
-                      </Button>
-                    </form>
-                  </Form>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* Security Settings */}
-            <TabsContent value="security">
-              {(user?.role === 'ceo' || user?.role === 'admin') ? (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Security Settings</CardTitle>
-                  <CardDescription>
-                    Manage security settings and access controls.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-              ) : (
-                <Alert variant="destructive">
-                  <AlertTriangleIcon className="h-4 w-4" />
-                  <AlertTitle>Restricted Access</AlertTitle>
-                  <AlertDescription>
-                    Only CEO and Admin can access security settings.
-                  </AlertDescription>
-                </Alert>
-              )}
-                  <Form {...securityForm}>
-                    <form onSubmit={securityForm.handleSubmit(onSecuritySubmit)} className="space-y-6">
-                      <div className="space-y-4">
-                        <h3 className="text-lg font-medium">Password Policy</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <FormField
-                            control={securityForm.control}
-                            name="passwordLength"
-                            render={({ field }) => (
-                              <FormItem className="flex items-center justify-between rounded-lg border p-4">
-                                <div className="space-y-0.5">
-                                  <FormLabel className="text-base">Minimum Password Length</FormLabel>
-                                  <FormDescription>
-                                    Minimum characters required
-                                  </FormDescription>
-                                </div>
-                                <FormControl>
-                                  <Input 
-                                    type="number" 
-                                    min="6" 
-                                    max="20" 
-                                    className="w-20" 
-                                    {...field}
-                                    value={field.value}
-                                    onChange={(e) => field.onChange(e.target.value)}
-                                  />
-                                </FormControl>
-                              </FormItem>
-                            )}
-                          />
-
-                          <FormField
-                            control={securityForm.control}
-                            name="passwordExpiry"
-                            render={({ field }) => (
-                              <FormItem className="flex items-center justify-between rounded-lg border p-4">
-                                <div className="space-y-0.5">
-                                  <FormLabel className="text-base">Password Expiry</FormLabel>
-                                  <FormDescription>
-                                    Days before passwords expire
-                                  </FormDescription>
-                                </div>
-                                <FormControl>
-                                  <Input 
-                                    type="number" 
-                                    min="0" 
-                                    className="w-20" 
-                                    {...field}
-                                    value={field.value}
-                                    onChange={(e) => field.onChange(e.target.value)}
-                                  />
-                                </FormControl>
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-
-                        <FormField
-                          control={securityForm.control}
-                          name="requireSpecialChars"
-                          render={({ field }) => (
-                            <FormItem className="flex items-center space-x-2 pt-2">
-                              <FormControl>
-                                <Switch 
-                                  checked={field.value}
-                                  onCheckedChange={field.onChange}
-                                  id="require-special-chars"
+                              {avatarPreview ? (
+                                <img
+                                  src={avatarPreview}
+                                  alt="Avatar"
+                                  className="w-full h-full object-cover"
                                 />
-                              </FormControl>
-                              <FormLabel htmlFor="require-special-chars">Require special characters</FormLabel>
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={securityForm.control}
-                          name="requireUppercase"
-                          render={({ field }) => (
-                            <FormItem className="flex items-center space-x-2">
-                              <FormControl>
-                                <Switch 
-                                  checked={field.value}
-                                  onCheckedChange={field.onChange}
-                                  id="require-uppercase"
-                                />
-                              </FormControl>
-                              <FormLabel htmlFor="require-uppercase">Require uppercase letters</FormLabel>
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={securityForm.control}
-                          name="requireNumbers"
-                          render={({ field }) => (
-                            <FormItem className="flex items-center space-x-2">
-                              <FormControl>
-                                <Switch 
-                                  checked={field.value}
-                                  onCheckedChange={field.onChange}
-                                  id="require-numbers"
-                                />
-                              </FormControl>
-                              <FormLabel htmlFor="require-numbers">Require numbers</FormLabel>
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-
-                      <div className="space-y-4 pt-4 border-t">
-                        <h3 className="text-lg font-medium">Session Settings</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <FormField
-                            control={securityForm.control}
-                            name="sessionTimeout"
-                            render={({ field }) => (
-                              <FormItem className="flex items-center justify-between rounded-lg border p-4">
-                                <div className="space-y-0.5">
-                                  <FormLabel className="text-base">Session Timeout</FormLabel>
-                                  <FormDescription>
-                                    Minutes of inactivity before logout
-                                  </FormDescription>
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                  <User size={40} />
                                 </div>
-                                <FormControl>
-                                  <Input 
-                                    type="number" 
-                                    min="5" 
-                                    max="120" 
-                                    className="w-20" 
-                                    {...field}
-                                    value={field.value}
-                                    onChange={(e) => field.onChange(e.target.value)}
-                                  />
-                                </FormControl>
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-
-                        <FormField
-                          control={securityForm.control}
-                          name="twoFactorEnabled"
-                          render={({ field }) => (
-                            <FormItem className="flex items-center space-x-2 pt-2">
-                              <FormControl>
-                                <Switch 
-                                  checked={field.value} 
-                                  onCheckedChange={field.onChange}
-                                  id="two-factor-auth"
-                                />
-                              </FormControl>
-                              <FormLabel htmlFor="two-factor-auth">Enable Two-Factor Authentication</FormLabel>
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-
-                      <Button type="submit">
-                        <Save className="h-4 w-4 mr-2" />
-                        Save Security Settings
-                      </Button>
-                    </form>
-                  </Form>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* Data Management */}
-            <TabsContent value="data">
-              {(user?.role === 'ceo' || user?.role === 'admin') ? (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Data Management</CardTitle>
-                  <CardDescription>
-                    Manage system data, backups, and exports.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-              ) : (
-                <Alert variant="destructive">
-                  <AlertTriangleIcon className="h-4 w-4" />
-                  <AlertTitle>Restricted Access</AlertTitle>
-                  <AlertDescription>
-                    Only CEO and Admin can access data management settings.
-                  </AlertDescription>
-                </Alert>
-              )}
-                  {/* Category Management Section */}
-                  <div className="space-y-4 pt-2 pb-8 border-b">
-                    <h3 className="text-lg font-medium">Categories</h3>
-                    <CategoryManagement />
-                  </div>
-
-                  {/* Specialty Management Section */}
-                  <div className="space-y-4 pt-2 pb-8 border-b">
-                    <h3 className="text-lg font-medium">Specialties</h3>
-                    {(user?.role === 'ceo' || user?.role === 'admin') ? (
-                      <SpecialtyManagement />
-                    ) : (
-                      <Alert variant="destructive">
-                        <AlertTriangleIcon className="h-4 w-4" />
-                        <AlertTitle>Restricted Access</AlertTitle>
-                        <AlertDescription>
-                          You don't have permission to manage specialties.
-                        </AlertDescription>
-                      </Alert>
-                    )}
-                  </div>
-
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-medium">Backup & Export Settings</h3>
-                    <Form {...dataManagementForm}>
-                      <form onSubmit={dataManagementForm.handleSubmit(onDataManagementSubmit)} className="space-y-6">
-                        <div className="space-y-4 border-b pb-6">
-                          <FormField
-                            control={dataManagementForm.control}
-                            name="autoBackupEnabled"
-                            render={({ field }) => (
-                              <FormItem className="flex flex-row items-center justify-between">
-                                <div className="space-y-0.5">
-                                  <FormLabel className="text-base">Automatic Backups</FormLabel>
-                                  <FormDescription>
-                                    Enable scheduled automatic backups
-                                  </FormDescription>
-                                </div>
-                                <FormControl>
-                                  <Switch
-                                    checked={field.value}
-                                    onCheckedChange={field.onChange}
-                                  />
-                                </FormControl>
-                              </FormItem>
-                            )}
-                          />
-
-                          {dataManagementForm.watch("autoBackupEnabled") && (
-                            <>
-                              <FormField
-                                control={dataManagementForm.control}
-                                name="backupFrequency"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Backup Frequency</FormLabel>
-                                    <Select 
-                                      onValueChange={field.onChange} 
-                                      defaultValue={field.value}
-                                    >
-                                      <FormControl>
-                                        <SelectTrigger>
-                                          <SelectValue placeholder="Select frequency" />
-                                        </SelectTrigger>
-                                      </FormControl>
-                                      <SelectContent>
-                                        <SelectItem value="daily">Daily</SelectItem>
-                                        <SelectItem value="weekly">Weekly</SelectItem>
-                                        <SelectItem value="monthly">Monthly</SelectItem>
-                                      </SelectContent>
-                                    </Select>
-                                    <FormDescription>
-                                      How often backups should be created
-                                    </FormDescription>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-
-                              <FormField
-                                control={dataManagementForm.control}
-                                name="retentionPeriod"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Retention Period (Days)</FormLabel>
-                                    <FormControl>
-                                      <Input 
-                                        type="number" 
-                                        min="1" 
-                                        {...field}
-                                        value={field.value}
-                                        onChange={(e) => field.onChange(e.target.value)}
-                                      />
-                                    </FormControl>
-                                    <FormDescription>
-                                      Number of days to keep backups before deletion
-                                    </FormDescription>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                            </>
-                          )}
-                        </div>
-
-                        <div className="space-y-4">
-                          <h4 className="text-md font-medium">Export Settings</h4>
+                              )}
+                            </div>
+                            <input
+                              type="file"
+                              ref={fileInputRef}
+                              accept="image/*"
+                              className="hidden"
+                              onChange={handleAvatarChange}
+                            />
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              type="button"
+                              onClick={handleAvatarClick}
+                            >
+                              Change Avatar
+                            </Button>
+                          </div>
 
                           <FormField
-                            control={dataManagementForm.control}
-                            name="exportFormat"
+                            control={profileForm.control}
+                            name="name"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Default Export Format</FormLabel>
-                                <Select 
-                                  onValueChange={field.onChange} 
+                                <FormLabel>Full Name</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="John Doe" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={profileForm.control}
+                            name="username"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Username</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="johndoe" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={profileForm.control}
+                            name="region"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Region</FormLabel>
+                                <Select
+                                  onValueChange={field.onChange}
                                   defaultValue={field.value}
                                 >
                                   <FormControl>
                                     <SelectTrigger>
-                                      <SelectValue placeholder="Select format" />
+                                      <SelectValue placeholder="Select a region" />
                                     </SelectTrigger>
                                   </FormControl>
                                   <SelectContent>
-                                    <SelectItem value="json">JSON</SelectItem>
-                                    <SelectItem value="csv">CSV</SelectItem>
-                                    <SelectItem value="excel">Excel</SelectItem>
+                                    <SelectItem value="north">North</SelectItem>
+                                    <SelectItem value="south">South</SelectItem>
+                                    <SelectItem value="east">East</SelectItem>
+                                    <SelectItem value="west">West</SelectItem>
+                                    <SelectItem value="central">Central</SelectItem>
                                   </SelectContent>
                                 </Select>
-                                <FormDescription>
-                                  Default format used when exporting data
-                                </FormDescription>
                                 <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-
-                          <FormField
-                            control={dataManagementForm.control}
-                            name="compressionEnabled"
-                            render={({ field }) => (
-                              <FormItem className="flex flex-row items-center justify-between">
-                                <div className="space-y-0.5">
-                                  <FormLabel className="text-base">Enable Compression</FormLabel>
-                                  <FormDescription>
-                                    Compress exported files to reduce size
-                                  </FormDescription>
-                                </div>
-                                <FormControl>
-                                  <Switch
-                                    checked={field.value}
-                                    onCheckedChange={field.onChange}
-                                  />
-                                </FormControl>
                               </FormItem>
                             )}
                           />
@@ -1241,368 +410,574 @@ export default function SettingsPage() {
 
                         <Button type="submit">
                           <Save className="h-4 w-4 mr-2" />
-                          Save Data Settings
+                          Save Profile
                         </Button>
                       </form>
                     </Form>
-                  </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
-                  <div className="space-y-4 pt-6 border-t">
-                    <h3 className="text-lg font-medium">Backup & Export Actions</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <Card>
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-base">Manual Backup</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <p className="text-sm text-muted-foreground mb-4">
-                            Create a backup of all system data.
-                          </p>
-                          <div className="flex flex-col space-y-2">
-                            <Button onClick={() => {
-                              // Generate sample backup data
-                              const backupData = {
-                                timestamp: new Date().toISOString(),
-                                version: "1.0",
-                                data: {
-                                  users: [],
-                                  stockItems: [],
-                                  categories: [],
-                                  movements: [],
-                                  settings: {}
-                                }
-                              };
+              {/* Notification Settings */}
+              <TabsContent value="notifications">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Notification Settings</CardTitle>
+                    <CardDescription>
+                      Manage how and when you receive notifications.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Form {...notificationForm}>
+                      <form onSubmit={notificationForm.handleSubmit(onNotificationSubmit)} className="space-y-6">
+                        <div className="space-y-4">
+                          <h3 className="text-lg font-medium">Stock Notifications</h3>
+                          <div className="space-y-4">
+                            <FormField
+                              control={notificationForm.control}
+                              name="stockAlerts"
+                              render={({ field }) => (
+                                <FormItem className="flex items-center space-x-2">
+                                  <FormControl>
+                                    <Switch 
+                                      checked={field.value} 
+                                      onCheckedChange={field.onChange}
+                                      id="stock-alerts"
+                                    />
+                                  </FormControl>
+                                  <FormLabel htmlFor="stock-alerts">Low Stock Alerts</FormLabel>
+                                </FormItem>
+                              )}
+                            />
 
-                              // Convert to JSON and create download
-                              const dataStr = JSON.stringify(backupData, null, 2);
-                              const dataUri = "data:application/json;charset=utf-8," + encodeURIComponent(dataStr);
+                            <FormField
+                              control={notificationForm.control}
+                              name="expiryAlerts"
+                              render={({ field }) => (
+                                <FormItem className="flex items-center space-x-2">
+                                  <FormControl>
+                                    <Switch 
+                                      checked={field.value} 
+                                      onCheckedChange={field.onChange}
+                                      id="expiry-alerts"
+                                    />
+                                  </FormControl>
+                                  <FormLabel htmlFor="expiry-alerts">Expiry Date Alerts</FormLabel>
+                                </FormItem>
+                              )}
+                            />
 
-                              // Create download link
-                              const downloadLink = document.createElement("a");
-                              downloadLink.setAttribute("href", dataUri);
-                              downloadLink.setAttribute("download", `pharmstock-backup-${new Date().toISOString().split('T')[0]}.json`);
-                              document.body.appendChild(downloadLink);
-                              downloadLink.click();
-                              document.body.removeChild(downloadLink);
+                            <FormField
+                              control={notificationForm.control}
+                              name="expiryAlertDays"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Days Before Expiry to Alert</FormLabel>
+                                  <FormControl>
+                                    <Input 
+                                      type="number" 
+                                      min="1" 
+                                      max="90" 
+                                      {...field}
+                                      value={field.value}
+                                      onChange={(e) => field.onChange(e.target.value)}
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
 
-                              toast({
-                                title: "Backup created",
-                                description: "System backup has been created and downloaded.",
-                              });
-                            }}>
-                              <FileText className="h-4 w-4 mr-2" />
-                              Create Backup
-                            </Button>
+                          <h3 className="text-lg font-medium pt-4">Movement Notifications</h3>
+                          <FormField
+                            control={notificationForm.control}
+                            name="movementAlerts"
+                            render={({ field }) => (
+                              <FormItem className="flex items-center space-x-2">
+                                <FormControl>
+                                  <Switch 
+                                    checked={field.value} 
+                                    onCheckedChange={field.onChange}
+                                    id="movement-alerts"
+                                  />
+                                </FormControl>
+                                <FormLabel htmlFor="movement-alerts">Stock Movement Alerts</FormLabel>
+                              </FormItem>
+                            )}
+                          />
+                        </div>
 
-                            {/* File upload button for restoring backups */}
-                            <div className="mt-2">
-                              <label htmlFor="restore-backup-file" className="cursor-pointer">
-                                <div className="flex items-center justify-center px-4 py-2 border border-input rounded-md bg-background hover:bg-accent hover:text-accent-foreground text-sm font-medium">
-                                  <Upload className="h-4 w-4 mr-2" />
-                                  Restore Backup
-                                </div>
-                              </label>
-                              <input
-                                id="restore-backup-file"
-                                type="file"
-                                accept=".json"
-                                className="hidden"
-                                onChange={(e) => {
-                                  const file = e.target.files?.[0];
-                                  if (!file) return;
+                        <Button type="submit">
+                          <Save className="h-4 w-4 mr-2" />
+                          Save Notification Settings
+                        </Button>
+                      </form>
+                    </Form>
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
-                                  const reader = new FileReader();
-                                  reader.onload = (event) => {
-                                    try {
-                                      const content = event.target?.result;
-                                      if (typeof content === 'string') {
-                                        // Parse backup data
-                                        const backupData = JSON.parse(content);
+              {/* System Settings */}
+              <TabsContent value="system">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>System Settings</CardTitle>
+                    <CardDescription>
+                      Customize system appearance and behavior.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Form {...systemForm}>
+                      <form onSubmit={systemForm.handleSubmit(onSystemSubmit)} className="space-y-6">
+                        <div className="space-y-4">
+                          <h3 className="text-lg font-medium">Display Settings</h3>
+                          <FormField
+                            control={systemForm.control}
+                            name="theme"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Theme</FormLabel>
+                                <Select
+                                  onValueChange={field.onChange}
+                                  defaultValue={field.value}
+                                >
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Select a theme" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="light">Light</SelectItem>
+                                    <SelectItem value="dark">Dark</SelectItem>
+                                    <SelectItem value="system">System</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
 
-                                        // Validate backup format
-                                        if (!backupData.version || !backupData.timestamp || !backupData.data) {
-                                          throw new Error("Invalid backup file format");
-                                        }
+                          <FormField
+                            control={systemForm.control}
+                            name="language"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Language</FormLabel>
+                                <Select
+                                  onValueChange={field.onChange}
+                                  defaultValue={field.value}
+                                >
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Select a language" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="en">English</SelectItem>
+                                    <SelectItem value="fr">French</SelectItem>
+                                    <SelectItem value="es">Spanish</SelectItem>
+                                    <SelectItem value="de">German</SelectItem>
+                                    <SelectItem value="ar">Arabic</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
 
-                                        // Here you would actually restore the data
-                                        // For now, just show success
-                                        toast({
-                                          title: "Backup restored",
-                                          description: `Backup from ${new Date(backupData.timestamp).toLocaleString()} has been restored.`,
-                                          variant: "default",
-                                        });
-                                      }
-                                    } catch (err) {
-                                      toast({
-                                        title: "Error restoring backup",
-                                        description: err instanceof Error ? err.message : "Invalid backup file",
-                                        variant: "destructive",
-                                      });
-                                    }
+                          <h3 className="text-lg font-medium pt-4">Behavior</h3>
+                          <FormField
+                            control={systemForm.control}
+                            name="autoLogout"
+                            render={({ field }) => (
+                              <FormItem className="flex items-center space-x-2">
+                                <FormControl>
+                                  <Switch 
+                                    checked={field.value} 
+                                    onCheckedChange={field.onChange}
+                                    id="auto-logout"
+                                  />
+                                </FormControl>
+                                <FormLabel htmlFor="auto-logout">Auto Logout on Inactivity</FormLabel>
+                              </FormItem>
+                            )}
+                          />
 
-                                    // Reset file input
-                                    e.target.value = '';
-                                  };
-                                  reader.readAsText(file);
-                                }}
+                          <FormField
+                            control={systemForm.control}
+                            name="expandSidebar"
+                            render={({ field }) => (
+                              <FormItem className="flex items-center space-x-2">
+                                <FormControl>
+                                  <Switch 
+                                    checked={field.value} 
+                                    onCheckedChange={field.onChange}
+                                    id="expand-sidebar"
+                                  />
+                                </FormControl>
+                                <FormLabel htmlFor="expand-sidebar">Expand Sidebar by Default</FormLabel>
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+
+                        <Button type="submit">
+                          <Save className="h-4 w-4 mr-2" />
+                          Save System Settings
+                        </Button>
+                      </form>
+                    </Form>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Security Settings */}
+              <TabsContent value="security">
+                {user?.role === 'ceo' || user?.role === 'admin' ? (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Security Settings</CardTitle>
+                      <CardDescription>
+                        Manage security settings and access controls.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      <Form {...securityForm}>
+                        <form onSubmit={securityForm.handleSubmit(onSecuritySubmit)} className="space-y-6">
+                          <div className="space-y-4">
+                            <h3 className="text-lg font-medium">Password Policy</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <FormField
+                                control={securityForm.control}
+                                name="passwordLength"
+                                render={({ field }) => (
+                                  <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                                    <div className="space-y-0.5">
+                                      <FormLabel className="text-base">Minimum Password Length</FormLabel>
+                                      <FormDescription>
+                                        Minimum characters required
+                                      </FormDescription>
+                                    </div>
+                                    <FormControl>
+                                      <Input 
+                                        type="number" 
+                                        min="6" 
+                                        max="20" 
+                                        className="w-20" 
+                                        {...field}
+                                        value={field.value}
+                                        onChange={(e) => field.onChange(e.target.value)}
+                                      />
+                                    </FormControl>
+                                  </FormItem>
+                                )}
+                              />
+
+                              <FormField
+                                control={securityForm.control}
+                                name="passwordExpiry"
+                                render={({ field }) => (
+                                  <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                                    <div className="space-y-0.5">
+                                      <FormLabel className="text-base">Password Expiry</FormLabel>
+                                      <FormDescription>
+                                        Days before passwords expire
+                                      </FormDescription>
+                                    </div>
+                                    <FormControl>
+                                      <Input 
+                                        type="number" 
+                                        min="0" 
+                                        className="w-20" 
+                                        {...field}
+                                        value={field.value}
+                                        onChange={(e) => field.onChange(e.target.value)}
+                                      />
+                                    </FormControl>
+                                  </FormItem>
+                                )}
                               />
                             </div>
+
+                            <FormField
+                              control={securityForm.control}
+                              name="sessionTimeout"
+                              render={({ field }) => (
+                                <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                                  <div className="space-y-0.5">
+                                    <FormLabel className="text-base">Session Timeout</FormLabel>
+                                    <FormDescription>
+                                      Minutes of inactivity before logout
+                                    </FormDescription>
+                                  </div>
+                                  <FormControl>
+                                    <Input 
+                                      type="number" 
+                                      min="5" 
+                                      max="120" 
+                                      className="w-20" 
+                                      {...field}
+                                      value={field.value}
+                                      onChange={(e) => field.onChange(e.target.value)}
+                                    />
+                                  </FormControl>
+                                </FormItem>
+                              )}
+                            />
+
+                            <FormField
+                              control={securityForm.control}
+                              name="twoFactorEnabled"
+                              render={({ field }) => (
+                                <FormItem className="flex items-center space-x-2 pt-2">
+                                  <FormControl>
+                                    <Switch 
+                                      checked={field.value} 
+                                      onCheckedChange={field.onChange}
+                                      id="two-factor-auth"
+                                    />
+                                  </FormControl>
+                                  <FormLabel htmlFor="two-factor-auth">Enable Two-Factor Authentication</FormLabel>
+                                </FormItem>
+                              )}
+                            />
                           </div>
-                        </CardContent>
-                      </Card>
 
-                      <Card>
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-base">Export Data</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <p className="text-sm text-muted-foreground mb-4">
-                            Export all system data as CSV.
-                          </p>
-                          <Button 
-                            variant="outline"
-                            onClick={async () => {
-                              try {
-                                // Create mock data for export example
-                                // In a real app, we would fetch actual data from the backend
-                                const mockStockItems = [
-                                  ["ID", "Name", "Category", "Quantity", "Expiry Date", "Status"],
-                                  ["1", "Sample Medicine", "Samples", "50", "2023-12-31", "Active"],
-                                  ["2", "Promotional Brochure", "Marketing", "200", "2024-06-30", "Active"]
-                                ];
-
-                                // Convert array to CSV string
-                                const csvContent = mockStockItems.map(row => row.join(",")).join("\n");
-
-                                // Create download for the CSV
-                                const encodedUri = "data:text/csv;charset=utf-8," + encodeURIComponent(csvContent);
-                                const downloadLink = document.createElement("a");
-                                downloadLink.href = encodedUri;
-                                downloadLink.download = `pharmstock-export-${new Date().toISOString().split('T')[0]}.csv`;
-                                document.body.appendChild(downloadLink);
-                                downloadLink.click();
-                                document.body.removeChild(downloadLink);
-
-                                toast({
-                                  title: "Data exported",
-                                  description: "All system data has been exported as CSV and downloaded.",
-                                });
-                              } catch (error) {
-                                toast({
-                                  title: "Export failed",
-                                  description: error instanceof Error ? error.message : "Failed to export data",
-                                  variant: "destructive",
-                                });
-                              }
-                            }}
-                          >
-                            <FileText className="h-4 w-4 mr-2" />
-                            Export All Data
+                          <Button type="submit">
+                            <Save className="h-4 w-4 mr-2" />
+                            Save Security Settings
                           </Button>
-                        </CardContent>
-                      </Card>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4 pt-6">
-                    <h3 className="text-lg font-medium">Automated Backups</h3>
-                    <div className="flex items-center space-x-2">
-                      <Switch id="auto-backup" checked={autoBackupEnabled} onCheckedChange={setAutoBackupEnabled} />
-                      <Label htmlFor="auto-backup">Enable automated backups</Label>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="flex items-center justify-between rounded-lg border p-4">
-                        <div className="space-y-0.5">
-                          <Label className="text-base">Backup Frequency</Label>
-                          <p className="text-sm text-muted-foreground">
-                            How often to create backups
-                          </p>
-                        </div>
-                        <Select value={backupFrequency} onValueChange={setBackupFrequency}>
-                          <SelectTrigger className="w-32">
-                            <SelectValue placeholder="Select" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="hourly">Hourly</SelectItem>
-                            <SelectItem value="daily">Daily</SelectItem>
-                            <SelectItem value="weekly">Weekly</SelectItem>
-                            <SelectItem value="monthly">Monthly</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="flex items-center justify-between rounded-lg border p-4">
-                        <div className="space-y-0.5">
-                          <Label className="text-base">Retention Period</Label>
-                          <p className="text-sm text-muted-foreground">
-                            How long to keep backups
-                          </p>
-                        </div>
-                        <Select value={retentionPeriod} onValueChange={setRetentionPeriod}>
-                          <SelectTrigger className="w-32">
-                            <SelectValue placeholder="Select" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="7">7 days</SelectItem>
-                            <SelectItem value="30">30 days</SelectItem>
-                            <SelectItem value="90">90 days</SelectItem>
-                            <SelectItem value="365">1 year</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col gap-4 mt-4">
-                      <div className="flex items-center space-x-2">
-                        <Switch checked={compressBackups} onCheckedChange={setCompressBackups} id="compress-backups" />
-                        <Label htmlFor="compress-backups">Compress backups</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Switch checked={encryptBackups} onCheckedChange={setEncryptBackups} id="encrypt-backups" />
-                        <Label htmlFor="encrypt-backups">Encrypt backups</Label>
-                      </div>
-                    </div>
-                  </div>
-
-                  <Alert variant="destructive" className="mt-6">
+                        </form>
+                      </Form>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <Alert variant="destructive">
                     <AlertTriangleIcon className="h-4 w-4" />
-                    <AlertTitle>Danger Zone</AlertTitle>
+                    <AlertTitle>Restricted Access</AlertTitle>
                     <AlertDescription>
-                      These actions are destructive and cannot be undone.
+                      Only CEO and Admin can access security settings.
                     </AlertDescription>
                   </Alert>
+                )}
+              </TabsContent>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                    <Card className="border-red-200">
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-base text-red-600">Clear All Data</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-sm text-muted-foreground mb-4">
-                          Permanently delete all system data.
-                        </p>
-                        <Button 
-                          variant="destructive" 
-                          onClick={() => {
-                            // Show confirmation dialog
-                            if (window.confirm("WARNING: This will permanently delete all data in the system. This action cannot be undone. Are you sure you want to continue?")) {
-                              try {
-                                // Here we would call an API to clear all data
-                                // For now we'll just invalidate any queries to refresh the UI
-                                queryClient.invalidateQueries();
+              {/* Data Management */}
+              <TabsContent value="data">
+                {user?.role === 'ceo' || user?.role === 'admin' ? (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Data Management</CardTitle>
+                      <CardDescription>
+                        Manage system data, backups, and exports.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      {/* Category Management Section */}
+                      <div className="space-y-4 pt-2 pb-8 border-b">
+                        <h3 className="text-lg font-medium">Categories</h3>
+                        <CategoryManagement />
+                      </div>
+                      
+                      {/* Specialty Management Section */}
+                      <div className="space-y-4 pt-2 pb-8 border-b">
+                        <h3 className="text-lg font-medium">Specialties</h3>
+                        {hasPermission("canManageSpecialties") ? (
+                          <SpecialtyManagement />
+                        ) : (
+                          <Alert variant="destructive">
+                            <AlertTriangleIcon className="h-4 w-4" />
+                            <AlertTitle>Restricted Access</AlertTitle>
+                            <AlertDescription>
+                              You don't have permission to manage specialties.
+                            </AlertDescription>
+                          </Alert>
+                        )}
+                      </div>
 
-                                toast({
-                                  title: "Action completed",
-                                  description: "All system data has been cleared.",
-                                  variant: "destructive"
-                                });
-                              } catch (error) {
-                                toast({
-                                  title: "Action failed",
-                                  description: error instanceof Error ? error.message : "Failed to clear data",
-                                  variant: "destructive"
-                                });
-                              }
-                            }
-                          }}
-                        >
-                          Clear All Data
-                        </Button>
-                      </CardContent>
-                    </Card>
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-medium">Backup & Export Settings</h3>
+                        <Form {...dataManagementForm}>
+                          <form onSubmit={dataManagementForm.handleSubmit(onDataManagementSubmit)} className="space-y-6">
+                            <div className="space-y-4 border-b pb-6">
+                              <FormField
+                                control={dataManagementForm.control}
+                                name="autoBackupEnabled"
+                                render={({ field }) => (
+                                  <FormItem className="flex items-center space-x-2">
+                                    <FormControl>
+                                      <Switch 
+                                        checked={field.value} 
+                                        onCheckedChange={field.onChange}
+                                        id="auto-backup"
+                                      />
+                                    </FormControl>
+                                    <FormLabel htmlFor="auto-backup">Enable Automatic Backups</FormLabel>
+                                  </FormItem>
+                                )}
+                              />
 
-                    <Card className="border-red-200">
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-base text-red-600">Reset System</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-sm text-muted-foreground mb-4">
-                          Reset the system to factory defaults.
-                        </p>
-                        <Button 
-                          variant="destructive"
-                          onClick={() => {
-                            // Show confirmation dialog
-                            if (window.confirm("WARNING: This will reset all system settings to factory defaults. All customized settings will be lost. Are you sure you want to continue?")) {
-                              try {
-                                // Clear all local storage settings
-                                localStorage.removeItem('security_settings');
-                                localStorage.removeItem('data_settings');
-                                localStorage.removeItem('system_settings');
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                                <FormField
+                                  control={dataManagementForm.control}
+                                  name="backupFrequency"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Backup Frequency (Days)</FormLabel>
+                                      <FormControl>
+                                        <Input 
+                                          type="number" 
+                                          min="1" 
+                                          max="30" 
+                                          {...field}
+                                          value={field.value}
+                                          onChange={(e) => field.onChange(e.target.value)}
+                                        />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
 
-                                // Here we would call an API to reset the system
-                                // For now we'll just invalidate any queries to refresh the UI
-                                queryClient.invalidateQueries();
+                                <FormField
+                                  control={dataManagementForm.control}
+                                  name="backupRetention"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Backup Retention (Days)</FormLabel>
+                                      <FormControl>
+                                        <Input 
+                                          type="number" 
+                                          min="1" 
+                                          max="365" 
+                                          {...field}
+                                          value={field.value}
+                                          onChange={(e) => field.onChange(e.target.value)}
+                                        />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                              </div>
+                            </div>
 
-                                toast({
-                                  title: "System reset",
-                                  description: "The system has been reset to factory defaults.",
-                                  variant: "destructive"
-                                });
+                            <div className="space-y-4">
+                              <FormField
+                                control={dataManagementForm.control}
+                                name="autoExportEnabled"
+                                render={({ field }) => (
+                                  <FormItem className="flex items-center space-x-2">
+                                    <FormControl>
+                                      <Switch 
+                                        checked={field.value} 
+                                        onCheckedChange={field.onChange}
+                                        id="auto-export"
+                                      />
+                                    </FormControl>
+                                    <FormLabel htmlFor="auto-export">Enable Automatic Data Exports</FormLabel>
+                                  </FormItem>
+                                )}
+                              />
 
-                                // Reload the page to reflect reset state
-                                setTimeout(() => {
-                                  window.location.reload();
-                                }, 1500);
-                              } catch (error) {
-                                toast({
-                                  title: "Reset failed",
-                                  description: error instanceof Error ? error.message : "Failed to reset system",
-                                  variant: "destructive"
-                                });
-                              }
-                            }
-                          }}
-                        >
-                          Reset System
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  </div>
-                </CardContent>
-                <CardFooter className="border-t pt-6">
-                  <Button
-                    onClick={async () => {
-                      try {
-                        // Get values from state variables
-                        const settings = {
-                          autoBackupEnabled: autoBackupEnabled,
-                          backupFrequency: backupFrequency,
-                          retentionPeriod: Number(retentionPeriod),
-                          compressBackups: compressBackups,
-                          encryptBackups: encryptBackups
-                        };
+                              <FormField
+                                control={dataManagementForm.control}
+                                name="exportFormat"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Export Format</FormLabel>
+                                    <Select
+                                      onValueChange={field.onChange}
+                                      defaultValue={field.value}
+                                    >
+                                      <FormControl>
+                                        <SelectTrigger>
+                                          <SelectValue placeholder="Select a format" />
+                                        </SelectTrigger>
+                                      </FormControl>
+                                      <SelectContent>
+                                        <SelectItem value="csv">CSV</SelectItem>
+                                        <SelectItem value="xlsx">Excel</SelectItem>
+                                        <SelectItem value="pdf">PDF</SelectItem>
+                                        <SelectItem value="json">JSON</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
 
-                        // In a real app, we would save to backend storage
-                        // For now, store settings in localStorage for persistence
-                        localStorage.setItem('data_settings', JSON.stringify(settings));
+                            <div className="flex justify-between">
+                              <Button type="submit">
+                                <Save className="h-4 w-4 mr-2" />
+                                Save Data Settings
+                              </Button>
 
-                        // Force the component to update after saving
-                        setDataSettings(settings);
+                              <div className="space-x-2">
+                                <Button type="button" variant="outline">
+                                  <FileOutput className="h-4 w-4 mr-2" />
+                                  Manual Export
+                                </Button>
+                                <Button type="button" variant="outline">
+                                  Manual Backup
+                                </Button>
+                              </div>
+                            </div>
+                          </form>
+                        </Form>
+                      </div>
 
-                        toast({
-                          title: "Settings saved",
-                          description: "Your data management settings have been saved successfully.",
-                        });
-                      } catch (error) {
-                        toast({
-                          title: "Update failed",
-                          description: error instanceof Error ? error.message : "Failed to update data settings",
-                          variant: "destructive",
-                        });
-                      }
-                    }}
-                  >
-                    <Save className="h-4 w-4 mr-2" />
-                    Save Data Settings
-                  </Button>
-                </CardFooter>
-              </Card>
-            </TabsContent>
-          </>
-        )}
-      </Tabs>
+                      <Alert variant="destructive" className="mt-6">
+                        <AlertTriangleIcon className="h-4 w-4" />
+                        <AlertTitle>Danger Zone</AlertTitle>
+                        <AlertDescription>
+                          These actions are destructive and cannot be undone.
+                        </AlertDescription>
+                      </Alert>
+
+                      <div className="space-y-4 border rounded-lg p-4 bg-red-50 dark:bg-red-950">
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <h4 className="font-medium">Reset All Settings</h4>
+                            <p className="text-sm text-muted-foreground">
+                              Reset all settings to their default values.
+                            </p>
+                          </div>
+                          <Button variant="destructive" size="sm">
+                            Reset Settings
+                          </Button>
+                        </div>
+
+                        <div className="flex justify-between items-center pt-4 border-t">
+                          <div>
+                            <h4 className="font-medium">Purge All Data</h4>
+                            <p className="text-sm text-muted-foreground">
+                              Delete all data from the system permanently.
+                            </p>
+                          </div>
+                          <Button variant="destructive" size="sm">
+                            Purge Data
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <Alert variant="destructive">
+                    <AlertTriangleIcon className="h-4 w-4" />
+                    <AlertTitle>Restricted Access</AlertTitle>
+                    <AlertDescription>
+                      Only CEO and Admin can access data management settings.
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </TabsContent>
+            </Tabs>
+          </div>
+        </div>
+      </div>
     </MainLayout>
   );
 }
