@@ -92,7 +92,7 @@ export default function SettingsPage() {
   const { user, hasPermission } = useAuth();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("profile");
-  
+
   // State variables for data settings section
   const [autoBackupEnabled, setAutoBackupEnabled] = useState(false);
   const [backupFrequency, setBackupFrequency] = useState("daily");
@@ -100,7 +100,7 @@ export default function SettingsPage() {
   const [compressBackups, setCompressBackups] = useState(true);
   const [encryptBackups, setEncryptBackups] = useState(false);
   const [dataSettings, setDataSettings] = useState<any>(null);
-  
+
   // Load saved data settings from localStorage when component mounts
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -130,7 +130,7 @@ export default function SettingsPage() {
       region: user?.region || "",
     },
   });
-  
+
   // Load saved profile settings from localStorage if available
   useEffect(() => {
     const savedProfileSettings = localStorage.getItem('profileSettings');
@@ -200,21 +200,21 @@ export default function SettingsPage() {
   const onProfileSubmit = async (data: ProfileFormValues) => {
     try {
       if (!user) return;
-      
+
       // Send updated profile data to the server
       await apiRequest("PATCH", `/api/users/${user.id}`, {
         name: data.name,
         region: data.region
       });
-      
+
       // Save profile settings to localStorage for persistence
       localStorage.setItem('profileSettings', JSON.stringify(data));
-      
+
       toast({
         title: "Profile updated",
         description: "Your profile information has been updated successfully.",
       });
-      
+
       // Update the local cache
       queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
@@ -230,11 +230,11 @@ export default function SettingsPage() {
   const onNotificationSubmit = async (data: NotificationFormValues) => {
     try {
       if (!user) return;
-      
+
       // In a real app, we would save to backend storage
       // For now, store settings in localStorage for persistence
       localStorage.setItem(`notifications_${user.id}`, JSON.stringify(data));
-      
+
       toast({
         title: "Notification preferences updated",
         description: "Your notification preferences have been saved.",
@@ -252,21 +252,21 @@ export default function SettingsPage() {
     try {
       // Create a copy of the data to modify before storage
       const storageData = { ...data };
-      
+
       // Handle company logo File object by creating a URL
       if (data.companyLogo instanceof File) {
         // Create blob URL for the company logo image
         const companyLogoUrl = URL.createObjectURL(data.companyLogo);
-        
+
         // Add a special property for the URL that's not in the form data structure
         // @ts-ignore - We're adding a property not in the type
         storageData.companyLogoUrl = companyLogoUrl;
       }
-      
+
       // In a real app, we would save to backend storage
       // For now, store settings in localStorage for persistence
       localStorage.setItem('system_settings', JSON.stringify(storageData));
-      
+
       toast({
         title: "System settings updated",
         description: "System settings have been updated successfully.",
@@ -279,7 +279,7 @@ export default function SettingsPage() {
       });
     }
   };
-  
+
   // Security settings schema
   const securityFormSchema = z.object({
     passwordLength: z.string().or(z.number()).transform(val => Number(val)),
@@ -325,7 +325,7 @@ export default function SettingsPage() {
   const onSecuritySubmit = async (data: SecurityFormValues) => {
     try {
       localStorage.setItem('security_settings', JSON.stringify(data));
-      
+
       toast({
         title: "Security settings updated",
         description: "Your security settings have been saved successfully.",
@@ -338,7 +338,7 @@ export default function SettingsPage() {
       });
     }
   };
-  
+
   // Data management settings schema
   const dataManagementSchema = z.object({
     autoBackupEnabled: z.boolean().default(false),
@@ -347,9 +347,9 @@ export default function SettingsPage() {
     exportFormat: z.enum(["json", "csv", "excel"]).default("json"),
     compressionEnabled: z.boolean().default(true),
   });
-  
+
   type DataManagementValues = z.infer<typeof dataManagementSchema>;
-  
+
   // Data management form
   const dataManagementForm = useForm<DataManagementValues>({
     resolver: zodResolver(dataManagementSchema),
@@ -361,7 +361,7 @@ export default function SettingsPage() {
       compressionEnabled: true,
     },
   });
-  
+
   // Load saved data management settings from localStorage if available
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -376,12 +376,12 @@ export default function SettingsPage() {
       }
     }
   }, [dataManagementForm]);
-  
+
   // Data management form submit handler
   const onDataManagementSubmit = async (data: DataManagementValues) => {
     try {
       localStorage.setItem('data_management_settings', JSON.stringify(data));
-      
+
       toast({
         title: "Data management settings updated",
         description: "Your data management settings have been saved successfully.",
@@ -400,7 +400,7 @@ export default function SettingsPage() {
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-gray-800">Settings</h2>
       </div>
-      
+
       <Tabs 
         defaultValue="profile" 
         value={activeTab} 
@@ -433,7 +433,7 @@ export default function SettingsPage() {
             </>
           )}
         </TabsList>
-        
+
         {/* Profile Settings */}
         <TabsContent value="profile">
           <Card>
@@ -459,7 +459,7 @@ export default function SettingsPage() {
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={profileForm.control}
                     name="username"
@@ -476,7 +476,7 @@ export default function SettingsPage() {
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={profileForm.control}
                     name="region"
@@ -493,7 +493,7 @@ export default function SettingsPage() {
                       </FormItem>
                     )}
                   />
-                  
+
                   <Button type="submit">
                     <Save className="h-4 w-4 mr-2" />
                     Save Profile
@@ -503,7 +503,7 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
         </TabsContent>
-        
+
         {/* Notification Settings */}
         <TabsContent value="notifications">
           <Card>
@@ -536,7 +536,7 @@ export default function SettingsPage() {
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={notificationForm.control}
                     name="stockAlerts"
@@ -557,7 +557,7 @@ export default function SettingsPage() {
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={notificationForm.control}
                     name="expiryAlerts"
@@ -578,7 +578,7 @@ export default function SettingsPage() {
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={notificationForm.control}
                     name="movementAlerts"
@@ -599,7 +599,7 @@ export default function SettingsPage() {
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={notificationForm.control}
                     name="dailyReports"
@@ -620,7 +620,7 @@ export default function SettingsPage() {
                       </FormItem>
                     )}
                   />
-                  
+
                   <Button type="submit">
                     <Save className="h-4 w-4 mr-2" />
                     Save Notification Settings
@@ -630,7 +630,7 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
         </TabsContent>
-        
+
         {/* System Settings - Only for certain roles */}
         {hasPermission("canAccessSettings") && (
           <>
@@ -661,7 +661,7 @@ export default function SettingsPage() {
                           </FormItem>
                         )}
                       />
-                      
+
                       <FormField
                         control={systemForm.control}
                         name="expiryAlertDays"
@@ -678,7 +678,7 @@ export default function SettingsPage() {
                           </FormItem>
                         )}
                       />
-                      
+
                       <FormField
                         control={systemForm.control}
                         name="defaultCategory"
@@ -710,7 +710,7 @@ export default function SettingsPage() {
                           </FormItem>
                         )}
                       />
-                      
+
                       <FormField
                         control={systemForm.control}
                         name="appName"
@@ -744,7 +744,7 @@ export default function SettingsPage() {
                           </FormItem>
                         )}
                       />
-                      
+
                       <FormField
                         control={systemForm.control}
                         name="companyLogo"
@@ -757,10 +757,10 @@ export default function SettingsPage() {
                                 ? field.value
                                 : null
                           );
-                          
+
                           // File input ref to allow resetting
                           const fileInputRef = useRef<HTMLInputElement>(null);
-                          
+
                           // Handle file selection
                           const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
                             const file = e.target.files?.[0];
@@ -769,32 +769,32 @@ export default function SettingsPage() {
                               if (previewUrl && previewUrl.startsWith('blob:')) {
                                 URL.revokeObjectURL(previewUrl);
                               }
-                              
+
                               // Create a preview URL for the selected file
                               const objectUrl = URL.createObjectURL(file);
                               setPreviewUrl(objectUrl);
-                              
+
                               // Update the form field
                               field.onChange(file);
                             }
                           };
-                          
+
                           // Reset the file input and preview
                           const handleReset = () => {
                             // Revoke object URL if exists
                             if (previewUrl && previewUrl.startsWith('blob:')) {
                               URL.revokeObjectURL(previewUrl);
                             }
-                            
+
                             setPreviewUrl(null);
                             field.onChange(null);
-                            
+
                             // Reset the file input
                             if (fileInputRef.current) {
                               fileInputRef.current.value = '';
                             }
                           };
-                          
+
                           // Clean up on unmount
                           useEffect(() => {
                             return () => {
@@ -803,7 +803,7 @@ export default function SettingsPage() {
                               }
                             };
                           }, [previewUrl]);
-                          
+
                           return (
                             <FormItem>
                               <FormLabel>Company Logo</FormLabel>
@@ -828,7 +828,7 @@ export default function SettingsPage() {
                                     </Button>
                                   </div>
                                 )}
-                                
+
                                 <FormControl>
                                   <div className="flex items-center">
                                     <Input 
@@ -851,7 +851,7 @@ export default function SettingsPage() {
                                     )}
                                   </div>
                                 </FormControl>
-                                
+
                                 <FormDescription>
                                   Used in reports and branding. Max size 2MB.
                                 </FormDescription>
@@ -861,7 +861,7 @@ export default function SettingsPage() {
                           );
                         }}
                       />
-                      
+
                       <Button type="submit">
                         <Save className="h-4 w-4 mr-2" />
                         Save System Settings
@@ -871,7 +871,7 @@ export default function SettingsPage() {
                 </CardContent>
               </Card>
             </TabsContent>
-            
+
             {/* Security Settings */}
             <TabsContent value="security">
               <Card>
@@ -912,7 +912,7 @@ export default function SettingsPage() {
                               </FormItem>
                             )}
                           />
-                            
+
                           <FormField
                             control={securityForm.control}
                             name="passwordExpiry"
@@ -938,7 +938,7 @@ export default function SettingsPage() {
                             )}
                           />
                         </div>
-                        
+
                         <FormField
                           control={securityForm.control}
                           name="requireSpecialChars"
@@ -955,7 +955,7 @@ export default function SettingsPage() {
                             </FormItem>
                           )}
                         />
-                        
+
                         <FormField
                           control={securityForm.control}
                           name="requireUppercase"
@@ -972,7 +972,7 @@ export default function SettingsPage() {
                             </FormItem>
                           )}
                         />
-                        
+
                         <FormField
                           control={securityForm.control}
                           name="requireNumbers"
@@ -990,7 +990,7 @@ export default function SettingsPage() {
                           )}
                         />
                       </div>
-                      
+
                       <div className="space-y-4 pt-4 border-t">
                         <h3 className="text-lg font-medium">Session Settings</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1020,7 +1020,7 @@ export default function SettingsPage() {
                             )}
                           />
                         </div>
-                        
+
                         <FormField
                           control={securityForm.control}
                           name="twoFactorEnabled"
@@ -1038,7 +1038,7 @@ export default function SettingsPage() {
                           )}
                         />
                       </div>
-                      
+
                       <Button type="submit">
                         <Save className="h-4 w-4 mr-2" />
                         Save Security Settings
@@ -1048,7 +1048,7 @@ export default function SettingsPage() {
                 </CardContent>
               </Card>
             </TabsContent>
-            
+
             {/* Data Management */}
             <TabsContent value="data">
               <Card>
@@ -1064,11 +1064,11 @@ export default function SettingsPage() {
                     <h3 className="text-lg font-medium">Categories</h3>
                     <CategoryManagement />
                   </div>
-                  
+
                   {/* Specialty Management Section */}
                   <div className="space-y-4 pt-2 pb-8 border-b">
                     <h3 className="text-lg font-medium">Specialties</h3>
-                    {hasPermission("canManageSpecialties") ? (
+                    {(user?.role === 'ceo' || user?.role === 'admin') ? (
                       <SpecialtyManagement />
                     ) : (
                       <Alert variant="destructive">
@@ -1080,7 +1080,7 @@ export default function SettingsPage() {
                       </Alert>
                     )}
                   </div>
-                  
+
                   <div className="space-y-4">
                     <h3 className="text-lg font-medium">Backup & Export Settings</h3>
                     <Form {...dataManagementForm}>
@@ -1106,7 +1106,7 @@ export default function SettingsPage() {
                               </FormItem>
                             )}
                           />
-                          
+
                           {dataManagementForm.watch("autoBackupEnabled") && (
                             <>
                               <FormField
@@ -1137,7 +1137,7 @@ export default function SettingsPage() {
                                   </FormItem>
                                 )}
                               />
-                              
+
                               <FormField
                                 control={dataManagementForm.control}
                                 name="retentionPeriod"
@@ -1163,10 +1163,10 @@ export default function SettingsPage() {
                             </>
                           )}
                         </div>
-                        
+
                         <div className="space-y-4">
                           <h4 className="text-md font-medium">Export Settings</h4>
-                          
+
                           <FormField
                             control={dataManagementForm.control}
                             name="exportFormat"
@@ -1195,7 +1195,7 @@ export default function SettingsPage() {
                               </FormItem>
                             )}
                           />
-                          
+
                           <FormField
                             control={dataManagementForm.control}
                             name="compressionEnabled"
@@ -1217,7 +1217,7 @@ export default function SettingsPage() {
                             )}
                           />
                         </div>
-                        
+
                         <Button type="submit">
                           <Save className="h-4 w-4 mr-2" />
                           Save Data Settings
@@ -1225,7 +1225,7 @@ export default function SettingsPage() {
                       </form>
                     </Form>
                   </div>
-                  
+
                   <div className="space-y-4 pt-6 border-t">
                     <h3 className="text-lg font-medium">Backup & Export Actions</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1251,11 +1251,11 @@ export default function SettingsPage() {
                                   settings: {}
                                 }
                               };
-                              
+
                               // Convert to JSON and create download
                               const dataStr = JSON.stringify(backupData, null, 2);
                               const dataUri = "data:application/json;charset=utf-8," + encodeURIComponent(dataStr);
-                              
+
                               // Create download link
                               const downloadLink = document.createElement("a");
                               downloadLink.setAttribute("href", dataUri);
@@ -1263,7 +1263,7 @@ export default function SettingsPage() {
                               document.body.appendChild(downloadLink);
                               downloadLink.click();
                               document.body.removeChild(downloadLink);
-                              
+
                               toast({
                                 title: "Backup created",
                                 description: "System backup has been created and downloaded.",
@@ -1272,7 +1272,7 @@ export default function SettingsPage() {
                               <FileText className="h-4 w-4 mr-2" />
                               Create Backup
                             </Button>
-                            
+
                             {/* File upload button for restoring backups */}
                             <div className="mt-2">
                               <label htmlFor="restore-backup-file" className="cursor-pointer">
@@ -1289,7 +1289,7 @@ export default function SettingsPage() {
                                 onChange={(e) => {
                                   const file = e.target.files?.[0];
                                   if (!file) return;
-                                  
+
                                   const reader = new FileReader();
                                   reader.onload = (event) => {
                                     try {
@@ -1297,12 +1297,12 @@ export default function SettingsPage() {
                                       if (typeof content === 'string') {
                                         // Parse backup data
                                         const backupData = JSON.parse(content);
-                                        
+
                                         // Validate backup format
                                         if (!backupData.version || !backupData.timestamp || !backupData.data) {
                                           throw new Error("Invalid backup file format");
                                         }
-                                        
+
                                         // Here you would actually restore the data
                                         // For now, just show success
                                         toast({
@@ -1318,7 +1318,7 @@ export default function SettingsPage() {
                                         variant: "destructive",
                                       });
                                     }
-                                    
+
                                     // Reset file input
                                     e.target.value = '';
                                   };
@@ -1329,7 +1329,7 @@ export default function SettingsPage() {
                           </div>
                         </CardContent>
                       </Card>
-                      
+
                       <Card>
                         <CardHeader className="pb-2">
                           <CardTitle className="text-base">Export Data</CardTitle>
@@ -1349,10 +1349,10 @@ export default function SettingsPage() {
                                   ["1", "Sample Medicine", "Samples", "50", "2023-12-31", "Active"],
                                   ["2", "Promotional Brochure", "Marketing", "200", "2024-06-30", "Active"]
                                 ];
-                                
+
                                 // Convert array to CSV string
                                 const csvContent = mockStockItems.map(row => row.join(",")).join("\n");
-                                
+
                                 // Create download for the CSV
                                 const encodedUri = "data:text/csv;charset=utf-8," + encodeURIComponent(csvContent);
                                 const downloadLink = document.createElement("a");
@@ -1361,7 +1361,7 @@ export default function SettingsPage() {
                                 document.body.appendChild(downloadLink);
                                 downloadLink.click();
                                 document.body.removeChild(downloadLink);
-                                
+
                                 toast({
                                   title: "Data exported",
                                   description: "All system data has been exported as CSV and downloaded.",
@@ -1382,14 +1382,14 @@ export default function SettingsPage() {
                       </Card>
                     </div>
                   </div>
-                  
+
                   <div className="space-y-4 pt-6">
                     <h3 className="text-lg font-medium">Automated Backups</h3>
                     <div className="flex items-center space-x-2">
                       <Switch id="auto-backup" checked={autoBackupEnabled} onCheckedChange={setAutoBackupEnabled} />
                       <Label htmlFor="auto-backup">Enable automated backups</Label>
                     </div>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="flex items-center justify-between rounded-lg border p-4">
                         <div className="space-y-0.5">
@@ -1410,7 +1410,7 @@ export default function SettingsPage() {
                           </SelectContent>
                         </Select>
                       </div>
-                      
+
                       <div className="flex items-center justify-between rounded-lg border p-4">
                         <div className="space-y-0.5">
                           <Label className="text-base">Retention Period</Label>
@@ -1431,7 +1431,7 @@ export default function SettingsPage() {
                         </Select>
                       </div>
                     </div>
-                    
+
                     <div className="flex flex-col gap-4 mt-4">
                       <div className="flex items-center space-x-2">
                         <Switch checked={compressBackups} onCheckedChange={setCompressBackups} id="compress-backups" />
@@ -1443,7 +1443,7 @@ export default function SettingsPage() {
                       </div>
                     </div>
                   </div>
-                  
+
                   <Alert variant="destructive" className="mt-6">
                     <AlertTriangleIcon className="h-4 w-4" />
                     <AlertTitle>Danger Zone</AlertTitle>
@@ -1451,7 +1451,7 @@ export default function SettingsPage() {
                       These actions are destructive and cannot be undone.
                     </AlertDescription>
                   </Alert>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                     <Card className="border-red-200">
                       <CardHeader className="pb-2">
@@ -1470,7 +1470,7 @@ export default function SettingsPage() {
                                 // Here we would call an API to clear all data
                                 // For now we'll just invalidate any queries to refresh the UI
                                 queryClient.invalidateQueries();
-                                
+
                                 toast({
                                   title: "Action completed",
                                   description: "All system data has been cleared.",
@@ -1490,7 +1490,7 @@ export default function SettingsPage() {
                         </Button>
                       </CardContent>
                     </Card>
-                    
+
                     <Card className="border-red-200">
                       <CardHeader className="pb-2">
                         <CardTitle className="text-base text-red-600">Reset System</CardTitle>
@@ -1509,17 +1509,17 @@ export default function SettingsPage() {
                                 localStorage.removeItem('security_settings');
                                 localStorage.removeItem('data_settings');
                                 localStorage.removeItem('system_settings');
-                                
+
                                 // Here we would call an API to reset the system
                                 // For now we'll just invalidate any queries to refresh the UI
                                 queryClient.invalidateQueries();
-                                
+
                                 toast({
                                   title: "System reset",
                                   description: "The system has been reset to factory defaults.",
                                   variant: "destructive"
                                 });
-                                
+
                                 // Reload the page to reflect reset state
                                 setTimeout(() => {
                                   window.location.reload();
@@ -1552,14 +1552,14 @@ export default function SettingsPage() {
                           compressBackups: compressBackups,
                           encryptBackups: encryptBackups
                         };
-                        
+
                         // In a real app, we would save to backend storage
                         // For now, store settings in localStorage for persistence
                         localStorage.setItem('data_settings', JSON.stringify(settings));
-                        
+
                         // Force the component to update after saving
                         setDataSettings(settings);
-                        
+
                         toast({
                           title: "Settings saved",
                           description: "Your data management settings have been saved successfully.",

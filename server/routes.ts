@@ -62,7 +62,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post(
     "/api/specialties", 
     isAuthenticated, 
-    hasPermission("canManageSpecialties"), 
+    hasPermission("canManageSpecialties"),
+    (req, res, next) => {
+      if (req.user.role !== 'ceo' && req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Only CEO and Admin can manage specialties" });
+      }
+      next();
+    },
     async (req, res, next) => {
       try {
         const specialty = await storage.createSpecialty(req.body);
@@ -76,16 +82,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put(
     "/api/specialties/:id", 
     isAuthenticated, 
-    hasPermission("canManageSpecialties"), 
+    hasPermission("canManageSpecialties"),
+    (req, res, next) => {
+      if (req.user.role !== 'ceo' && req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Only CEO and Admin can manage specialties" });
+      }
+      next();
+    },
     async (req, res, next) => {
       try {
         const id = parseInt(req.params.id);
         const updatedSpecialty = await storage.updateSpecialty(id, req.body);
-        
+
         if (!updatedSpecialty) {
           return res.status(404).json({ message: "Specialty not found" });
         }
-        
+
         res.json(updatedSpecialty);
       } catch (error) {
         next(error);
@@ -96,16 +108,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete(
     "/api/specialties/:id", 
     isAuthenticated, 
-    hasPermission("canManageSpecialties"), 
+    hasPermission("canManageSpecialties"),
+    (req, res, next) => {
+      if (req.user.role !== 'ceo' && req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Only CEO and Admin can manage specialties" });
+      }
+      next();
+    },
     async (req, res, next) => {
       try {
         const id = parseInt(req.params.id);
         const success = await storage.deleteSpecialty(id);
-        
+
         if (!success) {
           return res.status(404).json({ message: "Specialty not found" });
         }
-        
+
         res.status(204).end();
       } catch (error) {
         next(error);
