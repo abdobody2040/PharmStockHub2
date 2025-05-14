@@ -76,6 +76,7 @@ export function StockItemForm({ onSubmit, initialData, isLoading = false }: Stoc
       form.reset({
         name: initialData.name || "",
         categoryId: initialData.categoryId.toString() || "",
+        specialtyId: initialData.specialtyId ? initialData.specialtyId.toString() : user?.specialtyId ? user.specialtyId.toString() : "",
         quantity: initialData.quantity.toString() || "",
         price: initialData.price ? initialData.price.toString() : "0",
         expiry: initialData.expiry ? new Date(initialData.expiry).toISOString().substring(0, 10) : "",
@@ -83,7 +84,7 @@ export function StockItemForm({ onSubmit, initialData, isLoading = false }: Stoc
         notes: initialData.notes || "",
       });
     }
-  }, [initialData, form]);
+  }, [initialData, form, user]);
 
   const handleSubmit = (values: FormValues) => {
     const formData = new FormData();
@@ -91,6 +92,15 @@ export function StockItemForm({ onSubmit, initialData, isLoading = false }: Stoc
     // Add all fields to form data
     formData.append("name", values.name);
     formData.append("categoryId", values.categoryId);
+    
+    // Handle specialty selection - use user's specialty if none selected and user is not CEO/admin
+    if (values.specialtyId) {
+      formData.append("specialtyId", values.specialtyId);
+    } else if (user?.specialtyId && !hasPermission("canViewAllStockItems")) {
+      // If no specialty selected but user has a specialty and doesn't have all-access permission
+      formData.append("specialtyId", user.specialtyId.toString());
+    }
+    
     formData.append("quantity", values.quantity);
     
     // Convert dollar price to cents and store as integer
@@ -170,6 +180,43 @@ export function StockItemForm({ onSubmit, initialData, isLoading = false }: Stoc
                   ))}
                 </SelectContent>
               </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="specialtyId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{hasPermission("canViewAllStockItems") ? "Specialty" : "Specialty*"}</FormLabel>
+              <Select
+                onValueChange={field.onChange}
+                defaultValue={field.value}
+                disabled={!hasPermission("canViewAllStockItems") && user?.specialtyId !== null}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder={hasPermission("canViewAllStockItems") ? "Select a specialty" : "Using your assigned specialty"} />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {hasPermission("canViewAllStockItems") && (
+                    <SelectItem value="">No specific specialty</SelectItem>
+                  )}
+                  {specialties.map((specialty) => (
+                    <SelectItem key={specialty.id} value={specialty.id.toString()}>
+                      {specialty.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {!hasPermission("canViewAllStockItems") && (
+                <div className="text-xs text-muted-foreground mt-1">
+                  Items must be assigned to your specialty
+                </div>
+              )}
               <FormMessage />
             </FormItem>
           )}

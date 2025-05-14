@@ -46,7 +46,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { 
   Settings, 
-  AlertTriangle, 
+  AlertTriangle as AlertTriangleIcon, 
   Save,
   Bell,
   Shield,
@@ -1071,8 +1071,8 @@ export default function SettingsPage() {
                     {hasPermission("canManageSpecialties") ? (
                       <SpecialtyManagement />
                     ) : (
-                      <Alert variant="warning">
-                        <AlertTriangle className="h-4 w-4" />
+                      <Alert variant="destructive">
+                        <AlertTriangleIcon className="h-4 w-4" />
                         <AlertTitle>Restricted Access</AlertTitle>
                         <AlertDescription>
                           You don't have permission to manage specialties.
@@ -1445,7 +1445,7 @@ export default function SettingsPage() {
                   </div>
                   
                   <Alert variant="destructive" className="mt-6">
-                    <AlertTriangle className="h-4 w-4" />
+                    <AlertTriangleIcon className="h-4 w-4" />
                     <AlertTitle>Danger Zone</AlertTitle>
                     <AlertDescription>
                       These actions are destructive and cannot be undone.
