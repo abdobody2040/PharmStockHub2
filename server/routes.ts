@@ -49,6 +49,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // API routes
 
+  // Specialties
+  app.get("/api/specialties", isAuthenticated, async (req, res, next) => {
+    try {
+      const specialties = await storage.getSpecialties();
+      res.json(specialties);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post(
+    "/api/specialties", 
+    isAuthenticated, 
+    hasPermission("canManageSpecialties"), 
+    async (req, res, next) => {
+      try {
+        const specialty = await storage.createSpecialty(req.body);
+        res.status(201).json(specialty);
+      } catch (error) {
+        next(error);
+      }
+    }
+  );
+
+  app.put(
+    "/api/specialties/:id", 
+    isAuthenticated, 
+    hasPermission("canManageSpecialties"), 
+    async (req, res, next) => {
+      try {
+        const id = parseInt(req.params.id);
+        const updatedSpecialty = await storage.updateSpecialty(id, req.body);
+        
+        if (!updatedSpecialty) {
+          return res.status(404).json({ message: "Specialty not found" });
+        }
+        
+        res.json(updatedSpecialty);
+      } catch (error) {
+        next(error);
+      }
+    }
+  );
+
+  app.delete(
+    "/api/specialties/:id", 
+    isAuthenticated, 
+    hasPermission("canManageSpecialties"), 
+    async (req, res, next) => {
+      try {
+        const id = parseInt(req.params.id);
+        const success = await storage.deleteSpecialty(id);
+        
+        if (!success) {
+          return res.status(404).json({ message: "Specialty not found" });
+        }
+        
+        res.status(204).end();
+      } catch (error) {
+        next(error);
+      }
+    }
+  );
+
   // Categories
   app.get("/api/categories", isAuthenticated, async (req, res, next) => {
     try {

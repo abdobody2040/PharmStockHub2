@@ -2,6 +2,14 @@ import { pgTable, text, serial, integer, boolean, timestamp, varchar } from "dri
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Specialties schema
+export const specialties = pgTable("specialties", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // User and Auth schemas
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -11,7 +19,13 @@ export const users = pgTable("users", {
   role: text("role").notNull(),
   region: text("region"),
   avatar: text("avatar"),
+  specialtyId: integer("specialty_id").references(() => specialties.id),
   createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertSpecialtySchema = createInsertSchema(specialties).pick({
+  name: true,
+  description: true,
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
@@ -21,6 +35,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
   role: true,
   region: true,
   avatar: true,
+  specialtyId: true,
 });
 
 // Stock categories
@@ -37,6 +52,7 @@ export const stockItems = pgTable("stock_items", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   categoryId: integer("category_id").notNull(),
+  specialtyId: integer("specialty_id").references(() => specialties.id),
   quantity: integer("quantity").notNull().default(0),
   price: integer("price").default(0), // Price in cents (e.g. $10.99 = 1099)
   expiry: timestamp("expiry"),
@@ -50,6 +66,7 @@ export const stockItems = pgTable("stock_items", {
 export const insertStockItemSchema = createInsertSchema(stockItems).pick({
   name: true,
   categoryId: true,
+  specialtyId: true,
   quantity: true,
   price: true,
   expiry: true,
@@ -125,6 +142,9 @@ export const extendedInsertStockItemSchema = insertStockItemSchema.extend({
 export type InsertUser = z.infer<typeof extendedInsertUserSchema>;
 export type User = typeof users.$inferSelect;
 
+export type InsertSpecialty = z.infer<typeof insertSpecialtySchema>;
+export type Specialty = typeof specialties.$inferSelect;
+
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
 export type Category = typeof categories.$inferSelect;
 
@@ -147,7 +167,9 @@ export const ROLE_PERMISSIONS = {
     canMoveStock: true,
     canManageUsers: true,
     canViewReports: true,
-    canAccessSettings: true
+    canAccessSettings: true,
+    canManageSpecialties: true,
+    canSeeAllSpecialties: true
   },
   marketer: {
     canViewAll: false,
@@ -157,7 +179,9 @@ export const ROLE_PERMISSIONS = {
     canMoveStock: true,
     canManageUsers: false,
     canViewReports: false,
-    canAccessSettings: false
+    canAccessSettings: false,
+    canManageSpecialties: false,
+    canSeeAllSpecialties: false
   },
   salesManager: {
     canViewAll: false,
@@ -167,7 +191,9 @@ export const ROLE_PERMISSIONS = {
     canMoveStock: true,
     canManageUsers: false,
     canViewReports: false,
-    canAccessSettings: false
+    canAccessSettings: false,
+    canManageSpecialties: false,
+    canSeeAllSpecialties: false
   },
   stockManager: {
     canViewAll: false,
@@ -177,17 +203,21 @@ export const ROLE_PERMISSIONS = {
     canMoveStock: false,
     canManageUsers: false,
     canViewReports: false,
-    canAccessSettings: true
+    canAccessSettings: true,
+    canManageSpecialties: false,
+    canSeeAllSpecialties: false
   },
   admin: {
-    canViewAll: false,
+    canViewAll: true,
     canAddItems: true,
     canEditItems: true,
     canRemoveItems: true,
     canMoveStock: false,
     canManageUsers: true,
     canViewReports: true,
-    canAccessSettings: true
+    canAccessSettings: true,
+    canManageSpecialties: true,
+    canSeeAllSpecialties: true
   },
   medicalRep: {
     canViewAll: false,
@@ -197,7 +227,9 @@ export const ROLE_PERMISSIONS = {
     canMoveStock: false,
     canManageUsers: false,
     canViewReports: false,
-    canAccessSettings: false
+    canAccessSettings: false,
+    canManageSpecialties: false,
+    canSeeAllSpecialties: false
   }
 };
 
