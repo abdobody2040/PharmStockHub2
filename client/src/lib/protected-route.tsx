@@ -5,9 +5,11 @@ import { Redirect, Route } from "wouter";
 export function ProtectedRoute({
   path,
   component: Component,
+  roles = [],
 }: {
   path: string;
   component: () => React.JSX.Element;
+  roles?: string[];
 }) {
   const { user, isLoading } = useAuth();
 
@@ -25,6 +27,20 @@ export function ProtectedRoute({
     return (
       <Route path={path}>
         <Redirect to="/auth" />
+      </Route>
+    );
+  }
+
+  // Check if route requires specific roles
+  if (roles.length > 0 && !roles.includes(user.role)) {
+    return (
+      <Route path={path}>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-red-600">Access Denied</h1>
+            <p className="mt-2">You don't have permission to access this page.</p>
+          </div>
+        </div>
       </Route>
     );
   }

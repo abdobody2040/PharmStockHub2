@@ -27,7 +27,7 @@ function Router() {
       <ProtectedRoute path="/reports" component={ReportsPage} />
       <ProtectedRoute path="/analytics" component={AnalyticsDashboard} />
       <ProtectedRoute path="/users" component={UserManagementPage} />
-      <ProtectedRoute path="/settings" component={SettingsPage} />
+      <ProtectedRoute path="/settings" component={SettingsPage} roles={['ceo', 'admin']} />
       <ProtectedRoute path="/mobile" component={MobileApp} />
       <ProtectedRoute path="/mobile/:rest*" component={MobileApp} />
       <Route component={NotFound} />
