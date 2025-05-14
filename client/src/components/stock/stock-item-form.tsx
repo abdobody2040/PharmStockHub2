@@ -64,7 +64,7 @@ export function StockItemForm({ onSubmit, initialData, isLoading = false }: Stoc
       categoryId: initialData?.categoryId.toString() || "",
       specialtyId: initialData?.specialtyId ? initialData.specialtyId.toString() : user?.specialtyId ? user.specialtyId.toString() : "",
       quantity: initialData?.quantity.toString() || "",
-      price: initialData?.price ? initialData.price.toString() : "0",
+      price: initialData?.price ? (initialData.price).toString() : "0",
       expiry: initialData?.expiry ? new Date(initialData.expiry).toISOString().substring(0, 10) : "",
       uniqueNumber: initialData?.uniqueNumber || "",
       notes: initialData?.notes || "",
@@ -104,8 +104,10 @@ export function StockItemForm({ onSubmit, initialData, isLoading = false }: Stoc
     formData.append("quantity", values.quantity);
     
     // Convert dollar price to cents and store as integer
-    const price = parseFloat(values.price);
-    const priceInCents = isNaN(price) ? 0 : Math.round(price * 100);
+    // Convert string price to number, if empty or invalid use 0
+    const price = values.price ? parseFloat(values.price) : 0;
+    // Convert to cents without multiplying if already in cents
+    const priceInCents = Math.round(price);
     formData.append("price", priceInCents.toString());
     
     // Handle expiry date properly
