@@ -635,6 +635,7 @@ export default function SettingsPage() {
         {hasPermission("canAccessSettings") && (
           <>
             <TabsContent value="system">
+              {(user?.role === 'ceo' || user?.role === 'admin') ? (
               <Card>
                 <CardHeader>
                   <CardTitle>System Settings</CardTitle>
@@ -643,6 +644,15 @@ export default function SettingsPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
+              ) : (
+                <Alert variant="destructive">
+                  <AlertTriangleIcon className="h-4 w-4" />
+                  <AlertTitle>Restricted Access</AlertTitle>
+                  <AlertDescription>
+                    Only CEO and Admin can access system settings.
+                  </AlertDescription>
+                </Alert>
+              )}
                   <Form {...systemForm}>
                     <form onSubmit={systemForm.handleSubmit(onSystemSubmit)} className="space-y-6">
                       <FormField
@@ -874,6 +884,7 @@ export default function SettingsPage() {
 
             {/* Security Settings */}
             <TabsContent value="security">
+              {(user?.role === 'ceo' || user?.role === 'admin') ? (
               <Card>
                 <CardHeader>
                   <CardTitle>Security Settings</CardTitle>
@@ -882,6 +893,15 @@ export default function SettingsPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
+              ) : (
+                <Alert variant="destructive">
+                  <AlertTriangleIcon className="h-4 w-4" />
+                  <AlertTitle>Restricted Access</AlertTitle>
+                  <AlertDescription>
+                    Only CEO and Admin can access security settings.
+                  </AlertDescription>
+                </Alert>
+              )}
                   <Form {...securityForm}>
                     <form onSubmit={securityForm.handleSubmit(onSecuritySubmit)} className="space-y-6">
                       <div className="space-y-4">
@@ -1051,6 +1071,7 @@ export default function SettingsPage() {
 
             {/* Data Management */}
             <TabsContent value="data">
+              {(user?.role === 'ceo' || user?.role === 'admin') ? (
               <Card>
                 <CardHeader>
                   <CardTitle>Data Management</CardTitle>
@@ -1059,6 +1080,15 @@ export default function SettingsPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
+              ) : (
+                <Alert variant="destructive">
+                  <AlertTriangleIcon className="h-4 w-4" />
+                  <AlertTitle>Restricted Access</AlertTitle>
+                  <AlertDescription>
+                    Only CEO and Admin can access data management settings.
+                  </AlertDescription>
+                </Alert>
+              )}
                   {/* Category Management Section */}
                   <div className="space-y-4 pt-2 pb-8 border-b">
                     <h3 className="text-lg font-medium">Categories</h3>
