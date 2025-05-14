@@ -117,6 +117,11 @@ export function setupAuth(app: Express) {
         return res.status(401).json({ message: "Unauthorized" });
       }
       
+      // CEO always has all permissions
+      if (req.user.role === 'ceo') {
+        return next();
+      }
+      
       const hasPermission = await storage.hasPermission(req.user.id, permission);
       if (hasPermission) {
         return next();
