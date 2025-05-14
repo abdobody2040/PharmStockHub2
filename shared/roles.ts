@@ -21,7 +21,8 @@ export const ROLE_PERMISSIONS = {
     canMoveStock: true,
     canManageUsers: true,
     canViewReports: true,
-    canAccessSettings: true
+    canAccessSettings: true,
+    canManageSpecialties: true
   },
   marketer: {
     canViewAll: false,
@@ -31,7 +32,8 @@ export const ROLE_PERMISSIONS = {
     canMoveStock: true,
     canManageUsers: false,
     canViewReports: false,
-    canAccessSettings: false
+    canAccessSettings: false,
+    canManageSpecialties: false
   },
   salesManager: {
     canViewAll: false,
@@ -41,7 +43,8 @@ export const ROLE_PERMISSIONS = {
     canMoveStock: true,
     canManageUsers: false,
     canViewReports: false,
-    canAccessSettings: false
+    canAccessSettings: false,
+    canManageSpecialties: false
   },
   stockManager: {
     canViewAll: false,
@@ -51,7 +54,8 @@ export const ROLE_PERMISSIONS = {
     canMoveStock: false,
     canManageUsers: false,
     canViewReports: false,
-    canAccessSettings: true
+    canAccessSettings: true,
+    canManageSpecialties: false
   },
   admin: {
     canViewAll: false,
@@ -61,7 +65,8 @@ export const ROLE_PERMISSIONS = {
     canMoveStock: false,
     canManageUsers: true,
     canViewReports: true,
-    canAccessSettings: true
+    canAccessSettings: true,
+    canManageSpecialties: true
   },
   medicalRep: {
     canViewAll: false,
@@ -71,7 +76,8 @@ export const ROLE_PERMISSIONS = {
     canMoveStock: false,
     canManageUsers: false,
     canViewReports: false,
-    canAccessSettings: false
+    canAccessSettings: false,
+    canManageSpecialties: false
   }
 } as const;
 
