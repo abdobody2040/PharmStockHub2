@@ -636,23 +636,15 @@ export default function SettingsPage() {
           <>
             <TabsContent value="system">
               {(user?.role === 'ceo' || user?.role === 'admin') ? (
-              <Card>
-                <CardHeader>
-                  <CardTitle>System Settings</CardTitle>
-                  <CardDescription>
-                    Configure global system settings and preferences.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-              ) : (
-                <Alert variant="destructive">
-                  <AlertTriangleIcon className="h-4 w-4" />
-                  <AlertTitle>Restricted Access</AlertTitle>
-                  <AlertDescription>
-                    Only CEO and Admin can access system settings.
-                  </AlertDescription>
-                </Alert>
-              )}
+              {(user?.role === 'ceo' || user?.role === 'admin') ? (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>System Settings</CardTitle>
+                    <CardDescription>
+                      Configure global system settings and preferences.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
                   <Form {...systemForm}>
                     <form onSubmit={systemForm.handleSubmit(onSystemSubmit)} className="space-y-6">
                       <FormField
