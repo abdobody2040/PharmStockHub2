@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Specialty } from "@shared/schema";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -160,7 +160,7 @@ export function SpecialtyManagement() {
   });
 
   // Reset edit form when currentSpecialty changes
-  React.useEffect(() => {
+  useEffect(() => {
     if (currentSpecialty) {
       editForm.reset({
         name: currentSpecialty.name,

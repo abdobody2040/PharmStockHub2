@@ -1,7 +1,8 @@
-import { users, categories, stockItems, stockAllocations, stockMovements } from "@shared/schema";
+import { users, categories, specialties, stockItems, stockAllocations, stockMovements } from "@shared/schema";
 import type { 
   User, InsertUser, 
   Category, InsertCategory,
+  Specialty, InsertSpecialty,
   StockItem, InsertStockItem,
   StockAllocation, InsertStockAllocation,
   StockMovement, InsertStockMovement,
@@ -20,6 +21,13 @@ const PostgresSessionStore = connectPg(session);
 
 // Interface for storage operations
 export interface IStorage {
+  // Specialty operations
+  getSpecialties(): Promise<Specialty[]>;
+  getSpecialty(id: number): Promise<Specialty | undefined>;
+  createSpecialty(specialty: InsertSpecialty): Promise<Specialty>;
+  updateSpecialty(id: number, specialty: Partial<Specialty>): Promise<Specialty | undefined>;
+  deleteSpecialty(id: number): Promise<boolean>;
+  
   // User operations
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
@@ -66,12 +74,14 @@ export interface IStorage {
 export class MemStorage implements IStorage {
   private usersMap: Map<number, User>;
   private categoriesMap: Map<number, Category>;
+  private specialtiesMap: Map<number, Specialty>;
   private stockItemsMap: Map<number, StockItem>;
   private stockAllocationsMap: Map<number, StockAllocation>;
   private stockMovementsMap: Map<number, StockMovement>;
 
   private userIdCounter: number;
   private categoryIdCounter: number;
+  private specialtyIdCounter: number;
   private stockItemIdCounter: number;
   private stockAllocationIdCounter: number;
   private stockMovementIdCounter: number;
@@ -81,12 +91,14 @@ export class MemStorage implements IStorage {
   constructor() {
     this.usersMap = new Map();
     this.categoriesMap = new Map();
+    this.specialtiesMap = new Map();
     this.stockItemsMap = new Map();
     this.stockAllocationsMap = new Map();
     this.stockMovementsMap = new Map();
 
     this.userIdCounter = 1;
     this.categoryIdCounter = 1;
+    this.specialtyIdCounter = 1;
     this.stockItemIdCounter = 1;
     this.stockAllocationIdCounter = 1;
     this.stockMovementIdCounter = 1;
@@ -114,6 +126,50 @@ export class MemStorage implements IStorage {
     for (const category of defaultCategories) {
       await this.createCategory(category);
     }
+
+    // Add default specialties
+    const defaultSpecialties = [
+      { name: 'CNS', description: 'Central Nervous System' },
+      { name: 'Primary Care 1', description: 'Primary Care Group 1' },
+      { name: 'Primary Care 2', description: 'Primary Care Group 2' },
+      { name: 'GIT', description: 'Gastrointestinal Tract' },
+      { name: 'Specialty', description: 'Specialty Products' },
+      { name: 'OTC', description: 'Over The Counter' }
+    ];
+
+    for (const specialty of defaultSpecialties) {
+      await this.createSpecialty(specialty);
+    }
+  }
+
+  // Specialty operations
+  async getSpecialties(): Promise<Specialty[]> {
+    return Array.from(this.specialtiesMap.values());
+  }
+
+  async getSpecialty(id: number): Promise<Specialty | undefined> {
+    return this.specialtiesMap.get(id);
+  }
+
+  async createSpecialty(specialty: InsertSpecialty): Promise<Specialty> {
+    const id = this.specialtyIdCounter++;
+    const timestamp = new Date();
+    const newSpecialty: Specialty = { ...specialty, id, createdAt: timestamp };
+    this.specialtiesMap.set(id, newSpecialty);
+    return newSpecialty;
+  }
+
+  async updateSpecialty(id: number, specialtyData: Partial<Specialty>): Promise<Specialty | undefined> {
+    const specialty = this.specialtiesMap.get(id);
+    if (!specialty) return undefined;
+
+    const updatedSpecialty = { ...specialty, ...specialtyData };
+    this.specialtiesMap.set(id, updatedSpecialty);
+    return updatedSpecialty;
+  }
+
+  async deleteSpecialty(id: number): Promise<boolean> {
+    return this.specialtiesMap.delete(id);
   }
 
   // User operations
@@ -348,6 +404,54 @@ export class DatabaseStorage implements IStorage {
         await this.createCategory(category);
       }
     }
+
+    const existingSpecialties = await this.getSpecialties();
+
+    // Only initialize if no specialties exist
+    if (existingSpecialties.length === 0) {
+      // Add default specialties
+      const defaultSpecialties = [
+        { name: 'CNS', description: 'Central Nervous System' },
+        { name: 'Primary Care 1', description: 'Primary Care Group 1' },
+        { name: 'Primary Care 2', description: 'Primary Care Group 2' },
+        { name: 'GIT', description: 'Gastrointestinal Tract' },
+        { name: 'Specialty', description: 'Specialty Products' },
+        { name: 'OTC', description: 'Over The Counter' }
+      ];
+
+      for (const specialty of defaultSpecialties) {
+        await this.createSpecialty(specialty);
+      }
+    }
+  }
+
+  // Specialty operations
+  async getSpecialties(): Promise<Specialty[]> {
+    return db.select().from(specialties);
+  }
+
+  async getSpecialty(id: number): Promise<Specialty | undefined> {
+    const [specialty] = await db.select().from(specialties).where(eq(specialties.id, id));
+    return specialty;
+  }
+
+  async createSpecialty(specialty: InsertSpecialty): Promise<Specialty> {
+    const [newSpecialty] = await db.insert(specialties).values(specialty).returning();
+    return newSpecialty;
+  }
+
+  async updateSpecialty(id: number, specialtyData: Partial<Specialty>): Promise<Specialty | undefined> {
+    const [updatedSpecialty] = await db
+      .update(specialties)
+      .set(specialtyData)
+      .where(eq(specialties.id, id))
+      .returning();
+    return updatedSpecialty;
+  }
+
+  async deleteSpecialty(id: number): Promise<boolean> {
+    const result = await db.delete(specialties).where(eq(specialties.id, id)).returning();
+    return result.length > 0;
   }
 
   // User operations
