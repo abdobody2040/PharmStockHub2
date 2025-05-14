@@ -3,7 +3,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useQuery } from "@tanstack/react-query";
-import { Category, StockItem } from "@shared/schema";
+import { Category, StockItem, Specialty } from "@shared/schema";
+import { useAuth } from "@/hooks/use-auth";
 import {
   Form,
   FormControl,
@@ -35,6 +36,7 @@ interface StockItemFormProps {
 const stockItemSchema = z.object({
   name: z.string().min(2, "Item name must be at least 2 characters"),
   categoryId: z.string().min(1, "Category is required"),
+  specialtyId: z.string().optional(),
   quantity: z.string().min(1, "Quantity is required"),
   price: z.string().default("0"),
   expiry: z.string().nullish(),
@@ -46,8 +48,13 @@ const stockItemSchema = z.object({
 type FormValues = z.infer<typeof stockItemSchema>;
 
 export function StockItemForm({ onSubmit, initialData, isLoading = false }: StockItemFormProps) {
+  const { user, hasPermission } = useAuth();
   const { data: categories = [] } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
+  });
+  
+  const { data: specialties = [] } = useQuery<Specialty[]>({
+    queryKey: ["/api/specialties"],
   });
 
   const form = useForm<FormValues>({
@@ -55,6 +62,7 @@ export function StockItemForm({ onSubmit, initialData, isLoading = false }: Stoc
     defaultValues: {
       name: initialData?.name || "",
       categoryId: initialData?.categoryId.toString() || "",
+      specialtyId: initialData?.specialtyId ? initialData.specialtyId.toString() : user?.specialtyId ? user.specialtyId.toString() : "",
       quantity: initialData?.quantity.toString() || "",
       price: initialData?.price ? initialData.price.toString() : "0",
       expiry: initialData?.expiry ? new Date(initialData.expiry).toISOString().substring(0, 10) : "",

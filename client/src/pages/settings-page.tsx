@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { MainLayout } from "@/components/layout/main-layout";
 import CategoryManagement from "@/components/settings/category-management";
+import { SpecialtyManagement } from "@/components/settings/specialty-management";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -1060,7 +1061,24 @@ export default function SettingsPage() {
                 <CardContent className="space-y-6">
                   {/* Category Management Section */}
                   <div className="space-y-4 pt-2 pb-8 border-b">
+                    <h3 className="text-lg font-medium">Categories</h3>
                     <CategoryManagement />
+                  </div>
+                  
+                  {/* Specialty Management Section */}
+                  <div className="space-y-4 pt-2 pb-8 border-b">
+                    <h3 className="text-lg font-medium">Specialties</h3>
+                    {hasPermission("canManageSpecialties") ? (
+                      <SpecialtyManagement />
+                    ) : (
+                      <Alert variant="warning">
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertTitle>Restricted Access</AlertTitle>
+                        <AlertDescription>
+                          You don't have permission to manage specialties.
+                        </AlertDescription>
+                      </Alert>
+                    )}
                   </div>
                   
                   <div className="space-y-4">
