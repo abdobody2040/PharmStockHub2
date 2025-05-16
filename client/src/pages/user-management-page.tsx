@@ -40,6 +40,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import {
   AlertDialog,
@@ -76,6 +77,7 @@ const userFormSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters").optional(),
   role: z.enum(["ceo", "marketer", "salesManager", "stockManager", "admin", "medicalRep"] as [RoleType, ...RoleType[]]),
   region: z.string().optional(),
+  specialtyId: z.string().optional(),
 });
 
 type UserFormValues = z.infer<typeof userFormSchema>;
@@ -93,6 +95,10 @@ export default function UserManagementPage() {
   // Fetch users
   const { data: users = [], isLoading } = useQuery<User[]>({
     queryKey: ["/api/users"],
+  });
+
+  const { data: specialties = [] } = useQuery({
+    queryKey: ["/api/specialties"],
   });
 
   // Create user mutation
@@ -176,6 +182,7 @@ export default function UserManagementPage() {
       password: "",
       role: "medicalRep",
       region: "",
+      specialtyId: "",
     },
   });
 
@@ -189,6 +196,7 @@ export default function UserManagementPage() {
       username: "",
       role: "medicalRep",
       region: "",
+      specialtyId: "",
     },
   });
 
@@ -204,19 +212,20 @@ export default function UserManagementPage() {
       username: user.username,
       role: user.role as RoleType,
       region: user.region || "",
+      specialtyId: user.specialtyId || "",
     });
     setShowEditUserModal(true);
   };
 
   const handleUpdateUser = (data: UserFormValues) => {
     if (!selectedUser) return;
-    
+
     // Only include password if provided
     const updateData = { ...data };
     if (!updateData.password) {
       delete updateData.password;
     }
-    
+
     updateUserMutation.mutate({ id: selectedUser.id, userData: updateData });
   };
 
@@ -237,7 +246,7 @@ export default function UserManagementPage() {
     if (filterRole && u.role !== filterRole) {
       return false;
     }
-    
+
     // Search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
@@ -248,7 +257,7 @@ export default function UserManagementPage() {
         getRoleName(u.role).toLowerCase().includes(query)
       );
     }
-    
+
     return true;
   });
 
@@ -272,7 +281,7 @@ export default function UserManagementPage() {
           Add New User
         </Button>
       </div>
-      
+
       {/* Role filter tabs */}
       <div className="mb-6 overflow-x-auto">
         <Tabs defaultValue="all" value={filterRole || 'all'} onValueChange={setFilterRole as any}>
@@ -309,7 +318,7 @@ export default function UserManagementPage() {
           </TabsList>
         </Tabs>
       </div>
-      
+
       {/* Users list */}
       <Card>
         <CardHeader className="px-6 py-4 border-b border-gray-200">
@@ -374,7 +383,7 @@ export default function UserManagementPage() {
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
-                          
+
                           <Button
                             variant="ghost"
                             size="sm"
@@ -394,7 +403,7 @@ export default function UserManagementPage() {
           )}
         </CardContent>
       </Card>
-      
+
       {/* Add User Modal */}
       <Dialog open={showAddUserModal} onOpenChange={setShowAddUserModal}>
         <DialogContent className="max-w-md">
@@ -404,7 +413,7 @@ export default function UserManagementPage() {
               Create a new user account. All fields are required except region.
             </DialogDescription>
           </DialogHeader>
-          
+
           <Form {...addUserForm}>
             <form onSubmit={addUserForm.handleSubmit(handleAddUser)} className="space-y-4">
               <FormField
@@ -420,7 +429,7 @@ export default function UserManagementPage() {
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={addUserForm.control}
                 name="username"
@@ -434,7 +443,7 @@ export default function UserManagementPage() {
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={addUserForm.control}
                 name="password"
@@ -448,7 +457,7 @@ export default function UserManagementPage() {
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={addUserForm.control}
                 name="role"
@@ -477,7 +486,7 @@ export default function UserManagementPage() {
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={addUserForm.control}
                 name="region"
@@ -491,7 +500,36 @@ export default function UserManagementPage() {
                   </FormItem>
                 )}
               />
-              
+
+              <FormField
+                control={addUserForm.control}
+                name="specialtyId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Specialty</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select specialty" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="">No specialty</SelectItem>
+                        {specialties.map((specialty) => (
+                          <SelectItem key={specialty.id} value={specialty.id.toString()}>
+                            {specialty.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Assign a specialty to this user
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               <DialogFooter>
                 <Button 
                   type="submit" 
@@ -504,7 +542,7 @@ export default function UserManagementPage() {
           </Form>
         </DialogContent>
       </Dialog>
-      
+
       {/* Edit User Modal */}
       <Dialog open={showEditUserModal} onOpenChange={setShowEditUserModal}>
         <DialogContent className="max-w-md">
@@ -514,7 +552,7 @@ export default function UserManagementPage() {
               Update user information. Leave password blank to keep it unchanged.
             </DialogDescription>
           </DialogHeader>
-          
+
           <Form {...editUserForm}>
             <form onSubmit={editUserForm.handleSubmit(handleUpdateUser)} className="space-y-4">
               <FormField
@@ -530,7 +568,7 @@ export default function UserManagementPage() {
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={editUserForm.control}
                 name="username"
@@ -544,7 +582,7 @@ export default function UserManagementPage() {
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={editUserForm.control}
                 name="password"
@@ -558,7 +596,7 @@ export default function UserManagementPage() {
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={editUserForm.control}
                 name="role"
@@ -587,7 +625,7 @@ export default function UserManagementPage() {
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={editUserForm.control}
                 name="region"
@@ -601,7 +639,36 @@ export default function UserManagementPage() {
                   </FormItem>
                 )}
               />
-              
+
+              <FormField
+                control={editUserForm.control}
+                name="specialtyId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Specialty</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select specialty" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="">No specialty</SelectItem>
+                        {specialties.map((specialty) => (
+                          <SelectItem key={specialty.id} value={specialty.id.toString()}>
+                            {specialty.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Assign a specialty to this user
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               <DialogFooter>
                 <Button 
                   type="submit" 
@@ -614,7 +681,7 @@ export default function UserManagementPage() {
           </Form>
         </DialogContent>
       </Dialog>
-      
+
       {/* Delete Confirmation */}
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent>
