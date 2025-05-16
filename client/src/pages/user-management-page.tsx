@@ -514,7 +514,7 @@ export default function UserManagementPage() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">No specialty</SelectItem>
+                        <SelectItem value="0">No specialty</SelectItem>
                         {specialties.map((specialty) => (
                           <SelectItem key={specialty.id} value={specialty.id.toString()}>
                             {specialty.name}
@@ -653,7 +653,7 @@ export default function UserManagementPage() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">No specialty</SelectItem>
+                        <SelectItem value="0">No specialty</SelectItem>
                         {specialties.map((specialty) => (
                           <SelectItem key={specialty.id} value={specialty.id.toString()}>
                             {specialty.name}
