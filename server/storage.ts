@@ -202,15 +202,6 @@ export class MemStorage implements IStorage {
     return newUser;
   }
 
-  async updateUser(id: number, userData: Partial<User>): Promise<User | undefined> {
-    const user = this.usersMap.get(id);
-    if (!user) return undefined;
-
-    const updatedUser = { ...user, ...userData };
-    this.usersMap.set(id, updatedUser);
-    return updatedUser;
-  }
-
   async deleteUser(id: number): Promise<boolean> {
     return this.usersMap.delete(id);
   }
@@ -341,14 +332,19 @@ export class MemStorage implements IStorage {
     return newMovement;
   }
 
-  async updateUser(id: number, userData: Partial<User>): Promise<User | undefined> {
-    const user = await this.getUser(id);
-    if (!user) return undefined;
+async updateUser(id: number, userData: Partial<User>): Promise<User | undefined> {
+  // Fetch existing user asynchronously
+  const user = await this.getUser(id);
+  if (!user) return undefined;
 
-    const updatedUser = { ...user, ...userData };
-    this.usersMap.set(id, updatedUser);
-    return updatedUser;
-  }
+  // Update only provided fields in user
+  Object.assign(user, userData);
+
+  // Update the map or data storage with new user info
+  this.usersMap.set(id, user);
+
+  return user;
+}
 
   async hasPermission(userId: number, permission: keyof typeof ROLE_PERMISSIONS.ceo): Promise<boolean> {
     const user = await this.getUser(userId);
