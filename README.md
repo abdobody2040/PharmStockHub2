@@ -79,9 +79,34 @@ npm run dev
 
 The application will be available at your Repl's URL.
 
+## Database Migrations
+
+This project uses Drizzle Kit for managing database schema migrations.
+
+The typical workflow for making schema changes is as follows:
+
+1.  **Modify Schema:** Make your desired changes to the schema definition in `shared/schema.ts`.
+2.  **Generate Migrations:** Run the following command to generate SQL migration files based on your schema changes. These files will be placed in the `./drizzle` directory.
+    ```bash
+    npm run db:generate
+    ```
+    This script executes `drizzle-kit generate pg --schema shared/schema.ts --out ./drizzle`.
+3.  **Review Migrations:** Before applying, it's crucial to review the generated SQL migration files in the `./drizzle` directory to ensure they accurately reflect your intended changes and to understand potential impacts.
+4.  **Apply Migrations:** Once you've reviewed and are satisfied with the generated SQL, apply the migrations to your database by running:
+    ```bash
+    npm run db:migrate
+    ```
+    This script executes `drizzle-kit migrate pg`. This command will apply any pending migration files to the database. It relies on the same `drizzle.config.ts` used by other `drizzle-kit` commands, which should already be configured with your database connection details.
+
+### Alternative for Development: `db:push`
+
+For simpler development scenarios, you can use the `npm run db:push` script, which executes `drizzle-kit push`. This command attempts to directly synchronize your database schema with the definitions in `shared/schema.ts` without creating explicit migration files.
+
+**Caution:** `npm run db:push` can be destructive as it may lead to data loss if not used carefully (e.g., when dropping tables or columns). While convenient for rapid iteration during development, the `db:generate` and `db:migrate` workflow is strongly recommended for managing schema changes in staging and production environments to ensure safety and control.
+
 ## Deployment
 
-1. In your Repl, go to the "Deployment" tab
+1.  In your Repl, go to the "Deployment" tab
 
 2. Click "Deploy" to create a new deployment
 

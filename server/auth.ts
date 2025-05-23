@@ -63,8 +63,17 @@ async function comparePasswords(supplied: string, stored: string) {
 }
 
 export function setupAuth(app: Express) {
+  const sessionSecret = process.env.SESSION_SECRET;
+
+  if (!sessionSecret || sessionSecret.trim() === "") {
+    throw new Error(
+      "CRITICAL ERROR: SESSION_SECRET is not defined in environment variables. " +
+      "This secret is required for application security. Please set it to a long, random string."
+    );
+  }
+
   const sessionSettings: session.SessionOptions = {
-    secret: process.env.SESSION_SECRET || "pharmastock-secret-key",
+    secret: sessionSecret,
     resave: false,
     saveUninitialized: false,
     store: storage.sessionStore,

@@ -413,74 +413,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Convert numeric strings to numbers
         if (movementData.stockItemId) movementData.stockItemId = parseInt(movementData.stockItemId);
-        if (movementData.fromUserId) movementData.fromUserId = parseInt(movementData.fromUserId);
+        
+        // Ensure fromUserId is null if it's not a valid number or is explicitly meant to be null
+        if (movementData.fromUserId && !isNaN(parseInt(movementData.fromUserId))) {
+            movementData.fromUserId = parseInt(movementData.fromUserId);
+        } else {
+            movementData.fromUserId = null; 
+        }
+
         if (movementData.toUserId) movementData.toUserId = parseInt(movementData.toUserId);
         if (movementData.quantity) movementData.quantity = parseInt(movementData.quantity);
 
         // Set current user as the one who moved the stock
         movementData.movedBy = (req.user as User).id;
 
-        // Validate
+        // Validate (this should ideally be more robust, but keep existing for now or ensure it aligns with transaction method's needs)
         const validatedData = insertStockMovementSchema.parse(movementData);
 
-        // Check if source has enough stock
-        const stockItem = await storage.getStockItem(validatedData.stockItemId);
-        if (!stockItem) {
-          return res.status(404).json({ message: "Stock item not found" });
-        }
-
-        // If moving from central inventory, check main stock
-        if (!validatedData.fromUserId) {
-          if (stockItem.quantity < validatedData.quantity) {
-            return res.status(400).json({ message: "Not enough stock available" });
-          }
-
-          // Update central inventory quantity
-          await storage.updateStockItem(stockItem.id, {
-            quantity: stockItem.quantity - validatedData.quantity
-          });
-        } else {
-          // If moving from a user, check user's allocation
-          const userAllocations = await storage.getAllocations(validatedData.fromUserId);
-          const sourceAllocation = userAllocations.find(
-            a => a.stockItemId === validatedData.stockItemId
-          );
-
-          if (!sourceAllocation || sourceAllocation.quantity < validatedData.quantity) {
-            return res.status(400).json({ message: "Source user does not have enough stock" });
-          }
-
-          // Update source user's allocation
-          await storage.updateAllocation(sourceAllocation.id, {
-            quantity: sourceAllocation.quantity - validatedData.quantity
-          });
-        }
-
-        // Update or create target user's allocation
-        const targetAllocations = await storage.getAllocations(validatedData.toUserId);
-        const targetAllocation = targetAllocations.find(
-          a => a.stockItemId === validatedData.stockItemId
-        );
-
-        if (targetAllocation) {
-          // Update existing allocation
-          await storage.updateAllocation(targetAllocation.id, {
-            quantity: targetAllocation.quantity + validatedData.quantity
-          });
-        } else {
-          // Create new allocation
-          await storage.createAllocation({
-            userId: validatedData.toUserId,
-            stockItemId: validatedData.stockItemId,
-            quantity: validatedData.quantity,
-            allocatedBy: validatedData.movedBy
-          });
-        }
-
-        // Create movement record
-        const movement = await storage.createMovement(validatedData);
+        // Call the new transactional method
+        const movement = await storage.executeStockMovementTransaction({
+          stockItemId: validatedData.stockItemId,
+          quantity: validatedData.quantity,
+          fromUserId: validatedData.fromUserId, // This should be nullable
+          toUserId: validatedData.toUserId,
+          movedBy: validatedData.movedBy,
+          notes: validatedData.notes
+        });
+        
         res.status(201).json(movement);
       } catch (error) {
+        // Errors from executeStockMovementTransaction (e.g., insufficient stock) will be caught here
         next(error);
       }
     }

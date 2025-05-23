@@ -10,18 +10,28 @@ const app = express();
 // Create default admin user if it doesn't exist
 async function createDefaultAdmin() {
   try {
-    const adminExists = await storage.getUserByUsername('admin');
+    const defaultAdminUsername = process.env.DEFAULT_ADMIN_USERNAME;
+    const defaultAdminPassword = process.env.DEFAULT_ADMIN_PASSWORD;
+
+    if (!defaultAdminUsername || !defaultAdminPassword) {
+      console.warn(
+        'Default admin creation skipped: DEFAULT_ADMIN_USERNAME or DEFAULT_ADMIN_PASSWORD not set in environment variables.'
+      );
+      return;
+    }
+
+    const adminExists = await storage.getUserByUsername(defaultAdminUsername);
     if (!adminExists) {
-      const hashedPassword = await hashPassword('admin123');
+      const hashedPassword = await hashPassword(defaultAdminPassword);
       await storage.createUser({
-        username: 'admin',
+        username: defaultAdminUsername,
         password: hashedPassword,
         name: 'Administrator',
         role: 'admin',
-        region: '',
-        avatar: '',
+        region: '', // Or handle this as per your application's logic for default admin
+        avatar: '', // Or handle this as per your application's logic for default admin
       });
-      console.log('Default admin user created');
+      console.log(`Default admin user '${defaultAdminUsername}' created successfully.`);
     }
   } catch (error) {
     console.error('Error creating default admin:', error);
@@ -74,11 +84,12 @@ app.use((req, res, next) => {
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+    console.error(err); // Log the error
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
 
     res.status(status).json({ message });
-    throw err;
+    // Do not throw err; the request is ended with the response above.
   });
 
   // importantly only setup vite in development and after

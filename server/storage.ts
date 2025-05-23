@@ -652,6 +652,117 @@ export class DatabaseStorage implements IStorage {
     const role = user.role as RoleType;
     return ROLE_PERMISSIONS[role][permission] === true;
   }
+
+  async executeStockMovementTransaction(args: {
+    stockItemId: number;
+    quantity: number;
+    fromUserId?: number | null;
+    toUserId: number;
+    movedBy: number;
+    notes?: string;
+  }): Promise<StockMovement> {
+    const { stockItemId, quantity, fromUserId, toUserId, movedBy, notes } = args;
+
+    if (quantity <= 0) {
+      throw new Error("Movement quantity must be positive.");
+    }
+
+    return db.transaction(async (tx) => {
+      // a. Fetch the stockItem
+      const [item] = await tx
+        .select()
+        .from(stockItems)
+        .where(eq(stockItems.id, stockItemId));
+
+      if (!item) {
+        throw new Error(`Stock item with ID ${stockItemId} not found.`);
+      }
+
+      // b. If fromUserId is null/undefined (movement from central inventory)
+      if (fromUserId == null) {
+        // i. Check if stockItem.quantity >= quantity
+        if (item.quantity < quantity) {
+          throw new Error(
+            `Not enough stock available in central inventory for item ID ${stockItemId}. Available: ${item.quantity}, Requested: ${quantity}`
+          );
+        }
+        // ii. Update the stockItem's quantity
+        await tx
+          .update(stockItems)
+          .set({ quantity: item.quantity - quantity })
+          .where(eq(stockItems.id, stockItemId));
+      } else {
+        // c. If fromUserId is provided (movement from a user)
+        // i. Fetch the source user's allocation
+        const [sourceAllocation] = await tx
+          .select()
+          .from(stockAllocations)
+          .where(
+            and(
+              eq(stockAllocations.userId, fromUserId),
+              eq(stockAllocations.stockItemId, stockItemId)
+            )
+          );
+
+        // ii. Check if the source allocation exists and has enough quantity
+        if (!sourceAllocation || sourceAllocation.quantity < quantity) {
+          throw new Error(
+            `Source user ID ${fromUserId} does not have enough stock of item ID ${stockItemId}. Available: ${sourceAllocation?.quantity || 0}, Requested: ${quantity}`
+          );
+        }
+        // iii. Update the source user's allocation
+        await tx
+          .update(stockAllocations)
+          .set({ quantity: sourceAllocation.quantity - quantity })
+          .where(eq(stockAllocations.id, sourceAllocation.id));
+      }
+
+      // d. Update/Create Target User's Allocation
+      // i. Fetch the target user's existing allocation
+      const [targetAllocation] = await tx
+        .select()
+        .from(stockAllocations)
+        .where(
+          and(
+            eq(stockAllocations.userId, toUserId),
+            eq(stockAllocations.stockItemId, stockItemId)
+          )
+        );
+
+      if (targetAllocation) {
+        // ii. If it exists, update it
+        await tx
+          .update(stockAllocations)
+          .set({ quantity: targetAllocation.quantity + quantity })
+          .where(eq(stockAllocations.id, targetAllocation.id));
+      } else {
+        // iii. If it doesn't exist, create it
+        await tx.insert(stockAllocations).values({
+          userId: toUserId,
+          stockItemId: stockItemId,
+          quantity: quantity,
+          allocatedBy: movedBy, // Assuming movedBy is the one allocating in this context
+          allocatedAt: new Date(),
+        });
+      }
+
+      // e. Create the stock movement record
+      const [newMovement] = await tx
+        .insert(stockMovements)
+        .values({
+          stockItemId,
+          fromUserId: fromUserId,
+          toUserId,
+          quantity,
+          movedBy,
+          notes: notes,
+          movedAt: new Date(),
+        })
+        .returning();
+      
+      return newMovement;
+    });
+  }
 }
 
 // Use the database storage for production
