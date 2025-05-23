@@ -1,9 +1,18 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-import { getOrgConfig } from './config';
+import { getOrgConfig, type OrgConfig } from './config';
 import { storage } from "./storage";
 import { hashPassword } from "./auth";
+
+// Extend Express Request type
+declare global {
+  namespace Express {
+    interface Request {
+      orgConfig?: OrgConfig;
+    }
+  }
+}
 
 const app = express();
 

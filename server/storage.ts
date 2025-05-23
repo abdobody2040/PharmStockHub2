@@ -9,7 +9,7 @@ import type {
   RoleType
 } from "@shared/schema";
 import { ROLE_PERMISSIONS } from "@shared/schema";
-import session from "express-session";
+import session, { Store as SessionStore } from "express-session";
 import createMemoryStore from "memorystore";
 import connectPg from "connect-pg-simple";
 import { db, pool } from "./db";
@@ -67,7 +67,7 @@ export interface IStorage {
   hasPermission(userId: number, permission: keyof typeof ROLE_PERMISSIONS.ceo): Promise<boolean>;
 
   // Session store
-  sessionStore: ReturnType<typeof createMemoryStore>;
+  sessionStore: SessionStore;
 }
 
 // In-memory implementation for development
@@ -86,7 +86,7 @@ export class MemStorage implements IStorage {
   private stockAllocationIdCounter: number;
   private stockMovementIdCounter: number;
 
-  sessionStore: ReturnType<typeof createMemoryStore>;
+  sessionStore: SessionStore;
 
   constructor() {
     this.usersMap = new Map();
@@ -105,7 +105,7 @@ export class MemStorage implements IStorage {
 
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000, // Clear expired sessions every day
-    });
+    }) as SessionStore;
 
     // Initialize with default categories
     this.initializeData();
@@ -154,7 +154,12 @@ export class MemStorage implements IStorage {
   async createSpecialty(specialty: InsertSpecialty): Promise<Specialty> {
     const id = this.specialtyIdCounter++;
     const timestamp = new Date();
-    const newSpecialty: Specialty = { ...specialty, id, createdAt: timestamp };
+    const newSpecialty: Specialty = { 
+      ...specialty, 
+      id, 
+      createdAt: timestamp,
+      description: specialty.description || null,
+    };
     this.specialtiesMap.set(id, newSpecialty);
     return newSpecialty;
   }
@@ -197,7 +202,14 @@ export class MemStorage implements IStorage {
   async createUser(user: InsertUser): Promise<User> {
     const id = this.userIdCounter++;
     const timestamp = new Date();
-    const newUser: User = { ...user, id, createdAt: timestamp };
+    const newUser: User = { 
+      ...user, 
+      id, 
+      createdAt: timestamp,
+      region: user.region || null,
+      avatar: user.avatar || null,
+      specialtyId: user.specialtyId || null,
+    };
     this.usersMap.set(id, newUser);
     return newUser;
   }
@@ -256,6 +268,11 @@ export class MemStorage implements IStorage {
       ...item, 
       id, 
       createdAt: timestamp,
+      specialtyId: item.specialtyId || null,
+      expiry: item.expiry || null,
+      uniqueNumber: item.uniqueNumber || null,
+      imageUrl: item.imageUrl || null,
+      notes: item.notes || null,
     };
     this.stockItemsMap.set(id, newItem);
     return newItem;
@@ -326,7 +343,9 @@ export class MemStorage implements IStorage {
     const newMovement: StockMovement = { 
       ...movement, 
       id, 
-      movedAt: timestamp 
+      movedAt: timestamp,
+      fromUserId: movement.fromUserId || null,
+      notes: movement.notes || null,
     };
     this.stockMovementsMap.set(id, newMovement);
     return newMovement;
@@ -357,14 +376,14 @@ async updateUser(id: number, userData: Partial<User>): Promise<User | undefined>
 
 // Database storage implementation
 export class DatabaseStorage implements IStorage {
-  sessionStore: ReturnType<typeof createMemoryStore>;
+  sessionStore: SessionStore;
   private systemSettings: Map<string, any>;
 
   constructor() {
     this.sessionStore = new PostgresSessionStore({ 
       pool, 
       createTableIfMissing: true 
-    });
+    }) as SessionStore;
     this.systemSettings = new Map();
     this.initializeData();
   }

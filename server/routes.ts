@@ -64,6 +64,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     isAuthenticated, 
     hasPermission("canManageSpecialties"),
     (req, res, next) => {
+      // The `isAuthenticated` and `hasPermission` middleware should have already run
+      // and ensured req.user is defined. However, to satisfy TypeScript's strict checks
+      // in this separate middleware, we add a check.
+      if (!req.user) {
+        // This case should ideally not be reached if prior middleware worked correctly.
+        return res.status(401).json({ message: "Unauthorized: User not authenticated" });
+      }
       if (req.user.role !== 'ceo' && req.user.role !== 'admin') {
         return res.status(403).json({ message: "Only CEO and Admin can manage specialties" });
       }
@@ -84,6 +91,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     isAuthenticated, 
     hasPermission("canManageSpecialties"),
     (req, res, next) => {
+      // The `isAuthenticated` and `hasPermission` middleware should have already run
+      // and ensured req.user is defined. However, to satisfy TypeScript's strict checks
+      // in this separate middleware, we add a check.
+      if (!req.user) {
+        // This case should ideally not be reached if prior middleware worked correctly.
+        return res.status(401).json({ message: "Unauthorized: User not authenticated" });
+      }
       if (req.user.role !== 'ceo' && req.user.role !== 'admin') {
         return res.status(403).json({ message: "Only CEO and Admin can manage specialties" });
       }
@@ -110,6 +124,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     isAuthenticated, 
     hasPermission("canManageSpecialties"),
     (req, res, next) => {
+      // The `isAuthenticated` and `hasPermission` middleware should have already run
+      // and ensured req.user is defined. However, to satisfy TypeScript's strict checks
+      // in this separate middleware, we add a check.
+      if (!req.user) {
+        // This case should ideally not be reached if prior middleware worked correctly.
+        return res.status(401).json({ message: "Unauthorized: User not authenticated" });
+      }
       if (req.user.role !== 'ceo' && req.user.role !== 'admin') {
         return res.status(403).json({ message: "Only CEO and Admin can manage specialties" });
       }
@@ -437,7 +458,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           fromUserId: validatedData.fromUserId, // This should be nullable
           toUserId: validatedData.toUserId,
           movedBy: validatedData.movedBy,
-          notes: validatedData.notes
+          notes: validatedData.notes === null ? undefined : validatedData.notes
         });
         
         res.status(201).json(movement);

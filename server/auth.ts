@@ -5,14 +5,14 @@ import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
-import { User, ROLE_PERMISSIONS } from "@shared/schema";
+import { User as SharedUser, ROLE_PERMISSIONS } from "@shared/schema";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
 
 declare global {
   namespace Express {
-    interface User extends User {}
+    interface User extends SharedUser {}
   }
 }
 
@@ -127,11 +127,11 @@ export function setupAuth(app: Express) {
       }
       
       // CEO always has all permissions
-      if (req.user.role === 'ceo') {
+      if ((req.user as SharedUser).role === 'ceo') {
         return next();
       }
       
-      const hasPermission = await storage.hasPermission(req.user.id, permission);
+      const hasPermission = await storage.hasPermission((req.user as SharedUser).id, permission);
       if (hasPermission) {
         return next();
       }
@@ -174,15 +174,15 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/login", (req, res, next) => {
-    passport.authenticate("local", (err, user, info) => {
+    passport.authenticate("local", (err: Error | null, user: SharedUser | false, info: { message: string } | undefined) => {
       if (err) return next(err);
       if (!user) return res.status(401).json({ message: info?.message || "Login failed" });
       
-      req.login(user, (err) => {
-        if (err) return next(err);
+      req.login(user, (loginErr) => { // Renamed err to loginErr to avoid conflict
+        if (loginErr) return next(loginErr);
         
-        // Remove password from response
-        const { password, ...userWithoutPassword } = user;
+        // User is now guaranteed to be a SharedUser object here, not false
+        const { password, ...userWithoutPassword } = user; 
         res.status(200).json(userWithoutPassword);
       });
     })(req, res, next);
@@ -199,7 +199,7 @@ export function setupAuth(app: Express) {
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Not authenticated" });
     
     // Remove password from response
-    const { password, ...userWithoutPassword } = req.user as User;
+    const { password, ...userWithoutPassword } = req.user as SharedUser;
     res.json(userWithoutPassword);
   });
 
