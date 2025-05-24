@@ -479,15 +479,16 @@ export default function ReportsPage() {
               isLoading={isGeneratingReport}
             />
                 <Button
-                  onClick={(e) => {
-                    const formElement = e.currentTarget.closest('form');
-                    if (formElement) {
-                      const reportTypeInput = formElement.querySelector('[name="reportType"]') as HTMLSelectElement;
-                      const dateRangeInput = formElement.querySelector('[name="dateRange"]') as HTMLSelectElement;
-                      if (reportTypeInput && dateRangeInput) {
-                        setReportType(reportTypeInput.value);
-                        setDateRange(dateRangeInput.value);
-                      }
+                  onClick={() => {
+                    const formElement = document.querySelector('form');
+                    const reportTypeSelect = formElement?.querySelector('[data-value]') as HTMLDivElement;
+                    const dateRangeSelect = formElement?.querySelectorAll('[data-value]')[1] as HTMLDivElement;
+                    
+                    if (reportTypeSelect && dateRangeSelect) {
+                      const reportTypeValue = reportTypeSelect.getAttribute('data-value') || 'inventory';
+                      const dateRangeValue = dateRangeSelect.getAttribute('data-value') || 'month';
+                      setReportType(reportTypeValue);
+                      setDateRange(dateRangeValue);
                     }
                   }}
                   className="w-full mt-4"
