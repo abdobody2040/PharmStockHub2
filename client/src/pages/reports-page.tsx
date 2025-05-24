@@ -633,14 +633,76 @@ export default function ReportsPage() {
                 </span>
               </CardHeader>
               <CardContent className="p-6">
-                <div className="flex justify-center items-center py-10">
-                  <div className="text-center">
-                    <Clock className="h-24 w-24 text-gray-300 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-700">Expiry Report</h3>
-                    <p className="text-gray-500 mt-2 max-w-md">
-                      Analysis of expiring items will appear here. Currently, you have {expiringItems.length} items expiring in the next 30 days.
-                    </p>
-                  </div>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item Name</th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Days Until Expiry</th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {expiringItems.length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className="px-6 py-4 text-center text-gray-500">
+                            No items expiring in the next 30 days
+                          </td>
+                        </tr>
+                      ) : (
+                        expiringItems.map(item => {
+                          const category = categories.find(c => c.id === item.categoryId);
+                          const daysUntilExpiry = item.expiry ? 
+                            Math.ceil((new Date(item.expiry).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : 
+                            null;
+                          
+                          let status = 'Safe';
+                          let statusColor = 'bg-green-100 text-green-800';
+                          
+                          if (daysUntilExpiry !== null) {
+                            if (daysUntilExpiry <= 0) {
+                              status = 'Expired';
+                              statusColor = 'bg-red-100 text-red-800';
+                            } else if (daysUntilExpiry <= 14) {
+                              status = 'Critical';
+                              statusColor = 'bg-red-100 text-red-800';
+                            } else if (daysUntilExpiry <= 30) {
+                              status = 'Warning';
+                              statusColor = 'bg-yellow-100 text-yellow-800';
+                            }
+                          }
+
+                          return (
+                            <tr key={item.id}>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                {item.name}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {category?.name || 'Unknown'}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {daysUntilExpiry !== null ? 
+                                  daysUntilExpiry <= 0 ? 
+                                    'Expired' : 
+                                    `${daysUntilExpiry} days` : 
+                                  'No expiry date'}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {item.quantity}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusColor}`}>
+                                  {status}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
                 </div>
               </CardContent>
             </Card>
