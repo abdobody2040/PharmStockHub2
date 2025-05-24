@@ -93,11 +93,10 @@ export function StockItemForm({ onSubmit, initialData, isLoading = false }: Stoc
     formData.append("name", values.name);
     formData.append("categoryId", values.categoryId);
     
-    // Handle specialty selection - use user's specialty if none selected and user is not CEO/admin
+    // Handle specialty selection and ensure it's converted to a number
     if (values.specialtyId) {
-      formData.append("specialtyId", values.specialtyId);
+      formData.append("specialtyId", parseInt(values.specialtyId).toString());
     } else if (user?.specialtyId && !hasPermission("canViewAllStockItems")) {
-      // If no specialty selected but user has a specialty and doesn't have all-access permission
       formData.append("specialtyId", user.specialtyId.toString());
     }
     
