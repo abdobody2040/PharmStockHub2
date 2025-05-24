@@ -60,7 +60,7 @@ export default function ReportsPage() {
   const { data: expiringItems = [] } = useQuery<StockItem[]>({
     queryKey: ["/api/stock-items/expiring", { days: 30 }],
   });
-  
+
   const { data: users = [] } = useQuery<User[]>({
     queryKey: ["/api/users"],
   });
@@ -173,13 +173,13 @@ export default function ReportsPage() {
     const reportType = data.get('reportType') as string;
     const dateRange = data.get('dateRange') as string;
     const exportFormat = data.get('exportFormat') as string || 'pdf';
-    
+
     setReportType(reportType);
     setDateRange(dateRange);
-    
+
     // Prepare report data based on report type
     let reportData: any[][] = [];
-    
+
     switch(reportType) {
       case 'inventory':
         reportData = [
@@ -190,7 +190,7 @@ export default function ReportsPage() {
             const expiryDate = item.expiry ? new Date(item.expiry).toISOString().split('T')[0] : 'N/A';
             const unitPrice = item.price ? (item.price / 100).toFixed(2) : '0.00';
             const totalValue = item.price ? ((item.price * item.quantity) / 100).toFixed(2) : '0.00';
-            
+
             return [
               item.id.toString(),
               item.name,
@@ -204,7 +204,7 @@ export default function ReportsPage() {
           })
         ];
         break;
-        
+
       case 'movement':
         reportData = [
           ["ID", "Item", "From User", "To User", "Quantity", "Unit Price ($)", "Total Value ($)", "Date", "Status"],
@@ -218,7 +218,7 @@ export default function ReportsPage() {
             const unitPrice = stockItem?.price ? (stockItem.price / 100).toFixed(2) : '0.00';
             const totalValue = stockItem?.price ? ((stockItem.price * movement.quantity) / 100).toFixed(2) : '0.00';
             const moveDate = movement.movedAt ? new Date(movement.movedAt).toISOString().split('T')[0] : 'N/A';
-            
+
             // Calculate status based on time since movement
             let status = 'Completed';
             if (movement.movedAt) {
@@ -228,7 +228,7 @@ export default function ReportsPage() {
               else if (daysSinceMove < 30) status = 'Last Month';
               else status = 'Archive';
             }
-            
+
             return [
               movement.id.toString(),
               item,
@@ -243,7 +243,7 @@ export default function ReportsPage() {
           })
         ];
         break;
-        
+
       case 'expiry':
         reportData = [
           ["ID", "Name", "Category", "Quantity", "Unit Price ($)", "Total Value ($)", "Expiry Date", "Days Remaining", "Risk Level"],
@@ -254,7 +254,7 @@ export default function ReportsPage() {
               Math.ceil((new Date(item.expiry).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : 'N/A';
             const unitPrice = item.price ? (item.price / 100).toFixed(2) : '0.00';
             const totalValue = item.price ? ((item.price * item.quantity) / 100).toFixed(2) : '0.00';
-            
+
             // Determine risk level
             let riskLevel = 'Low';
             if (typeof daysRemaining === 'number') {
@@ -263,7 +263,7 @@ export default function ReportsPage() {
               else if (daysRemaining <= 30) riskLevel = 'High';
               else if (daysRemaining <= 60) riskLevel = 'Medium';
             }
-            
+
             return [
               item.id.toString(),
               item.name,
@@ -278,7 +278,7 @@ export default function ReportsPage() {
           })
         ];
         break;
-        
+
       case 'allocation':
         // This would be filled with allocation data if we had it in the app
         reportData = [
@@ -286,14 +286,14 @@ export default function ReportsPage() {
           // Would be populated with actual allocation data
         ];
         break;
-        
+
       default:
         reportData = [["No data available for this report type"]];
     }
-    
+
     // Store the current report data for sharing
     setCurrentReportData(reportData);
-    
+
     // Generate the report in the requested format
     setTimeout(() => {
       if (exportFormat === 'pdf') {
@@ -303,7 +303,7 @@ export default function ReportsPage() {
       } else if (exportFormat === 'csv') {
         generateCsvReport(reportType, reportData);
       }
-      
+
       setIsGeneratingReport(false);
       toast({
         title: "Report Generated",
@@ -311,63 +311,63 @@ export default function ReportsPage() {
       });
     }, 1000);
   };
-  
+
   // Generate PDF report
   const generatePdfReport = (reportType: string, data: any[][]) => {
     const doc = new jsPDF();
     const reportTitle = reportType.charAt(0).toUpperCase() + reportType.slice(1) + ' Report';
     const pageWidth = doc.internal.pageSize.getWidth();
     let y = 20;
-    
+
     // Add report title
     doc.setFontSize(20);
     doc.text(reportTitle, pageWidth / 2, y, { align: 'center' });
     y += 10;
-    
+
     // Add date
     doc.setFontSize(12);
     doc.text(`Generated on: ${new Date().toLocaleDateString()}`, pageWidth / 2, y, { align: 'center' });
     y += 15;
-    
+
     // Add table
     if (data.length > 1) {
       doc.setFontSize(10);
-      
+
       // Table headers
       const headers = data[0];
       const columnWidths = headers.map(header => 
         Math.min(30, Math.max(15, (header.length * 2.5)))
       );
-      
+
       // Calculate total width
       const totalWidth = columnWidths.reduce((sum, width) => sum + width, 0);
       const startX = (pageWidth - totalWidth) / 2;
-      
+
       // Draw header row
       let x = startX;
       doc.setFillColor(240, 240, 240);
       doc.rect(startX, y, totalWidth, 10, 'F');
-      
+
       doc.setFont('helvetica', 'bold');
       headers.forEach((header, i) => {
         doc.text(header, x + 2, y + 7);
         x += columnWidths[i];
       });
       y += 10;
-      
+
       // Draw data rows
       doc.setFont('helvetica', 'normal');
       for (let i = 1; i < Math.min(data.length, 25); i++) {
         x = startX;
         const row = data[i];
-        
+
         row.forEach((cell, j) => {
           doc.text(String(cell).substring(0, 30), x + 2, y + 7);
           x += columnWidths[j];
         });
-        
+
         y += 10;
-        
+
         // Add a new page if we're near the bottom
         if (y > 280 && i < data.length - 1) {
           doc.addPage();
@@ -377,16 +377,16 @@ export default function ReportsPage() {
     } else {
       doc.text("No data available for this report", 14, y);
     }
-    
+
     // Save the PDF
     doc.save(`${reportType}-report-${new Date().toISOString().split('T')[0]}.pdf`);
   };
-  
+
   // Generate Excel report (as TSV for simplicity)
   const generateExcelReport = (reportType: string, data: any[][]) => {
     // Create a tsv string that Excel can open
     const tsvContent = data.map(row => row.join("\t")).join("\n");
-    
+
     // Create download link
     const encodedUri = "data:text/tab-separated-values;charset=utf-8," + encodeURIComponent(tsvContent);
     const downloadLink = document.createElement("a");
@@ -396,7 +396,7 @@ export default function ReportsPage() {
     downloadLink.click();
     document.body.removeChild(downloadLink);
   };
-  
+
   // Generate CSV report
   const generateCsvReport = (reportType: string, data: any[][]) => {
     // Create a CSV string
@@ -409,7 +409,7 @@ export default function ReportsPage() {
           cellStr;
       }).join(",")
     ).join("\n");
-    
+
     // Create download link
     const encodedUri = "data:text/csv;charset=utf-8," + encodeURIComponent(csvContent);
     const downloadLink = document.createElement("a");
@@ -427,7 +427,7 @@ export default function ReportsPage() {
     const expiringSoon = itemsInCategory.filter(item => 
       item.expiry && new Date(item.expiry) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
     ).length;
-    
+
     return {
       category,
       totalItems: itemsInCategory.length,
@@ -466,7 +466,7 @@ export default function ReportsPage() {
           </Button>
         </div>
       </div>
-      
+
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
         {/* Report Settings */}
         <Card className="lg:col-span-1">
@@ -478,33 +478,19 @@ export default function ReportsPage() {
               onGenerate={handleGenerateReport}
               isLoading={isGeneratingReport}
             />
-            
-            <div className="mt-6 border-t border-gray-200 pt-4">
-              <h4 className="text-sm font-medium text-gray-700 mb-3">Saved Reports</h4>
-              <ul className="space-y-2">
-                <li>
-                  <Button variant="link" className="p-0 h-auto text-primary hover:text-primary-600 flex items-center">
-                    <FileText className="mr-2 h-4 w-4" />
-                    Inventory Status - Jul 2023
-                  </Button>
-                </li>
-                <li>
-                  <Button variant="link" className="p-0 h-auto text-primary hover:text-primary-600 flex items-center">
-                    <FileText className="mr-2 h-4 w-4" />
-                    Q2 Stock Movement Report
-                  </Button>
-                </li>
-                <li>
-                  <Button variant="link" className="p-0 h-auto text-primary hover:text-primary-600 flex items-center">
-                    <FileText className="mr-2 h-4 w-4" />
-                    Expiring Items - Aug 2023
-                  </Button>
-                </li>
-              </ul>
-            </div>
+                <Button
+                  onClick={() => {
+                    setReportType(form.getValues("reportType"));
+                    setDateRange(form.getValues("dateRange"));
+                  }}
+                  className="w-full mt-4"
+                  variant="outline"
+                >
+                  Show Report
+                </Button>
           </CardContent>
         </Card>
-        
+
         {/* Report Display */}
         <div className="lg:col-span-3">
           {/* Inventory Status Report */}
@@ -523,7 +509,7 @@ export default function ReportsPage() {
                 <div className="mb-6">
                   <canvas ref={inventoryChartRef} height="200"></canvas>
                 </div>
-                
+
                 <div className="mt-8">
                   <h4 className="text-md font-medium text-gray-700 mb-3">Inventory Summary by Category</h4>
                   <div className="overflow-x-auto">
@@ -561,7 +547,7 @@ export default function ReportsPage() {
                     </table>
                   </div>
                 </div>
-                
+
                 <div className="mt-8">
                   <h4 className="text-md font-medium text-gray-700 mb-3">Stock Level Insights</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -577,7 +563,7 @@ export default function ReportsPage() {
                         </Button>
                       </div>
                     </div>
-                    
+
                     <div className="bg-gray-50 rounded-lg p-4">
                       <h5 className="text-sm font-medium text-gray-700 mb-2">Movement Rate</h5>
                       <p className="text-3xl font-bold text-green-600">+12%</p>
@@ -593,7 +579,7 @@ export default function ReportsPage() {
               </CardContent>
             </Card>
           )}
-          
+
           {/* Stock Movement Report */}
           {reportType === 'movement' && (
             <Card>
@@ -619,7 +605,7 @@ export default function ReportsPage() {
               </CardContent>
             </Card>
           )}
-          
+
           {/* Expiring Items Report */}
           {reportType === 'expiry' && (
             <Card>
@@ -657,10 +643,10 @@ export default function ReportsPage() {
                           const daysUntilExpiry = item.expiry ? 
                             Math.ceil((new Date(item.expiry).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : 
                             null;
-                          
+
                           let status = 'Safe';
                           let statusColor = 'bg-green-100 text-green-800';
-                          
+
                           if (daysUntilExpiry !== null) {
                             if (daysUntilExpiry <= 0) {
                               status = 'Expired';
@@ -707,7 +693,7 @@ export default function ReportsPage() {
               </CardContent>
             </Card>
           )}
-          
+
           {/* Medical Rep Allocation Report */}
           {reportType === 'allocation' && (
             <Card>
@@ -730,7 +716,7 @@ export default function ReportsPage() {
           )}
         </div>
       </div>
-      
+
       {/* Report Share Dialog */}
       <ReportShare
         isOpen={isShareDialogOpen}
