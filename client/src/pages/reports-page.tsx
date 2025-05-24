@@ -479,12 +479,20 @@ export default function ReportsPage() {
               isLoading={isGeneratingReport}
             />
                 <Button
-                  onClick={() => {
-                    setReportType(form.getValues("reportType"));
-                    setDateRange(form.getValues("dateRange"));
+                  onClick={(e) => {
+                    const formElement = e.currentTarget.closest('form');
+                    if (formElement) {
+                      const reportTypeInput = formElement.querySelector('[name="reportType"]') as HTMLSelectElement;
+                      const dateRangeInput = formElement.querySelector('[name="dateRange"]') as HTMLSelectElement;
+                      if (reportTypeInput && dateRangeInput) {
+                        setReportType(reportTypeInput.value);
+                        setDateRange(dateRangeInput.value);
+                      }
+                    }
                   }}
                   className="w-full mt-4"
                   variant="outline"
+                  type="button"
                 >
                   Show Report
                 </Button>
