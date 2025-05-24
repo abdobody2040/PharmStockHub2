@@ -124,6 +124,16 @@ export const extendedInsertUserSchema = insertUserSchema.extend({
 export const extendedInsertStockItemSchema = insertStockItemSchema.extend({
   name: z.string().min(2, "Item name must be at least 2 characters"),
   categoryId: z.number().int().positive("Category is required"),
+  // Add specialtyId validation to handle both number and string conversion
+  specialtyId: z.union([
+    z.number().int().positive(),
+    z.string().transform(val => {
+      if (!val) return null;
+      const num = parseInt(val, 10);
+      return isNaN(num) ? null : num;
+    }),
+    z.null(),
+  ]).nullable().optional(),
   quantity: z.number().int().min(0, "Quantity cannot be negative"),
   price: z.number().int().min(0, "Price cannot be negative").default(0),
   // Allow null, empty strings, and Date objects for expiry
