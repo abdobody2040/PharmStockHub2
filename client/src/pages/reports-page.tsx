@@ -478,25 +478,7 @@ export default function ReportsPage() {
               onGenerate={handleGenerateReport}
               isLoading={isGeneratingReport}
             />
-                <Button
-                  onClick={() => {
-                    const formElement = document.querySelector('form');
-                    const reportTypeSelect = formElement?.querySelector('[data-value]') as HTMLDivElement;
-                    const dateRangeSelect = formElement?.querySelectorAll('[data-value]')[1] as HTMLDivElement;
-                    
-                    if (reportTypeSelect && dateRangeSelect) {
-                      const reportTypeValue = reportTypeSelect.getAttribute('data-value') || 'inventory';
-                      const dateRangeValue = dateRangeSelect.getAttribute('data-value') || 'month';
-                      setReportType(reportTypeValue);
-                      setDateRange(dateRangeValue);
-                    }
-                  }}
-                  className="w-full mt-4"
-                  variant="outline"
-                  type="button"
-                >
-                  Show Report
-                </Button>
+                
           </CardContent>
         </Card>
 
