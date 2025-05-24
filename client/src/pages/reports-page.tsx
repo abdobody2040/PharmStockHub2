@@ -73,9 +73,13 @@ export default function ReportsPage() {
         inventoryChart.current.destroy();
       }
 
-      // Sample data for demonstration
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'];
-      const inventoryData = [3400, 3650, 3800, 3500, 4200, 4800, 5400];
+      // Group stock items by category
+      const categoryTotals = categories.reduce((acc, category) => {
+        const itemsInCategory = stockItems.filter(item => item.categoryId === category.id);
+        const total = itemsInCategory.reduce((sum, item) => sum + item.quantity, 0);
+        acc[category.name] = total;
+        return acc;
+      }, {} as Record<string, number>);
 
       // Create chart
       const ctx = inventoryChartRef.current.getContext('2d');
@@ -83,10 +87,10 @@ export default function ReportsPage() {
         inventoryChart.current = new Chart(ctx, {
           type: 'line',
           data: {
-            labels: months,
+            labels: Object.keys(categoryTotals),
             datasets: [{
-              label: 'Total Inventory',
-              data: inventoryData,
+              label: 'Total Inventory by Category',
+              data: Object.values(categoryTotals),
               borderColor: '#3B82F6',
               backgroundColor: 'rgba(59, 130, 246, 0.1)',
               borderWidth: 2,
