@@ -602,13 +602,23 @@ export default function ReportsPage() {
                 </span>
               </CardHeader>
               <CardContent className="p-6">
-                <div className="flex justify-center items-center py-10">
-                  <div className="text-center">
-                    <BarChart className="h-24 w-24 text-gray-300 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-700">Movement Report</h3>
-                    <p className="text-gray-500 mt-2 max-w-md">
-                      Stock movement visualizations and analysis will appear here when more transfer data is available.
+                <div className="mb-6">
+                  <canvas ref={inventoryChartRef} height="200"></canvas>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h5 className="text-sm font-medium text-gray-700 mb-2">Total Movements</h5>
+                    <p className="text-3xl font-bold text-blue-600">
+                      {movements.length}
                     </p>
+                    <p className="text-sm text-gray-500 mt-1">All time movements</p>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h5 className="text-sm font-medium text-gray-700 mb-2">Recent Movements</h5>
+                    <p className="text-3xl font-bold text-green-600">
+                      {movements.filter(m => new Date(m.movedAt).getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000).length}
+                    </p>
+                    <p className="text-sm text-gray-500 mt-1">Last 7 days</p>
                   </div>
                 </div>
               </CardContent>
@@ -628,6 +638,44 @@ export default function ReportsPage() {
                 </span>
               </CardHeader>
               <CardContent className="p-6">
+                <div className="mb-6">
+                  <canvas ref={categoryChartRef} height="200"></canvas>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h5 className="text-sm font-medium text-gray-700 mb-2">Critical Items</h5>
+                    <p className="text-3xl font-bold text-red-600">
+                      {expiringItems.filter(item => {
+                        const daysUntilExpiry = item.expiry ? 
+                          Math.ceil((new Date(item.expiry).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null;
+                        return daysUntilExpiry !== null && daysUntilExpiry <= 14;
+                      }).length}
+                    </p>
+                    <p className="text-sm text-gray-500 mt-1">Expiring within 14 days</p>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h5 className="text-sm font-medium text-gray-700 mb-2">Warning Items</h5>
+                    <p className="text-3xl font-bold text-yellow-600">
+                      {expiringItems.filter(item => {
+                        const daysUntilExpiry = item.expiry ? 
+                          Math.ceil((new Date(item.expiry).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null;
+                        return daysUntilExpiry !== null && daysUntilExpiry > 14 && daysUntilExpiry <= 30;
+                      }).length}
+                    </p>
+                    <p className="text-sm text-gray-500 mt-1">Expiring within 30 days</p>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h5 className="text-sm font-medium text-gray-700 mb-2">Safe Items</h5>
+                    <p className="text-3xl font-bold text-green-600">
+                      {expiringItems.filter(item => {
+                        const daysUntilExpiry = item.expiry ? 
+                          Math.ceil((new Date(item.expiry).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null;
+                        return daysUntilExpiry !== null && daysUntilExpiry > 30;
+                      }).length}
+                    </p>
+                    <p className="text-sm text-gray-500 mt-1">Expiring after 30 days</p>
+                  </div>
+                </div>
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
