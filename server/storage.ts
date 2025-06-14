@@ -380,9 +380,9 @@ export class DatabaseStorage implements IStorage {
   private systemSettings: Map<string, any>;
 
   constructor() {
-    this.sessionStore = new PostgresSessionStore({ 
-      pool, 
-      createTableIfMissing: true 
+    // Use memory store for sessions to avoid connection timeout issues
+    this.sessionStore = new MemoryStore({
+      checkPeriod: 86400000, // 24 hours
     }) as SessionStore;
     this.systemSettings = new Map();
     this.initializeData();
