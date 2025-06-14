@@ -15,15 +15,24 @@ export function MobileScanner({ onScan }: MobileScannerProps) {
 
   const {
     ref,
-    torch: { on: turnOnTorch, off: turnOffTorch, isAvailable: torchAvailable },
+    torch: { on: turnOnTorch, off: turnOffTorch, isAvailable: torchAvailable } = { on: async () => {}, off: async () => {}, isAvailable: false },
   } = useZxing({
     onDecodeResult(result) {
-      const scannedValue = result.getText();
-      onScan(scannedValue);
-      toast({
-        title: "Barcode scanned successfully",
-        description: `Scanned value: ${scannedValue}`,
-      });
+      try {
+        const scannedValue = result.getText();
+        onScan(scannedValue);
+        toast({
+          title: "Barcode scanned successfully",
+          description: `Scanned value: ${scannedValue}`,
+        });
+      } catch (error) {
+        console.error('Barcode scan error:', error);
+        toast({
+          title: "Scan error",
+          description: "Failed to process scanned barcode",
+          variant: "destructive",
+        });
+      }
     },
     timeBetweenDecodingAttempts: 300,
     constraints: {

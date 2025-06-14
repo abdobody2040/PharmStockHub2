@@ -11,16 +11,26 @@ if (!process.env.DATABASE_URL) {
 export const pool = new Pool({ 
   connectionString: process.env.DATABASE_URL,
   max: 10,
-  min: 2,
+  min: 1,
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 10000,
+  connectionTimeoutMillis: 15000,
   acquireTimeoutMillis: 60000,
-  allowExitOnIdle: true,
+  allowExitOnIdle: false,
+  // Add connection retry logic
+  retryDelay: 1000,
+  maxRetries: 3,
 });
 
-// Handle pool errors
+// Handle pool errors with better logging
 pool.on('error', (err) => {
-  console.error('Unexpected error on idle client', err);
+  console.error('Database pool error:', err.message);
+  if (err.code === '57P01') {
+    console.log('Database connection terminated by administrator, will reconnect automatically');
+  }
+});
+
+pool.on('connect', () => {
+  console.log('Database connection established');
 });
 
 export const db = drizzle(pool, { schema });

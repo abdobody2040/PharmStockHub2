@@ -27,7 +27,7 @@ export interface IStorage {
   createSpecialty(specialty: InsertSpecialty): Promise<Specialty>;
   updateSpecialty(id: number, specialty: Partial<Specialty>): Promise<Specialty | undefined>;
   deleteSpecialty(id: number): Promise<boolean>;
-  
+
   // User operations
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
@@ -558,7 +558,7 @@ export class DatabaseStorage implements IStorage {
   async createStockItem(item: InsertStockItem): Promise<StockItem> {
     // Create a clean data object to ensure proper date handling
     const cleanData: InsertStockItem = { ...item };
-    
+
     // Handle expiry date explicitly if it exists
     if (cleanData.expiry !== undefined) {
       try {
@@ -571,7 +571,7 @@ export class DatabaseStorage implements IStorage {
         // If conversion fails, we'll keep the original value
       }
     }
-    
+
     const [newItem] = await db.insert(stockItems).values(cleanData).returning();
     return newItem;
   }
@@ -579,7 +579,7 @@ export class DatabaseStorage implements IStorage {
   async updateStockItem(id: number, itemData: Partial<StockItem>): Promise<StockItem | undefined> {
     // Create a clean data object to ensure proper date handling
     const cleanData: Partial<StockItem> = { ...itemData };
-    
+
     // Handle expiry date explicitly - convert to a proper Date object if it's a string
     if (cleanData.expiry !== undefined) {
       try {
@@ -592,7 +592,7 @@ export class DatabaseStorage implements IStorage {
         delete cleanData.expiry; // Remove the invalid field
       }
     }
-    
+
     const [updatedItem] = await db
       .update(stockItems)
       .set(cleanData)
@@ -683,7 +683,7 @@ export class DatabaseStorage implements IStorage {
     fromUserId?: number | null;
     toUserId: number;
     movedBy: number;
-    notes?: string;
+    notes?: string | undefined;
   }): Promise<StockMovement> {
     const { stockItemId, quantity, fromUserId, toUserId, movedBy, notes } = args;
 
@@ -783,7 +783,7 @@ export class DatabaseStorage implements IStorage {
           movedAt: new Date(),
         })
         .returning();
-      
+
       return newMovement;
     });
   }

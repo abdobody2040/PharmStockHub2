@@ -48,6 +48,20 @@ async function createDefaultAdmin() {
 }
 
 createDefaultAdmin();
+
+// Add global error handlers
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  // Don't exit in development
+  if (process.env.NODE_ENV === 'production') {
+    process.exit(1);
+  }
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 

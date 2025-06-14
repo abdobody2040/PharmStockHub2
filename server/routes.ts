@@ -488,10 +488,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const movement = await storage.executeStockMovementTransaction({
           stockItemId: validatedData.stockItemId,
           quantity: validatedData.quantity,
-          fromUserId: validatedData.fromUserId, // This should be nullable
+          fromUserId: validatedData.fromUserId,
           toUserId: validatedData.toUserId,
           movedBy: validatedData.movedBy,
-          notes: validatedData.notes === null ? undefined : validatedData.notes
+          notes: validatedData.notes || undefined
         });
         
         res.status(201).json(movement);
