@@ -401,10 +401,11 @@ export class DatabaseStorage implements IStorage {
 
   // Initialize with default data if needed
   private async initializeData() {
-    const existingCategories = await this.getCategories();
+    try {
+      const existingCategories = await this.getCategories();
 
-    // Only initialize if no categories exist
-    if (existingCategories.length === 0) {
+      // Only initialize if no categories exist
+      if (existingCategories.length === 0) {
       // Add default categories
       const defaultCategories = [
         { name: 'Brochures', color: 'bg-blue-500' },
@@ -437,6 +438,10 @@ export class DatabaseStorage implements IStorage {
       for (const specialty of defaultSpecialties) {
         await this.createSpecialty(specialty);
       }
+    }
+    } catch (error) {
+      console.error('Failed to initialize database data:', error);
+      console.warn('The application will continue but some default data may be missing.');
     }
   }
 
@@ -784,5 +789,14 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
-// Use the database storage for production
-export const storage = new DatabaseStorage();
+// Use the database storage for production with fallback
+let storage: IStorage;
+
+try {
+  storage = new DatabaseStorage();
+} catch (error) {
+  console.error('Failed to initialize database storage, falling back to memory storage:', error);
+  storage = new MemStorage();
+}
+
+export { storage };
