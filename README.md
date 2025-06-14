@@ -18,11 +18,11 @@ A full-stack inventory management system built with React, Express, and PostgreS
 
 ### Backend
 - Express.js with TypeScript
-- PostgreSQL (Neon Database)
+- PostgreSQL (Replit Database or external)
 - Drizzle ORM
-- JWT authentication
+- Passport authentication
 - Multer for file uploads
-- WebSocket for real-time updates
+- Real-time updates
 
 ### Development Tools
 - TypeScript
@@ -47,15 +47,15 @@ A full-stack inventory management system built with React, Express, and PostgreS
 
 - Node.js 18+ 
 - NPM or Yarn
-- PostgreSQL Database (Neon)
+- PostgreSQL Database
 
 ## Environment Variables
 
 Create the following environment variables in your Replit Secrets:
 
 ```env
-DATABASE_URL=your_neon_database_url
-JWT_SECRET=your_jwt_secret
+DATABASE_URL=your_postgresql_database_url
+SESSION_SECRET=your_session_secret
 ```
 
 ## Installation & Setup

@@ -4,14 +4,14 @@
 ## Prerequisites
 - Node.js 18+
 - NPM or Yarn
-- PostgreSQL Database (Neon)
+- PostgreSQL Database
 
 ## Environment Variables
 Create these variables in Replit Secrets:
 
 ```env
 DATABASE_URL=postgresql://user:password@host:port/dbname
-JWT_SECRET=your-secure-jwt-secret
+SESSION_SECRET=your-secure-session-secret
 ```
 
 ## Database Schema
