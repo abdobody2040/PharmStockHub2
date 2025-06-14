@@ -1,0 +1,1 @@
+ALTER TABLE "specialties" DROP COLUMN "dummy_field";

@@ -8,6 +8,13 @@
       "when": 1748008882454,
       "tag": "0000_shiny_invisible_woman",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1749921585992,
+      "tag": "0001_fuzzy_franklin_richards",
+      "breakpoints": true
     }
   ]
 }
