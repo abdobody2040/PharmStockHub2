@@ -284,6 +284,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
           createdBy: (req.user as User).id
         };
 
+        // Handle expiry date properly - check for empty strings and invalid dates
+        if (stockData.expiry !== undefined) {
+          if (stockData.expiry === '' || stockData.expiry === null) {
+            // Set to null for empty strings
+            stockData.expiry = null;
+          } else {
+            try {
+              const dateObj = new Date(stockData.expiry);
+              if (isNaN(dateObj.getTime())) {
+                // Invalid date, set to null
+                stockData.expiry = null;
+              } else {
+                stockData.expiry = dateObj.toISOString();
+              }
+            } catch (e) {
+              // If date conversion fails, set to null to prevent errors
+              console.error("Date conversion error in creation:", e);
+              stockData.expiry = null;
+            }
+          }
+        }
+
         // Handle image upload
         if (req.file) {
           stockData.imageUrl = `/uploads/${req.file.filename}`;
@@ -323,18 +345,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
           price: req.body.price !== undefined ? Math.round(parseFloat(req.body.price) * 100) : undefined,
         };
 
-        // Handle expiry date properly - make sure it's a valid date
-        if (updateData.expiry) {
-          try {
-            // Check if it's already a valid date string in ISO format
-            if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(updateData.expiry)) {
-              // If not in ISO format, try to convert it
-              updateData.expiry = new Date(updateData.expiry).toISOString();
+        // Handle expiry date properly - check for empty strings and invalid dates
+        if (updateData.expiry !== undefined) {
+          if (updateData.expiry === '' || updateData.expiry === null) {
+            // Set to null for empty strings
+            updateData.expiry = null;
+          } else {
+            try {
+              // Check if it's already a valid date string in ISO format
+              if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(updateData.expiry)) {
+                // If not in ISO format, try to convert it
+                const dateObj = new Date(updateData.expiry);
+                if (isNaN(dateObj.getTime())) {
+                  // Invalid date, set to null
+                  updateData.expiry = null;
+                } else {
+                  updateData.expiry = dateObj.toISOString();
+                }
+              }
+            } catch (e) {
+              // If date conversion fails, set to null to prevent errors
+              console.error("Date conversion error:", e);
+              updateData.expiry = null;
             }
-          } catch (e) {
-            // If date conversion fails, remove the expiry field to prevent errors
-            console.error("Date conversion error:", e);
-            delete updateData.expiry;
           }
         }
 
