@@ -32,16 +32,19 @@ A comprehensive pharmaceutical promotional materials management platform designe
 
 ## Recent Changes
 
-### June 14, 2025 - Dependency Updates and Fixes
+### June 14, 2025 - Dependency Updates and TypeScript Fixes
 - Updated core dependencies to latest compatible versions
 - Fixed stock item creation bug related to specialtyId validation
 - Enhanced schema validation for specialty ID handling
-- Resolved Neon database compatibility issues
 - Updated React Query to v5.67.0
 - Updated Lucide React icons to v0.468.0
 - Updated Framer Motion to v11.14.0
-- Maintained PostgreSQL session store compatibility
-- Fixed schema validation for string-to-number conversions in forms
+- Fixed TypeScript compilation errors across the application
+- Resolved date handling issues in stock item updates
+- Fixed barcode scanner ref type compatibility
+- Corrected user management specialty type handling
+- Addressed security vulnerabilities in dependencies
+- Fixed database connection error handling and configuration
 
 ### Previous Updates
 - Completed specialty management system with database migrations
