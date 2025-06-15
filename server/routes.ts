@@ -605,28 +605,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Health check endpoint
   app.get("/api/health", async (req, res) => {
     try {
-      // Test database connection with timeout
-      const healthCheck = await Promise.race([
-        storage.getCategories(),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Health check timeout')), 3000)
-        )
-      ]);
-      
-      res.json({ 
-        status: "ok", 
-        timestamp: new Date().toISOString(), 
-        database: "connected",
-        version: process.env.npm_package_version || "unknown"
-      });
+      // Test database connection
+      await storage.getCategories();
+      res.json({ status: "ok", timestamp: new Date().toISOString(), database: "connected" });
     } catch (error) {
-      console.error('Health check failed:', error);
-      res.status(503).json({ 
-        status: "error", 
-        timestamp: new Date().toISOString(), 
-        database: "disconnected", 
-        error: error instanceof Error ? error.message : 'Unknown error'
-      });
+      res.status(503).json({ status: "error", timestamp: new Date().toISOString(), database: "disconnected", error: error.message });
     }
   });
 
