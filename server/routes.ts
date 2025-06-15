@@ -467,7 +467,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Convert numeric strings to numbers
         if (movementData.stockItemId) movementData.stockItemId = parseInt(movementData.stockItemId);
-        
+
         // Ensure fromUserId is null if it's not a valid number or is explicitly meant to be null
         if (movementData.fromUserId && !isNaN(parseInt(movementData.fromUserId))) {
             movementData.fromUserId = parseInt(movementData.fromUserId);
@@ -493,7 +493,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           movedBy: validatedData.movedBy,
           notes: validatedData.notes || undefined
         });
-        
+
         res.status(201).json(movement);
       } catch (error) {
         // Errors from executeStockMovementTransaction (e.g., insufficient stock) will be caught here
@@ -601,6 +601,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     }
   );
+
+  // Health check endpoint
+  app.get("/api/health", async (req, res) => {
+    try {
+      // Test database connection
+      await storage.getCategories();
+      res.json({ status: "ok", timestamp: new Date().toISOString(), database: "connected" });
+    } catch (error) {
+      res.status(503).json({ status: "error", timestamp: new Date().toISOString(), database: "disconnected", error: error.message });
+    }
+  });
 
   // Create HTTP server
   const httpServer = createServer(app);

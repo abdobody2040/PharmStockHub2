@@ -16,6 +16,19 @@ declare global {
 
 const app = express();
 
+// Validate critical environment variables
+function validateEnvironment() {
+  const requiredEnvVars = ['DATABASE_URL'];
+  const missing = requiredEnvVars.filter(envVar => !process.env[envVar]);
+  
+  if (missing.length > 0) {
+    console.error(`Missing required environment variables: ${missing.join(', ')}`);
+    console.error('Please check your environment configuration.');
+  }
+}
+
+validateEnvironment();
+
 // Create default admin user if it doesn't exist
 async function createDefaultAdmin() {
   try {

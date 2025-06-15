@@ -1,0 +1,102 @@
+
+> rest-express@1.0.0 check
+> tsc
+
+client/src/components/barcode/barcode-scanner.tsx:103:19 - error TS2322: Type 'RefObject<HTMLVideoElement | null>' is not assignable to type 'LegacyRef<HTMLVideoElement> | undefined'.
+  Type 'RefObject<HTMLVideoElement | null>' is not assignable to type 'RefObject<HTMLVideoElement>'.
+    Type 'HTMLVideoElement | null' is not assignable to type 'HTMLVideoElement'.
+      Type 'null' is not assignable to type 'HTMLVideoElement'.
+
+103                   ref={ref}
+                      ~~~
+
+  node_modules/@types/react/index.d.ts:303:9
+    303         ref?: LegacyRef<T> | undefined;
+                ~~~
+    The expected type comes from property 'ref' which is declared here on type 'DetailedHTMLProps<VideoHTMLAttributes<HTMLVideoElement>, HTMLVideoElement>'
+
+client/src/pages/reports-page.tsx:601:55 - error TS2769: No overload matches this call.
+  Overload 1 of 4, '(value: string | number | Date): Date', gave the following error.
+    Argument of type 'Date | null' is not assignable to parameter of type 'string | number | Date'.
+      Type 'null' is not assignable to type 'string | number | Date'.
+  Overload 2 of 4, '(value: string | number): Date', gave the following error.
+    Argument of type 'Date | null' is not assignable to parameter of type 'string | number'.
+      Type 'null' is not assignable to type 'string | number'.
+
+601                       {movements.filter(m => new Date(m.movedAt).getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000).length}
+                                                          ~~~~~~~~~
+
+
+client/src/pages/stock-movement-page.tsx:197:94 - error TS2339: Property 'region' does not exist on type '{ id: number; role: string; name: string; region: string | null; createdAt: Date | null; username: string; password: string; avatar: string | null; specialtyId: number | null; } | { ...; }'.
+  Property 'region' does not exist on type '{ name: string; role: string; }'.
+
+197                                 {fromUser?.role === "warehouse" ? "Main Storage" : fromUser?.region || "—"}
+                                                                                                 ~~~~~~
+
+client/src/pages/stock-movement-page.tsx:208:111 - error TS2339: Property 'region' does not exist on type '{ id: number; role: string; name: string; region: string | null; createdAt: Date | null; username: string; password: string; avatar: string | null; specialtyId: number | null; } | { ...; }'.
+  Property 'region' does not exist on type '{ name: string; role: string; }'.
+
+208                                 {toUser?.role === "warehouse" ? "Main Storage" : `${toUser?.role} - ${toUser?.region || "No region"}`}
+                                                                                                                  ~~~~~~
+
+client/src/pages/user-management-page.tsx:215:7 - error TS2322: Type 'string | number' is not assignable to type 'string | undefined'.
+  Type 'number' is not assignable to type 'string'.
+
+215       specialtyId: user.specialtyId || "",
+          ~~~~~~~~~~~
+
+client/src/pages/user-management-page.tsx:518:26 - error TS18046: 'specialties' is of type 'unknown'.
+
+518                         {specialties.map((specialty) => (
+                             ~~~~~~~~~~~
+
+client/src/pages/user-management-page.tsx:518:43 - error TS7006: Parameter 'specialty' implicitly has an 'any' type.
+
+518                         {specialties.map((specialty) => (
+                                              ~~~~~~~~~
+
+client/src/pages/user-management-page.tsx:657:26 - error TS18046: 'specialties' is of type 'unknown'.
+
+657                         {specialties.map((specialty) => (
+                             ~~~~~~~~~~~
+
+client/src/pages/user-management-page.tsx:657:43 - error TS7006: Parameter 'specialty' implicitly has an 'any' type.
+
+657                         {specialties.map((specialty) => (
+                                              ~~~~~~~~~
+
+server/db.ts:17:3 - error TS2561: Object literal may only specify known properties, but 'acquireTimeoutMillis' does not exist in type 'PoolConfig'. Did you mean to write 'idleTimeoutMillis'?
+
+17   acquireTimeoutMillis: 60000,
+     ~~~~~~~~~~~~~~~~~~~~
+
+server/db.ts:27:11 - error TS2339: Property 'code' does not exist on type 'Error'.
+
+27   if (err.code === '57P01') {
+             ~~~~
+
+server/routes.ts:41:36 - error TS2339: Property 'getSystemSettings' does not exist on type 'IStorage'.
+
+41     const settings = await storage.getSystemSettings();
+                                      ~~~~~~~~~~~~~~~~~
+
+server/routes.ts:46:19 - error TS2339: Property 'updateSystemSettings' does not exist on type 'IStorage'.
+
+46     await storage.updateSystemSettings(req.body);
+                     ~~~~~~~~~~~~~~~~~~~~
+
+server/routes.ts:488:40 - error TS2339: Property 'executeStockMovementTransaction' does not exist on type 'IStorage'.
+
+488         const movement = await storage.executeStockMovementTransaction({
+                                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+Found 14 errors in 6 files.
+
+Errors  Files
+     1  client/src/components/barcode/barcode-scanner.tsx:103
+     1  client/src/pages/reports-page.tsx:601
+     2  client/src/pages/stock-movement-page.tsx:197
+     5  client/src/pages/user-management-page.tsx:215
+     2  server/db.ts:17
+     3  server/routes.ts:41

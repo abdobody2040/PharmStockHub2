@@ -14,11 +14,7 @@ export const pool = new Pool({
   min: 1,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 15000,
-  acquireTimeoutMillis: 60000,
   allowExitOnIdle: false,
-  // Add connection retry logic
-  retryDelay: 1000,
-  maxRetries: 3,
 });
 
 // Handle pool errors with better logging

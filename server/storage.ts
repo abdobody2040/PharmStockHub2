@@ -402,6 +402,9 @@ export class DatabaseStorage implements IStorage {
   // Initialize with default data if needed
   private async initializeData() {
     try {
+      // Test database connection first
+      await db.select().from(categories).limit(1);
+      
       const existingCategories = await this.getCategories();
 
       // Only initialize if no categories exist
