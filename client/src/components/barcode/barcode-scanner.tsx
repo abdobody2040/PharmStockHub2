@@ -46,7 +46,6 @@ export function BarcodeScanner({ onScan, isOpen, onClose }: BarcodeScannerProps)
           setPermissionGranted(true);
         })
         .catch((err) => {
-          console.error("Camera permission error:", err);
           setPermissionGranted(false);
           toast({
             title: "Camera permission denied",
