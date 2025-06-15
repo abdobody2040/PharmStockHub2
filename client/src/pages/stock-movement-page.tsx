@@ -194,7 +194,7 @@ export default function StockMovementPage() {
                             <div>
                               <div className="text-sm text-gray-900">{fromUser?.name}</div>
                               <div className="text-sm text-gray-500">
-                                {fromUser?.role === "warehouse" ? "Main Storage" : fromUser?.region || "—"}
+                                {fromUser?.role === "warehouse" ? "Main Storage" : fromUser?.role || "—"}
                               </div>
                             </div>
                           </div>
@@ -205,7 +205,7 @@ export default function StockMovementPage() {
                             <div>
                               <div className="text-sm text-gray-900">{toUser?.name}</div>
                               <div className="text-sm text-gray-500">
-                                {toUser?.role === "warehouse" ? "Main Storage" : `${toUser?.role} - ${toUser?.region || "No region"}`}
+                                {toUser?.role === "warehouse" ? "Main Storage" : toUser?.role || "No role"}
                               </div>
                             </div>
                           </div>

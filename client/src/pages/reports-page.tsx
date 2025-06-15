@@ -598,7 +598,7 @@ export default function ReportsPage() {
                   <div className="bg-gray-50 rounded-lg p-4">
                     <h5 className="text-sm font-medium text-gray-700 mb-2">Recent Movements</h5>
                     <p className="text-3xl font-bold text-green-600">
-                      {movements.filter(m => new Date(m.movedAt).getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000).length}
+                      {movements.filter(m => m.movedAt && new Date(m.movedAt).getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000).length}
                     </p>
                     <p className="text-sm text-gray-500 mt-1">Last 7 days</p>
                   </div>

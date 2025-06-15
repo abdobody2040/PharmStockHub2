@@ -97,7 +97,7 @@ export default function UserManagementPage() {
     queryKey: ["/api/users"],
   });
 
-  const { data: specialties = [] } = useQuery({
+  const { data: specialties = [] } = useQuery<Specialty[]>({
     queryKey: ["/api/specialties"],
   });
 
@@ -212,7 +212,7 @@ export default function UserManagementPage() {
       username: user.username,
       role: user.role as RoleType,
       region: user.region || "",
-      specialtyId: user.specialtyId || "",
+      specialtyId: user.specialtyId ? user.specialtyId.toString() : "",
     });
     setShowEditUserModal(true);
   };
