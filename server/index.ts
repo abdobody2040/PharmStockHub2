@@ -24,6 +24,15 @@ function validateEnvironment() {
   if (missing.length > 0) {
     console.error(`Missing required environment variables: ${missing.join(', ')}`);
     console.error('Please check your environment configuration.');
+    console.warn('Application may not function correctly without proper environment setup.');
+  }
+  
+  // Check for recommended environment variables
+  const recommendedEnvVars = ['DEFAULT_ADMIN_USERNAME', 'DEFAULT_ADMIN_PASSWORD'];
+  const missingRecommended = recommendedEnvVars.filter(envVar => !process.env[envVar]);
+  
+  if (missingRecommended.length > 0) {
+    console.warn(`Recommended environment variables not set: ${missingRecommended.join(', ')}`);
   }
 }
 

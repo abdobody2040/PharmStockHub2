@@ -443,8 +443,13 @@ export class DatabaseStorage implements IStorage {
   // Initialize with default data if needed
   private async initializeData() {
     try {
-      // Test database connection first
-      await db.select().from(categories).limit(1);
+      // Test database connection first with timeout
+      const testQuery = db.select().from(categories).limit(1);
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Database connection timeout')), 5000)
+      );
+      
+      await Promise.race([testQuery, timeoutPromise]);
       
       const existingCategories = await this.getCategories();
 
