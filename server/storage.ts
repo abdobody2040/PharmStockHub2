@@ -66,6 +66,20 @@ export interface IStorage {
   // Permission check
   hasPermission(userId: number, permission: keyof typeof ROLE_PERMISSIONS.ceo): Promise<boolean>;
 
+  // System settings operations
+  getSystemSettings(): Promise<any>;
+  updateSystemSettings(settings: any): Promise<void>;
+
+  // Stock movement transaction
+  executeStockMovementTransaction(args: {
+    stockItemId: number;
+    fromUserId?: number | null;
+    toUserId?: number | null;
+    quantity: number;
+    notes?: string;
+    movedBy: number;
+  }): Promise<StockMovement>;
+
   // Session store
   sessionStore: SessionStore;
 }
@@ -371,6 +385,33 @@ async updateUser(id: number, userData: Partial<User>): Promise<User | undefined>
 
     const role = user.role as RoleType;
     return ROLE_PERMISSIONS[role][permission] === true;
+  }
+
+  async getSystemSettings(): Promise<any> {
+    return {};
+  }
+
+  async updateSystemSettings(settings: any): Promise<void> {
+    // Memory implementation - settings not persisted
+  }
+
+  async executeStockMovementTransaction(args: {
+    stockItemId: number;
+    fromUserId?: number | null;
+    toUserId?: number | null;
+    quantity: number;
+    notes?: string;
+    movedBy: number;
+  }): Promise<StockMovement> {
+    const movement = await this.createMovement({
+      stockItemId: args.stockItemId,
+      fromUserId: args.fromUserId ?? null,
+      toUserId: args.toUserId ?? 1, // Default to admin user if not specified
+      quantity: args.quantity,
+      notes: args.notes ?? null,
+      movedBy: args.movedBy,
+    });
+    return movement;
   }
 }
 

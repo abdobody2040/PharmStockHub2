@@ -18,9 +18,9 @@ export const pool = new Pool({
 });
 
 // Handle pool errors with better logging
-pool.on('error', (err) => {
+pool.on('error', (err: any) => {
   console.error('Database pool error:', err.message);
-  if (err.code === '57P01') {
+  if ('code' in err && err.code === '57P01') {
     console.log('Database connection terminated by administrator, will reconnect automatically');
   }
 });
