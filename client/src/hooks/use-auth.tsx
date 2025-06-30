@@ -92,12 +92,12 @@ const ROLE_PERMISSIONS = {
   },
   productManager: {
     canViewAll: false,
-    canAddItems: true,
-    canEditItems: true,
+    canAddItems: false,
+    canEditItems: false,
     canRemoveItems: false,
-    canMoveStock: true,
+    canMoveStock: false,
     canManageUsers: false,
-    canViewReports: true,
+    canViewReports: false,
     canAccessSettings: false,
     canCreateRequests: true
   },

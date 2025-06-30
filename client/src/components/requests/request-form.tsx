@@ -50,7 +50,7 @@ interface RequestFormProps {
 
 export function RequestForm({ onSubmit, isLoading = false }: RequestFormProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [items, setItems] = useState([{ stockItemId: "", itemName: "", quantity: "", notes: "" }]);
+  const [items, setItems] = useState([{ stockItemId: "none", itemName: "", quantity: "", notes: "" }]);
 
   const { data: users = [] } = useQuery<User[]>({
     queryKey: ["/api/users"],
@@ -93,7 +93,7 @@ export function RequestForm({ onSubmit, isLoading = false }: RequestFormProps) {
   };
 
   const addItem = () => {
-    setItems([...items, { stockItemId: "", itemName: "", quantity: "", notes: "" }]);
+    setItems([...items, { stockItemId: "none", itemName: "", quantity: "", notes: "" }]);
   };
 
   const removeItem = (index: number) => {
@@ -297,6 +297,7 @@ export function RequestForm({ onSubmit, isLoading = false }: RequestFormProps) {
                         <SelectValue placeholder="Select existing item" />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="none">No existing item</SelectItem>
                         {stockItems.map((stockItem) => (
                           <SelectItem key={stockItem.id} value={stockItem.id.toString()}>
                             {stockItem.name}
