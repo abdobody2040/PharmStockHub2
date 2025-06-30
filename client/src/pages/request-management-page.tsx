@@ -233,7 +233,7 @@ export default function RequestManagementPage() {
             </p>
           </div>
           
-          {hasPermission("canCreateRequests") && (
+          {(user?.role === 'productManager' || user?.role === 'stockKeeper' || hasPermission("canCreateRequests")) && (
             <Button onClick={() => setShowCreateModal(true)}>
               <Plus className="h-4 w-4 mr-2" />
               New Request
