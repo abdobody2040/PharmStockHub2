@@ -182,7 +182,11 @@ export function RequestForm({ onSubmit, isLoading = false }: RequestFormProps) {
             <FormItem>
               <FormLabel>Title</FormLabel>
               <FormControl>
-                <Input placeholder="Enter request title" {...field} />
+                <Input placeholder={
+                  requestType === REQUEST_TYPES.RECEIVE_INVENTORY 
+                    ? "e.g., Incoming Inventory - Pens and Notebooks" 
+                    : "Enter request title"
+                } {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -197,7 +201,11 @@ export function RequestForm({ onSubmit, isLoading = false }: RequestFormProps) {
               <FormLabel>Description</FormLabel>
               <FormControl>
                 <Textarea 
-                  placeholder="Enter request description" 
+                  placeholder={
+                    requestType === REQUEST_TYPES.RECEIVE_INVENTORY 
+                      ? "Describe the incoming inventory you expect to receive. This will notify the Stock Keeper to prepare for the delivery." 
+                      : "Enter request description"
+                  }
                   className="min-h-[100px]"
                   {...field} 
                 />
@@ -262,27 +270,35 @@ export function RequestForm({ onSubmit, isLoading = false }: RequestFormProps) {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
-              Request Items
+              {requestType === REQUEST_TYPES.RECEIVE_INVENTORY ? "Expected Incoming Items" : "Request Items"}
               <Button type="button" onClick={addItem} size="sm">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Item
               </Button>
             </CardTitle>
+            {requestType === REQUEST_TYPES.RECEIVE_INVENTORY && (
+              <p className="text-sm text-gray-600">
+                List all items you expect to receive. This helps the Stock Keeper prepare for incoming inventory.
+              </p>
+            )}
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               {items.map((item, index) => (
                 <div key={index} className="grid grid-cols-1 md:grid-cols-5 gap-4 p-4 border rounded-lg">
                   <div>
-                    <label className="text-sm font-medium">Stock Item</label>
+                    <label className="text-sm font-medium">
+                      {requestType === REQUEST_TYPES.RECEIVE_INVENTORY ? "Existing Stock Item (Optional)" : "Stock Item"}
+                    </label>
                     <Select
                       value={item.stockItemId}
                       onValueChange={(value) => updateItem(index, 'stockItemId', value)}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select item" />
+                        <SelectValue placeholder="Select existing item" />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="">No existing item</SelectItem>
                         {stockItems.map((stockItem) => (
                           <SelectItem key={stockItem.id} value={stockItem.id.toString()}>
                             {stockItem.name}
@@ -293,21 +309,25 @@ export function RequestForm({ onSubmit, isLoading = false }: RequestFormProps) {
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium">Item Name (if not in stock)</label>
+                    <label className="text-sm font-medium">
+                      {requestType === REQUEST_TYPES.RECEIVE_INVENTORY ? "Item Name" : "Item Name (if not in stock)"}
+                    </label>
                     <Input
                       value={item.itemName}
                       onChange={(e) => updateItem(index, 'itemName', e.target.value)}
-                      placeholder="Custom item name"
+                      placeholder={requestType === REQUEST_TYPES.RECEIVE_INVENTORY ? "e.g., Pen, Notebook" : "Custom item name"}
                     />
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium">Quantity</label>
+                    <label className="text-sm font-medium">
+                      {requestType === REQUEST_TYPES.RECEIVE_INVENTORY ? "Expected Quantity" : "Quantity"}
+                    </label>
                     <Input
                       type="number"
                       value={item.quantity}
                       onChange={(e) => updateItem(index, 'quantity', e.target.value)}
-                      placeholder="0"
+                      placeholder={requestType === REQUEST_TYPES.RECEIVE_INVENTORY ? "e.g., 100" : "0"}
                       min="1"
                     />
                   </div>
