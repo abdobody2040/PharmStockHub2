@@ -110,6 +110,7 @@ export interface IStorage {
   createRequestItem(item: InsertRequestItem): Promise<RequestItem>;
   approveRequest(id: number, notes?: string): Promise<InventoryRequest | undefined>;
   denyRequest(id: number, notes?: string): Promise<InventoryRequest | undefined>;
+  approveAndForward(id: number, notes?: string): Promise<InventoryRequest | undefined>;
 
   // Session store
   sessionStore: SessionStore;
@@ -426,7 +427,12 @@ export class MemStorage implements IStorage {
       notes: null,
       assignedTo: request.assignedTo ?? null,
       fileUrl: request.fileUrl ?? null,
-      requestData: request.requestData ?? null
+      requestData: request.requestData ?? null,
+      finalAssignee: request.finalAssignee ?? null,
+      secondaryApprover: request.secondaryApprover ?? null,
+      secondaryNotes: null,
+      shareFromUserId: (request as any).shareFromUserId ?? null,
+      shareToUserId: (request as any).shareToUserId ?? null
     };
     this.requestsMap.set(id, newRequest);
     return newRequest;
@@ -480,6 +486,23 @@ export class MemStorage implements IStorage {
       notes,
       completedAt: new Date()
     });
+  }
+
+  async approveAndForward(id: number, notes?: string): Promise<InventoryRequest | undefined> {
+    const request = await this.getRequest(id);
+    if (!request) return undefined;
+
+    // For inventory sharing: PM2 approves and forwards to Stock Keeper
+    if (request.type === 'inventory_share' && request.finalAssignee) {
+      return this.updateRequest(id, {
+        status: "pending_secondary",
+        secondaryNotes: notes,
+        assignedTo: request.finalAssignee, // Move to Stock Keeper
+      });
+    }
+
+    // For other types, just approve
+    return this.approveRequest(id, notes);
   }
 
 async updateUser(id: number, userData: Partial<User>): Promise<User | undefined> {
@@ -1024,6 +1047,23 @@ export class DatabaseStorage implements IStorage {
       notes,
       completedAt: new Date(),
     });
+  }
+
+  async approveAndForward(id: number, notes?: string): Promise<InventoryRequest | undefined> {
+    const request = await this.getRequest(id);
+    if (!request) return undefined;
+
+    // For inventory sharing: PM2 approves and forwards to Stock Keeper
+    if (request.type === 'inventory_share' && request.finalAssignee) {
+      return this.updateRequest(id, {
+        status: "pending_secondary",
+        secondaryNotes: notes,
+        assignedTo: request.finalAssignee, // Move to Stock Keeper
+      });
+    }
+
+    // For other types, just approve
+    return this.approveRequest(id, notes);
   }
 }
 

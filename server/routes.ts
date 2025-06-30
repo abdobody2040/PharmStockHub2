@@ -668,11 +668,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         const user = req.user as User;
         
-        const requestData = {
+        // Set up workflow routing based on request type
+        let requestData = {
           ...req.body,
           requestedBy: user.id,
           assignedTo: req.body.assignedTo ? parseInt(req.body.assignedTo) : null,
         };
+
+        // Handle workflow routing
+        if (req.body.type === 'inventory_share') {
+          // PM1 → PM2 → Stock Keeper workflow
+          requestData = {
+            ...requestData,
+            assignedTo: req.body.assignedTo ? parseInt(req.body.assignedTo) : null, // PM2
+            finalAssignee: req.body.finalAssignee ? parseInt(req.body.finalAssignee) : null, // Stock Keeper
+            secondaryApprover: req.body.assignedTo ? parseInt(req.body.assignedTo) : null, // Same as assignedTo for PM2
+            shareFromUserId: user.id, // PM1
+            shareToUserId: req.body.assignedTo ? parseInt(req.body.assignedTo) : null, // PM2
+          };
+        } else {
+          // Direct PM → Stock Keeper workflow (prepare_order, receive_inventory)
+          requestData = {
+            ...requestData,
+            finalAssignee: req.body.assignedTo ? parseInt(req.body.assignedTo) : null,
+          };
+        }
 
         // Handle file upload
         if (req.file) {
@@ -746,6 +766,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         const updatedRequest = await storage.updateRequest(id, updateData);
+        res.json(updatedRequest);
+      } catch (error) {
+        next(error);
+      }
+    }
+  );
+
+  // Approve and forward request (for inventory share workflow)
+  app.post(
+    "/api/requests/:id/approve-forward",
+    isAuthenticated,
+    async (req, res, next) => {
+      try {
+        const id = parseInt(req.params.id);
+        const user = req.user as User;
+        const { notes } = req.body;
+
+        // Check if user can approve this request
+        const request = await storage.getRequest(id);
+        if (!request) {
+          return res.status(404).json({ message: "Request not found" });
+        }
+
+        // Only assigned user can approve and forward
+        if (request.assignedTo !== user.id) {
+          return res.status(403).json({ message: "Not authorized to approve this request" });
+        }
+
+        const updatedRequest = await storage.approveAndForward(id, notes);
         res.json(updatedRequest);
       } catch (error) {
         next(error);

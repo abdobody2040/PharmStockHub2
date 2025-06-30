@@ -96,13 +96,14 @@ export const insertStockAllocationSchema = createInsertSchema(stockAllocations).
 
 // Request types enum
 export const REQUEST_TYPES = {
-  PREPARE_ORDER: "prepare_order",
-  INVENTORY_SHARE: "inventory_share", 
-  RECEIVE_INVENTORY: "receive_inventory"
+  PREPARE_ORDER: "prepare_order",           // PM → Stock Keeper: Request to prepare order
+  INVENTORY_SHARE: "inventory_share",       // PM1 → PM2 → Stock Keeper: Share quota between PMs
+  RECEIVE_INVENTORY: "receive_inventory"    // PM → Stock Keeper: Inform about incoming inventory
 } as const;
 
 export const REQUEST_STATUS = {
   PENDING: "pending",
+  PENDING_SECONDARY: "pending_secondary", // For inventory_share: waiting for PM2 approval
   APPROVED: "approved", 
   DENIED: "denied",
   COMPLETED: "completed"
@@ -113,13 +114,18 @@ export const inventoryRequests = pgTable("inventory_requests", {
   id: serial("id").primaryKey(),
   type: text("type").notNull(), // prepare_order, inventory_share, receive_inventory
   requestedBy: integer("requested_by").notNull().references(() => users.id),
-  assignedTo: integer("assigned_to").references(() => users.id), // Stock keeper or other PM
+  assignedTo: integer("assigned_to").references(() => users.id), // Current assignee (PM2 or Stock Keeper)
+  finalAssignee: integer("final_assignee").references(() => users.id), // Final Stock Keeper assignee
+  secondaryApprover: integer("secondary_approver").references(() => users.id), // PM2 for sharing requests
   status: text("status").notNull().default("pending"),
   title: text("title").notNull(),
   description: text("description"),
   notes: text("notes"), // For approver/denier notes
+  secondaryNotes: text("secondary_notes"), // Notes from PM2 in sharing workflow
   fileUrl: text("file_url"), // For Excel uploads
   requestData: text("request_data"), // JSON data for specific request details
+  shareFromUserId: integer("share_from_user_id").references(() => users.id), // For sharing: PM1
+  shareToUserId: integer("share_to_user_id").references(() => users.id), // For sharing: PM2
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
   completedAt: timestamp("completed_at"),

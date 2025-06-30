@@ -31,6 +31,9 @@ const requestSchema = z.object({
   title: z.string().min(1, "Title is required"),
   description: z.string().optional(),
   assignedTo: z.string().optional(),
+  // For inventory sharing workflow
+  shareToUserId: z.string().optional(),
+  finalAssignee: z.string().optional(),
   items: z.array(z.object({
     stockItemId: z.string().optional(),
     itemName: z.string().optional(),
@@ -203,6 +206,34 @@ export function RequestForm({ onSubmit, isLoading = false }: RequestFormProps) {
             </FormItem>
           )}
         />
+
+        {/* Final Assignee for Inventory Share workflow */}
+        {requestType === REQUEST_TYPES.INVENTORY_SHARE && (
+          <FormField
+            control={form.control}
+            name="finalAssignee"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Final Stock Keeper Assignee</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select final stock keeper" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {stockKeepers.map((user) => (
+                      <SelectItem key={user.id} value={user.id.toString()}>
+                        {user.name} ({user.username})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
 
         {/* File Upload */}
         <Card>

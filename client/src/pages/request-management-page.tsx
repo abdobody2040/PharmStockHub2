@@ -122,11 +122,60 @@ export default function RequestManagementPage() {
     },
   });
 
+  const approveAndForwardMutation = useMutation({
+    mutationFn: async ({ id, notes }: { id: number; notes?: string }) => {
+      return apiRequest(`/api/requests/${id}/approve-forward`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ notes }),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
+      setShowApprovalModal(false);
+      setCurrentRequest(null);
+      setApprovalNotes("");
+      toast({
+        title: "Success",
+        description: "Request approved and forwarded to Stock Keeper",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to approve and forward request",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleCreateRequest = (formData: FormData) => {
     createRequestMutation.mutate(formData);
   };
 
   const handleApproval = (action: "approved" | "denied") => {
+    if (!currentRequest) return;
+
+    updateRequestMutation.mutate({
+      id: currentRequest.id,
+      data: {
+        status: action,
+        notes: approvalNotes,
+        completedAt: new Date(),
+      },
+    });
+  };
+
+  const handleApproveAndForward = () => {
+    if (!currentRequest) return;
+
+    approveAndForwardMutation.mutate({
+      id: currentRequest.id,
+      notes: approvalNotes,
+    });
+  };
+
+  const handleApprovalAction = (action: "approved" | "denied") => {
     if (!currentRequest) return;
 
     const updateData: any = {
@@ -331,15 +380,31 @@ export default function RequestManagementPage() {
                 >
                   Cancel
                 </Button>
-                <Button
-                  onClick={() => handleApproval(approvalAction)}
-                  variant={approvalAction === "approved" ? "default" : "destructive"}
-                  disabled={updateRequestMutation.isPending}
-                >
-                  {updateRequestMutation.isPending ? "Processing..." : 
-                    (approvalAction === "approved" ? "Approve" : "Deny")
-                  }
-                </Button>
+                
+                {/* Show different buttons based on request type and workflow stage */}
+                {currentRequest?.type === 'inventory_share' && 
+                 currentRequest?.status === 'pending' && 
+                 approvalAction === "approved" ? (
+                  // PM2 in inventory sharing workflow - show "Approve & Forward"
+                  <Button
+                    onClick={handleApproveAndForward}
+                    variant="default"
+                    disabled={approveAndForwardMutation.isPending}
+                  >
+                    {approveAndForwardMutation.isPending ? "Processing..." : "Approve & Forward to Stock Keeper"}
+                  </Button>
+                ) : (
+                  // Regular approve/deny button for other cases
+                  <Button
+                    onClick={() => handleApproval(approvalAction)}
+                    variant={approvalAction === "approved" ? "default" : "destructive"}
+                    disabled={updateRequestMutation.isPending}
+                  >
+                    {updateRequestMutation.isPending ? "Processing..." : 
+                      (approvalAction === "approved" ? "Approve" : "Deny")
+                    }
+                  </Button>
+                )}
               </div>
             </div>
           </DialogContent>

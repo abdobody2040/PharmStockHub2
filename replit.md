@@ -32,6 +32,18 @@ A comprehensive pharmaceutical promotional materials management platform designe
 
 ## Recent Changes
 
+### June 30, 2025 - Enhanced Request Management Workflows
+- Implemented three specific request workflows for Product Managers:
+  1. **Prepare Order**: PM → Stock Keeper (direct workflow)
+  2. **Inventory Share**: PM1 → PM2 → Stock Keeper (two-stage approval)
+  3. **Receive Inventory**: PM → Stock Keeper (notification workflow)
+- Added approve and forward functionality for inventory sharing workflow
+- Enhanced database schema with workflow routing fields (finalAssignee, secondaryApprover, etc.)
+- Updated request form to dynamically show appropriate fields based on request type
+- Added role-based permissions for Product Manager and Stock Keeper roles
+- Implemented multi-stage approval process with proper workflow routing
+- Enhanced request management UI with workflow-specific buttons and status indicators
+
 ### June 14, 2025 - Dependency Updates and TypeScript Fixes
 - Updated core dependencies to latest compatible versions
 - Fixed stock item creation bug related to specialtyId validation
