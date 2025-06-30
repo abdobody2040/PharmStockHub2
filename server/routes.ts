@@ -368,6 +368,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Request not found" });
       }
       
+      // Get request items
+      const items = await storage.getRequestItems(id);
+      
+      res.json({
+        ...request,
+        items
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/requests/:id", isAuthenticated, async (req, res, next) => {
+    try {
+      const id = parseInt(req.params.id);
+      const request = await storage.getRequest(id);
+      
+      if (!request) {
+        return res.status(404).json({ error: "Request not found" });
+      }
+      
       res.json(request);
     } catch (error) {
       next(error);
@@ -499,6 +520,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       res.json(request);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Dedicated file upload endpoint for existing requests
+  app.post("/api/requests/:id/upload", isAuthenticated, upload.single('attachment'), async (req, res, next) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      if (!req.file) {
+        return res.status(400).json({ error: "No file uploaded" });
+      }
+      
+      // Update the request with the file URL
+      const updatedRequest = await storage.updateRequest(id, {
+        fileUrl: req.file.path
+      });
+      
+      if (!updatedRequest) {
+        return res.status(404).json({ error: "Request not found" });
+      }
+      
+      res.json({
+        message: "File uploaded successfully",
+        fileUrl: req.file.path,
+        request: updatedRequest
+      });
     } catch (error) {
       next(error);
     }

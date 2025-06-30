@@ -1,0 +1,149 @@
+I want to implement a Request Approval System between two user roles:
+
+Product Manager
+
+Stock Keeper
+
+🔧 Tech Stack
+Frontend:
+
+React 18.3.1 + TypeScript
+
+Vite
+
+Wouter (routing)
+
+TailwindCSS + Radix UI + Lucide Icons
+
+React Hook Form + Zod
+
+TanStack React Query
+
+Framer Motion
+
+Backend:
+
+Node.js 20 + Express 4.21.2
+
+TypeScript 5.8.3
+
+Passport.js (local auth)
+
+Express Session
+
+Multer (file upload)
+
+Database:
+
+PostgreSQL 16 (via Replit DB)
+
+Drizzle ORM 0.39.3
+
+Drizzle Kit for schema/migrations
+
+📦 New Feature: Inventory Request & Approval System
+🧩 System Entities
+InventoryRequest table:
+
+id: UUID
+
+request_type: enum → prepare_order, share_quota, receive_inventory
+
+from_user_id → FK to user
+
+to_user_id → FK to user (Stock Keeper or another PM)
+
+status: pending | approved | denied
+
+notes: optional text
+
+created_at, updated_at: timestamps
+
+InventoryRequestItem table:
+
+id, request_id → FK
+
+product_id → FK
+
+quantity
+
+InventoryRequestFile table:
+
+id, request_id → FK
+
+file_path
+
+uploaded_at
+
+🔒 Roles and Behavior
+Product Manager can:
+
+Create:
+
+prepare_order → to stock keeper
+
+share_quota → to another product manager → if approved, automatically create prepare_order to stock keeper
+
+receive_inventory → to stock keeper
+
+Upload Excel file (.xls, .xlsx) on request
+
+Stock Keeper can:
+
+View incoming requests
+
+Approve/Deny requests with optional note
+
+Restock or confirm received items manually
+
+🌐 Backend API Routes to Implement
+POST /api/requests → Create request (with items + optional file)
+
+GET /api/requests → Get all requests (with role-based filtering)
+
+GET /api/requests/:id → Get request detail
+
+POST /api/requests/:id/approve → Mark as approved
+
+POST /api/requests/:id/deny → Mark as denied
+
+POST /api/requests/:id/upload → Upload Excel file
+
+💻 Frontend UI
+Use React Query for data fetching
+
+Create a form with:
+
+Select request_type (enum)
+
+Add multiple product items (product_id + quantity) dynamically
+
+File upload field (Excel)
+
+Select user to send to (dropdown of Product Managers / Stock Keepers)
+
+Validate with Zod + React Hook Form
+
+Show list of requests for the logged-in user (sent/received) with filtering
+
+Approve/Deny actions (only available to recipients)
+
+On approving a share_quota request, automatically trigger a follow-up prepare_order to Stock Keeper
+
+📂 File Upload
+Use Multer in backend
+
+Store files in /uploads folder
+
+Accept .xls, .xlsx only
+
+Store file path in InventoryRequestFile table
+
+✅ Start by:
+Creating Drizzle schema + migration files for the three tables
+
+Implementing Express routes and request validation using TypeScript
+
+Adding React form + table components using Tailwind, Zod, React Query
+
+Keep code modular and clean. Let me know if you need existing project structure reference.

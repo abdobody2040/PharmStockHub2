@@ -141,6 +141,17 @@ export const requestItems = pgTable("request_items", {
   notes: text("notes"),
 });
 
+// File uploads table (for better file management)
+export const requestFiles = pgTable("request_files", {
+  id: serial("id").primaryKey(),
+  requestId: integer("request_id").notNull().references(() => inventoryRequests.id, { onDelete: "cascade" }),
+  filePath: text("file_path").notNull(),
+  originalName: text("original_name").notNull(),
+  fileSize: integer("file_size"),
+  mimeType: text("mime_type"),
+  uploadedAt: timestamp("uploaded_at").defaultNow(),
+});
+
 // Insert schemas for requests
 export const insertInventoryRequestSchema = createInsertSchema(inventoryRequests).pick({
   type: true,
@@ -160,11 +171,21 @@ export const insertRequestItemSchema = createInsertSchema(requestItems).pick({
   notes: true,
 });
 
+export const insertRequestFileSchema = createInsertSchema(requestFiles).pick({
+  requestId: true,
+  filePath: true,
+  originalName: true,
+  fileSize: true,
+  mimeType: true,
+});
+
 // Types
 export type InventoryRequest = typeof inventoryRequests.$inferSelect;
 export type InsertInventoryRequest = typeof inventoryRequests.$inferInsert;
 export type RequestItem = typeof requestItems.$inferSelect;
 export type InsertRequestItem = typeof requestItems.$inferInsert;
+export type RequestFile = typeof requestFiles.$inferSelect;
+export type InsertRequestFile = typeof requestFiles.$inferInsert;
 
 
 
