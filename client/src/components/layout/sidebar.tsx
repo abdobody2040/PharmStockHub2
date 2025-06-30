@@ -11,7 +11,8 @@ import {
   Menu,
   FlaskRound,
   BarChart3,
-  LineChart
+  LineChart,
+  FileText
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -28,7 +29,7 @@ export function Sidebar({ className }: SidebarProps) {
   const [activeRole, setActiveRole] = useState<RoleType>(user?.role as RoleType);
 
   const roles: RoleType[] = [
-    'ceo', 'marketer', 'salesManager', 'stockManager', 'admin', 'medicalRep'
+    'ceo', 'marketer', 'salesManager', 'stockManager', 'admin', 'medicalRep', 'productManager', 'stockKeeper'
   ];
 
   type MenuItem = {
@@ -68,6 +69,12 @@ export function Sidebar({ className }: SidebarProps) {
       icon: <BarChart3 className="mr-3 h-5 w-5" />,
       href: "/analytics",
       requiredPermission: "canViewReports"
+    },
+    {
+      title: "Request Management",
+      icon: <FileText className="mr-3 h-5 w-5" />,
+      href: "/requests",
+      requiredPermission: null // Allow for both canCreateRequests OR canManageRequests users
     },
     {
       title: "User Management",
@@ -121,12 +128,14 @@ export function Sidebar({ className }: SidebarProps) {
       };
 
       const rolePermissions: RolePermissions = {
-        'ceo': ['canMoveStock', 'canViewReports', 'canManageUsers', 'canAccessSettings'],
+        'ceo': ['canMoveStock', 'canViewReports', 'canManageUsers', 'canAccessSettings', 'canCreateRequests', 'canManageRequests'],
         'marketer': ['canMoveStock', 'canViewReports'],
         'salesManager': ['canMoveStock', 'canViewReports', 'canManageUsers'],
         'stockManager': ['canMoveStock', 'canAccessSettings'],
-        'admin': ['canManageUsers', 'canAccessSettings'],
-        'medicalRep': []
+        'admin': ['canManageUsers', 'canAccessSettings', 'canCreateRequests', 'canManageRequests'],
+        'medicalRep': [],
+        'productManager': ['canMoveStock', 'canViewReports', 'canCreateRequests', 'canUploadFiles', 'canShareInventory'],
+        'stockKeeper': ['canMoveStock', 'canViewReports', 'canManageRequests', 'canRestockInventory', 'canValidateInventory']
       };
 
       const permissionList = rolePermissions[activeRole as keyof typeof rolePermissions] || [];

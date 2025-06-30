@@ -100,6 +100,17 @@ export interface IStorage {
     movedBy: number;
   }): Promise<StockMovement>;
 
+  // Request operations
+  getRequests(): Promise<InventoryRequest[]>;
+  getRequest(id: number): Promise<InventoryRequest | undefined>;
+  createRequest(request: InsertInventoryRequest): Promise<InventoryRequest>;
+  updateRequest(id: number, request: Partial<InventoryRequest>): Promise<InventoryRequest | undefined>;
+  deleteRequest(id: number): Promise<boolean>;
+  getRequestItems(requestId: number): Promise<RequestItem[]>;
+  createRequestItem(item: InsertRequestItem): Promise<RequestItem>;
+  approveRequest(id: number, notes?: string): Promise<InventoryRequest | undefined>;
+  denyRequest(id: number, notes?: string): Promise<InventoryRequest | undefined>;
+
   // Session store
   sessionStore: SessionStore;
 }
@@ -112,6 +123,8 @@ export class MemStorage implements IStorage {
   private stockItemsMap: Map<number, StockItem>;
   private stockAllocationsMap: Map<number, StockAllocation>;
   private stockMovementsMap: Map<number, StockMovement>;
+  private requestsMap: Map<number, InventoryRequest>;
+  private requestItemsMap: Map<number, RequestItem>;
 
   private userIdCounter: number;
   private categoryIdCounter: number;
@@ -119,6 +132,8 @@ export class MemStorage implements IStorage {
   private stockItemIdCounter: number;
   private stockAllocationIdCounter: number;
   private stockMovementIdCounter: number;
+  private requestIdCounter: number;
+  private requestItemIdCounter: number;
 
   sessionStore: SessionStore;
 
@@ -129,6 +144,8 @@ export class MemStorage implements IStorage {
     this.stockItemsMap = new Map();
     this.stockAllocationsMap = new Map();
     this.stockMovementsMap = new Map();
+    this.requestsMap = new Map();
+    this.requestItemsMap = new Map();
 
     this.userIdCounter = 1;
     this.categoryIdCounter = 1;
@@ -136,6 +153,8 @@ export class MemStorage implements IStorage {
     this.stockItemIdCounter = 1;
     this.stockAllocationIdCounter = 1;
     this.stockMovementIdCounter = 1;
+    this.requestIdCounter = 1;
+    this.requestItemIdCounter = 1;
 
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000, // Clear expired sessions every day
@@ -383,6 +402,84 @@ export class MemStorage implements IStorage {
     };
     this.stockMovementsMap.set(id, newMovement);
     return newMovement;
+  }
+
+  // Request operations
+  async getRequests(): Promise<InventoryRequest[]> {
+    return Array.from(this.requestsMap.values());
+  }
+
+  async getRequest(id: number): Promise<InventoryRequest | undefined> {
+    return this.requestsMap.get(id);
+  }
+
+  async createRequest(request: InsertInventoryRequest): Promise<InventoryRequest> {
+    const id = this.requestIdCounter++;
+    const newRequest: InventoryRequest = { 
+      ...request, 
+      id,
+      status: "pending",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      completedAt: null,
+      description: request.description ?? null,
+      notes: null,
+      assignedTo: request.assignedTo ?? null,
+      fileUrl: request.fileUrl ?? null,
+      requestData: request.requestData ?? null
+    };
+    this.requestsMap.set(id, newRequest);
+    return newRequest;
+  }
+
+  async updateRequest(id: number, requestData: Partial<InventoryRequest>): Promise<InventoryRequest | undefined> {
+    const existingRequest = this.requestsMap.get(id);
+    if (!existingRequest) return undefined;
+    
+    const updatedRequest = { 
+      ...existingRequest, 
+      ...requestData,
+      updatedAt: new Date()
+    };
+    this.requestsMap.set(id, updatedRequest);
+    return updatedRequest;
+  }
+
+  async deleteRequest(id: number): Promise<boolean> {
+    return this.requestsMap.delete(id);
+  }
+
+  async getRequestItems(requestId: number): Promise<RequestItem[]> {
+    return Array.from(this.requestItemsMap.values()).filter(item => item.requestId === requestId);
+  }
+
+  async createRequestItem(item: InsertRequestItem): Promise<RequestItem> {
+    const id = this.requestItemIdCounter++;
+    const newItem: RequestItem = { 
+      ...item, 
+      id,
+      notes: item.notes ?? null,
+      stockItemId: item.stockItemId ?? null,
+      itemName: item.itemName ?? null
+    };
+    this.requestItemsMap.set(id, newItem);
+    return newItem;
+  }
+
+  async approveRequest(id: number, notes?: string): Promise<InventoryRequest | undefined> {
+    return this.updateRequest(id, { 
+      status: "approved", 
+      notes,
+      completedAt: new Date()
+    });
+  }
+
+  async denyRequest(id: number, notes?: string): Promise<InventoryRequest | undefined> {
+    return this.updateRequest(id, { 
+      status: "denied", 
+      notes,
+      completedAt: new Date()
+    });
   }
 
 async updateUser(id: number, userData: Partial<User>): Promise<User | undefined> {
@@ -849,6 +946,83 @@ export class DatabaseStorage implements IStorage {
         .returning();
 
       return newMovement;
+    });
+  }
+
+  // Request operations for DatabaseStorage
+  async getRequests(): Promise<InventoryRequest[]> {
+    return await db.select().from(inventoryRequests);
+  }
+
+  async getRequest(id: number): Promise<InventoryRequest | undefined> {
+    const result = await db
+      .select()
+      .from(inventoryRequests)
+      .where(eq(inventoryRequests.id, id))
+      .limit(1);
+    return result[0];
+  }
+
+  async createRequest(request: InsertInventoryRequest): Promise<InventoryRequest> {
+    const [newRequest] = await db
+      .insert(inventoryRequests)
+      .values({
+        ...request,
+        status: "pending",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returning();
+    return newRequest;
+  }
+
+  async updateRequest(id: number, requestData: Partial<InventoryRequest>): Promise<InventoryRequest | undefined> {
+    const [updatedRequest] = await db
+      .update(inventoryRequests)
+      .set({
+        ...requestData,
+        updatedAt: new Date(),
+      })
+      .where(eq(inventoryRequests.id, id))
+      .returning();
+    return updatedRequest;
+  }
+
+  async deleteRequest(id: number): Promise<boolean> {
+    const result = await db
+      .delete(inventoryRequests)
+      .where(eq(inventoryRequests.id, id));
+    return result.rowCount !== null && result.rowCount > 0;
+  }
+
+  async getRequestItems(requestId: number): Promise<RequestItem[]> {
+    return await db
+      .select()
+      .from(requestItems)
+      .where(eq(requestItems.requestId, requestId));
+  }
+
+  async createRequestItem(item: InsertRequestItem): Promise<RequestItem> {
+    const [newItem] = await db
+      .insert(requestItems)
+      .values(item)
+      .returning();
+    return newItem;
+  }
+
+  async approveRequest(id: number, notes?: string): Promise<InventoryRequest | undefined> {
+    return this.updateRequest(id, {
+      status: "approved",
+      notes,
+      completedAt: new Date(),
+    });
+  }
+
+  async denyRequest(id: number, notes?: string): Promise<InventoryRequest | undefined> {
+    return this.updateRequest(id, {
+      status: "denied", 
+      notes,
+      completedAt: new Date(),
     });
   }
 }
