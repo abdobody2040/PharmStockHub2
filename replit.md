@@ -32,17 +32,42 @@ A comprehensive pharmaceutical promotional materials management platform designe
 
 ## Recent Changes
 
-### June 30, 2025 - Enhanced Request Management Workflows
-- Implemented three specific request workflows for Product Managers:
-  1. **Prepare Order**: PM → Stock Keeper (direct workflow)
-  2. **Inventory Share**: PM1 → PM2 → Stock Keeper (two-stage approval)
-  3. **Receive Inventory**: PM → Stock Keeper (notification workflow)
+### June 30, 2025 - Comprehensive UI/UX Enhancements and Advanced Features
+- **Role-Based Dashboard System**: Implemented customized dashboards for Product Managers, Stock Keepers, and Administrators
+  - Product Manager dashboard focuses on request management and tracking
+  - Stock Keeper dashboard emphasizes inventory health and approval workflows
+  - Admin dashboard provides system-wide oversight and user management
+- **Visual Inventory Health Indicators**: Added comprehensive health monitoring with:
+  - Real-time health score calculations
+  - Low stock alerts and expiring items tracking
+  - Color-coded status indicators and progress bars
+  - Category-wise inventory breakdown
+- **Personalized User Onboarding Flow**: Created role-specific onboarding experiences
+  - Interactive step-by-step guides tailored to user roles
+  - Progress tracking with completion indicators
+  - Quick tips and best practices for each role
+  - Dismissible interface with persistent progress storage
+- **Smart Search and Filter System**: Implemented advanced filtering capabilities
+  - Multi-criteria search across name, item number, and notes
+  - Category, specialty, stock level, and expiry status filters
+  - Real-time result filtering with active filter indicators
+  - Smart filter summary and quick clear options
+- **Export and Print Functionality**: Added comprehensive report generation
+  - PDF export with formatted tables and headers
+  - CSV export for data analysis
+  - Direct print functionality with optimized layouts
+  - Multiple export formats with date stamping
+- **Enhanced Request Management Workflows**: Previous implementation refined
+  - Fixed API call issues and improved error handling
+  - Restricted Product Manager permissions for security
+  - Improved multi-stage approval processes
+
+### June 30, 2025 - Enhanced Request Management Workflows (Previous)
+- Implemented three specific request workflows for Product Managers
 - Added approve and forward functionality for inventory sharing workflow
-- Enhanced database schema with workflow routing fields (finalAssignee, secondaryApprover, etc.)
+- Enhanced database schema with workflow routing fields
 - Updated request form to dynamically show appropriate fields based on request type
 - Added role-based permissions for Product Manager and Stock Keeper roles
-- Implemented multi-stage approval process with proper workflow routing
-- Enhanced request management UI with workflow-specific buttons and status indicators
 
 ### June 14, 2025 - Dependency Updates and TypeScript Fixes
 - Updated core dependencies to latest compatible versions

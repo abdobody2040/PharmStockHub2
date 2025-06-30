@@ -2,6 +2,8 @@ import { useState } from "react";
 import { MainLayout } from "@/components/layout/main-layout";
 import { StockItemCard } from "@/components/stock/stock-item-card";
 import { StockItemForm } from "@/components/stock/stock-item-form";
+import { SmartSearchFilter } from "@/components/inventory/smart-search-filter";
+import { ExportPrintToolbar } from "@/components/reports/export-print-toolbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";

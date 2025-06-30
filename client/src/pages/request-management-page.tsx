@@ -73,10 +73,12 @@ export default function RequestManagementPage() {
   // Mutations
   const createRequestMutation = useMutation({
     mutationFn: async (formData: FormData) => {
-      return apiRequest("/api/requests", {
+      const response = await fetch("/api/requests", {
         method: "POST",
         body: formData,
       });
+      if (!response.ok) throw new Error('Failed to create request');
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
@@ -97,11 +99,13 @@ export default function RequestManagementPage() {
 
   const updateRequestMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: any }) => {
-      return apiRequest(`/api/requests/${id}`, {
+      const response = await fetch(`/api/requests/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
+      if (!response.ok) throw new Error('Failed to update request');
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
@@ -124,11 +128,13 @@ export default function RequestManagementPage() {
 
   const approveAndForwardMutation = useMutation({
     mutationFn: async ({ id, notes }: { id: number; notes?: string }) => {
-      return apiRequest(`/api/requests/${id}/approve-forward`, {
+      const response = await fetch(`/api/requests/${id}/approve-and-forward`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ notes }),
       });
+      if (!response.ok) throw new Error('Failed to approve and forward request');
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
