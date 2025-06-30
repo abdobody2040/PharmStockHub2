@@ -376,7 +376,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/requests", isAuthenticated, upload.single('attachment'), async (req, res, next) => {
     try {
-      const requestData = JSON.parse(req.body.requestData);
+      let requestData;
+      
+      // Handle both FormData and JSON formats
+      if (req.body.requestData) {
+        // FormData format with requestData field
+        requestData = JSON.parse(req.body.requestData);
+      } else {
+        // Direct JSON format
+        requestData = req.body;
+      }
+      
       const validatedData = insertInventoryRequestSchema.parse(requestData);
       
       if (req.file) {

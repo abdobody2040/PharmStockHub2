@@ -76,17 +76,18 @@ export function RequestForm({ onSubmit, isLoading = false }: RequestFormProps) {
 
   const handleSubmit = (data: FormValues) => {
     const formData = new FormData();
-
-    Object.entries(data).forEach(([key, value]) => {
-      if (key === 'items') {
-        formData.append('items', JSON.stringify(items));
-      } else if (value !== undefined && value !== '') {
-        formData.append(key, value as string);
-      }
-    });
+    
+    // Create the request data object
+    const requestData = {
+      ...data,
+      items: items
+    };
+    
+    // Append the request data as a JSON string
+    formData.append('requestData', JSON.stringify(requestData));
 
     if (selectedFile) {
-      formData.append('file', selectedFile);
+      formData.append('attachment', selectedFile);
     }
 
     onSubmit(formData);
