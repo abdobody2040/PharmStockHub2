@@ -202,7 +202,15 @@ export default function UserManagementPage() {
 
   // Handle user actions
   const handleAddUser = (data: UserFormValues) => {
-    createUserMutation.mutate(data);
+    // Handle specialtyId - convert empty string to null
+    const userData = { ...data };
+    if (userData.specialtyId === "" || userData.specialtyId === "0") {
+      userData.specialtyId = null;
+    } else if (userData.specialtyId) {
+      userData.specialtyId = parseInt(userData.specialtyId);
+    }
+
+    createUserMutation.mutate(userData);
   };
 
   const handleEditUser = (user: User) => {
@@ -224,6 +232,13 @@ export default function UserManagementPage() {
     const updateData = { ...data };
     if (!updateData.password) {
       delete updateData.password;
+    }
+
+    // Handle specialtyId - convert empty string to null
+    if (updateData.specialtyId === "" || updateData.specialtyId === "0") {
+      updateData.specialtyId = null;
+    } else if (updateData.specialtyId) {
+      updateData.specialtyId = parseInt(updateData.specialtyId);
     }
 
     updateUserMutation.mutate({ id: selectedUser.id, userData: updateData });

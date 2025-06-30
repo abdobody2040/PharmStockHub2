@@ -125,17 +125,17 @@ export function setupAuth(app: Express) {
       if (!req.isAuthenticated()) {
         return res.status(401).json({ message: "Unauthorized" });
       }
-      
+
       // CEO always has all permissions
       if ((req.user as SharedUser).role === 'ceo') {
         return next();
       }
-      
+
       const hasPermission = await storage.hasPermission((req.user as SharedUser).id, permission);
       if (hasPermission) {
         return next();
       }
-      
+
       res.status(403).json({ message: "Forbidden: Insufficient permissions" });
     };
   };
@@ -143,31 +143,41 @@ export function setupAuth(app: Express) {
   // Authentication routes
   app.post("/api/register", async (req, res, next) => {
     try {
-      const { username, password, name, role, region } = req.body;
-      
-      const existingUser = await storage.getUserByUsername(username);
-      if (existingUser) {
-        return res.status(400).json({ message: "Username already exists" });
+      const { username, password, name, role, region, specialtyId } = req.body;
+
+      if (!username || !password || !name || !role) {
+        return res.status(400).json({ message: "Missing required fields" });
       }
 
+      // Check if user already exists
+      const existingUser = await storage.getUserByUsername(username);
+      if (existingUser) {
+        return res.status(400).json({ message: "Username already taken" });
+      }
+
+      // Hash password
       const hashedPassword = await hashPassword(password);
-      // Set default role to medicalRep for all new registrations
+
+      // Handle specialtyId conversion
+      let processedSpecialtyId = null;
+      if (specialtyId && specialtyId !== "" && specialtyId !== "0") {
+        processedSpecialtyId = typeof specialtyId === 'string' ? parseInt(specialtyId) : specialtyId;
+      }
+
+      // Create user
       const user = await storage.createUser({
         username,
         password: hashedPassword,
         name,
-        role: "medicalRep", // Default role
-        region,
-        avatar: "",
+        role,
+        region: region || null,
+        specialtyId: processedSpecialtyId,
       });
 
       // Remove password from response
-      const { password: _, ...userWithoutPassword } = user;
+      const { password: _, ...safeUser } = user;
 
-      req.login(user, (err) => {
-        if (err) return next(err);
-        res.status(201).json(userWithoutPassword);
-      });
+      res.status(201).json(safeUser);
     } catch (error) {
       next(error);
     }
@@ -177,10 +187,10 @@ export function setupAuth(app: Express) {
     passport.authenticate("local", (err: Error | null, user: SharedUser | false, info: { message: string } | undefined) => {
       if (err) return next(err);
       if (!user) return res.status(401).json({ message: info?.message || "Login failed" });
-      
+
       req.login(user, (loginErr) => { // Renamed err to loginErr to avoid conflict
         if (loginErr) return next(loginErr);
-        
+
         // User is now guaranteed to be a SharedUser object here, not false
         const { password, ...userWithoutPassword } = user; 
         res.status(200).json(userWithoutPassword);
@@ -197,7 +207,7 @@ export function setupAuth(app: Express) {
 
   app.get("/api/user", (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Not authenticated" });
-    
+
     // Remove password from response
     const { password, ...userWithoutPassword } = req.user as SharedUser;
     res.json(userWithoutPassword);

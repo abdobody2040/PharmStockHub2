@@ -595,6 +595,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const id = parseInt(req.params.id);
         const userData = req.body;
 
+        // Handle specialtyId conversion
+        if (userData.specialtyId !== undefined) {
+          if (userData.specialtyId === "" || userData.specialtyId === "0" || userData.specialtyId === null) {
+            userData.specialtyId = null;
+          } else if (typeof userData.specialtyId === 'string') {
+            userData.specialtyId = parseInt(userData.specialtyId);
+          }
+        }
+
         // If password is provided, hash it
         if (userData.password) {
 
