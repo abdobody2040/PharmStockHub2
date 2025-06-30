@@ -387,6 +387,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         requestData = req.body;
       }
       
+      console.log('Raw request data:', requestData);
+      
+      // Add the current user as requestedBy
+      requestData.requestedBy = req.user?.id;
+      
+      // Convert string numbers to integers, handle empty strings
+      if (requestData.assignedTo && requestData.assignedTo !== "" && requestData.assignedTo !== "undefined") {
+        requestData.assignedTo = parseInt(requestData.assignedTo);
+      } else {
+        requestData.assignedTo = null;
+      }
+      
+      // Handle other numeric fields
+      if (requestData.shareToUserId && requestData.shareToUserId !== "" && requestData.shareToUserId !== "undefined") {
+        requestData.shareToUserId = parseInt(requestData.shareToUserId);
+      } else {
+        requestData.shareToUserId = null;
+      }
+      
+      if (requestData.finalAssignee && requestData.finalAssignee !== "" && requestData.finalAssignee !== "undefined") {
+        requestData.finalAssignee = parseInt(requestData.finalAssignee);
+      } else {
+        requestData.finalAssignee = null;
+      }
+      
       const validatedData = insertInventoryRequestSchema.parse(requestData);
       
       if (req.file) {
