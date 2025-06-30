@@ -32,7 +32,8 @@ const ROLE_PERMISSIONS = {
     canMoveStock: true,
     canManageUsers: true,
     canViewReports: true,
-    canAccessSettings: true
+    canAccessSettings: true,
+    canCreateRequests: true
   },
   marketer: {
     canViewAll: false,
@@ -42,7 +43,8 @@ const ROLE_PERMISSIONS = {
     canMoveStock: true,
     canManageUsers: false,
     canViewReports: false,
-    canAccessSettings: false
+    canAccessSettings: false,
+    canCreateRequests: false
   },
   salesManager: {
     canViewAll: false,
@@ -52,7 +54,8 @@ const ROLE_PERMISSIONS = {
     canMoveStock: true,
     canManageUsers: false,
     canViewReports: false,
-    canAccessSettings: false
+    canAccessSettings: false,
+    canCreateRequests: false
   },
   stockManager: {
     canViewAll: false,
@@ -62,7 +65,8 @@ const ROLE_PERMISSIONS = {
     canMoveStock: false,
     canManageUsers: false,
     canViewReports: false,
-    canAccessSettings: true
+    canAccessSettings: true,
+    canCreateRequests: false
   },
   admin: {
     canViewAll: false,
@@ -72,7 +76,8 @@ const ROLE_PERMISSIONS = {
     canMoveStock: false,
     canManageUsers: true,
     canViewReports: true,
-    canAccessSettings: true
+    canAccessSettings: true,
+    canCreateRequests: true
   },
   medicalRep: {
     canViewAll: false,
@@ -82,7 +87,30 @@ const ROLE_PERMISSIONS = {
     canMoveStock: false,
     canManageUsers: false,
     canViewReports: false,
-    canAccessSettings: false
+    canAccessSettings: false,
+    canCreateRequests: false
+  },
+  productManager: {
+    canViewAll: false,
+    canAddItems: true,
+    canEditItems: true,
+    canRemoveItems: false,
+    canMoveStock: true,
+    canManageUsers: false,
+    canViewReports: true,
+    canAccessSettings: false,
+    canCreateRequests: true
+  },
+  stockKeeper: {
+    canViewAll: true,
+    canAddItems: true,
+    canEditItems: true,
+    canRemoveItems: true,
+    canMoveStock: true,
+    canManageUsers: false,
+    canViewReports: true,
+    canAccessSettings: false,
+    canCreateRequests: true
   }
 };
 

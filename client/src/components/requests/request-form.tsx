@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -77,7 +76,7 @@ export function RequestForm({ onSubmit, isLoading = false }: RequestFormProps) {
 
   const handleSubmit = (data: FormValues) => {
     const formData = new FormData();
-    
+
     Object.entries(data).forEach(([key, value]) => {
       if (key === 'items') {
         formData.append('items', JSON.stringify(items));
@@ -126,6 +125,7 @@ export function RequestForm({ onSubmit, isLoading = false }: RequestFormProps) {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
+                    <SelectItem value="placeholder" disabled>Select request type</SelectItem>
                     <SelectItem value={REQUEST_TYPES.PREPARE_ORDER}>
                       Prepare Order (to Stock Keeper)
                     </SelectItem>
@@ -155,6 +155,7 @@ export function RequestForm({ onSubmit, isLoading = false }: RequestFormProps) {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
+                    <SelectItem value="placeholder" disabled>Select assignee</SelectItem>
                     {requestType === REQUEST_TYPES.INVENTORY_SHARE
                       ? productManagers.map((user) => (
                           <SelectItem key={user.id} value={user.id.toString()}>
@@ -230,6 +231,7 @@ export function RequestForm({ onSubmit, isLoading = false }: RequestFormProps) {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
+                    <SelectItem value="placeholder" disabled>Select Stock Keeper</SelectItem>
                     {stockKeepers.map((user) => (
                       <SelectItem key={user.id} value={user.id.toString()}>
                         {user.name} ({user.username})
@@ -298,7 +300,7 @@ export function RequestForm({ onSubmit, isLoading = false }: RequestFormProps) {
                         <SelectValue placeholder="Select existing item" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">No existing item</SelectItem>
+                        <SelectItem value="placeholder" disabled>Select an item</SelectItem>
                         {stockItems.map((stockItem) => (
                           <SelectItem key={stockItem.id} value={stockItem.id.toString()}>
                             {stockItem.name}
