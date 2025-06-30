@@ -1,11 +1,31 @@
-import { users, categories, specialties, stockItems, stockAllocations, stockMovements } from "@shared/schema";
+import { 
+  users, 
+  categories, 
+  stockItems, 
+  stockAllocations, 
+  stockMovements, 
+  specialties,
+  inventoryRequests,
+  requestItems,
+  users as usersTable
+} from "@shared/schema";
 import type { 
-  User, InsertUser, 
-  Category, InsertCategory,
-  Specialty, InsertSpecialty,
-  StockItem, InsertStockItem,
-  StockAllocation, InsertStockAllocation,
-  StockMovement, InsertStockMovement,
+  User, 
+  Category, 
+  StockItem, 
+  StockAllocation, 
+  StockMovement, 
+  Specialty,
+  InventoryRequest,
+  RequestItem,
+  InsertUser,
+  InsertCategory,
+  InsertStockItem,
+  InsertStockAllocation,
+  InsertStockMovement,
+  InsertSpecialty,
+  InsertInventoryRequest,
+  InsertRequestItem,
   RoleType
 } from "@shared/schema";
 import { ROLE_PERMISSIONS } from "@shared/schema";
@@ -445,7 +465,7 @@ export class DatabaseStorage implements IStorage {
     try {
       // Test database connection first
       await db.select().from(categories).limit(1);
-      
+
       const existingCategories = await this.getCategories();
 
       // Only initialize if no categories exist

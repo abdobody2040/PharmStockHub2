@@ -8,6 +8,8 @@ export const ROLES = {
   stockManager: "stockManager",
   admin: "admin",
   medicalRep: "medicalRep",
+  productManager: "productManager",
+  stockKeeper: "stockKeeper",
 } as const;
 
 export type RoleType = keyof typeof ROLES;
@@ -78,6 +80,34 @@ export const ROLE_PERMISSIONS = {
     canViewReports: false,
     canAccessSettings: false,
     canManageSpecialties: false
+  },
+  productManager: {
+    canViewAll: false,
+    canAddItems: true,
+    canEditItems: true,
+    canRemoveItems: false,
+    canMoveStock: true,
+    canManageUsers: false,
+    canViewReports: true,
+    canAccessSettings: false,
+    canManageSpecialties: false,
+    canCreateRequests: true,
+    canUploadFiles: true,
+    canShareInventory: true
+  },
+  stockKeeper: {
+    canViewAll: true,
+    canAddItems: true,
+    canEditItems: true,
+    canRemoveItems: true,
+    canMoveStock: true,
+    canManageUsers: false,
+    canViewReports: true,
+    canAccessSettings: false,
+    canManageSpecialties: false,
+    canManageRequests: true,
+    canRestockInventory: true,
+    canValidateInventory: true
   }
 } as const;
 
@@ -87,7 +117,9 @@ export const roleSchema = z.enum([
   ROLES.salesManager,
   ROLES.stockManager,
   ROLES.admin,
-  ROLES.medicalRep
+  ROLES.medicalRep,
+  ROLES.productManager,
+  ROLES.stockKeeper
 ]);
 
 export function getRoleName(role: RoleType): string {
@@ -104,6 +136,10 @@ export function getRoleName(role: RoleType): string {
       return "Admin";
     case ROLES.medicalRep:
       return "Medical Representative";
+    case ROLES.productManager:
+      return "Product Manager";
+    case ROLES.stockKeeper:
+      return "Stock Keeper";
     default:
       return role;
   }

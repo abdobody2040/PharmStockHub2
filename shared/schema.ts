@@ -93,6 +93,75 @@ export const insertStockAllocationSchema = createInsertSchema(stockAllocations).
   allocatedBy: true,
 });
 
+
+// Request types enum
+export const REQUEST_TYPES = {
+  PREPARE_ORDER: "prepare_order",
+  INVENTORY_SHARE: "inventory_share", 
+  RECEIVE_INVENTORY: "receive_inventory"
+} as const;
+
+export const REQUEST_STATUS = {
+  PENDING: "pending",
+  APPROVED: "approved", 
+  DENIED: "denied",
+  COMPLETED: "completed"
+} as const;
+
+// Inventory requests table
+export const inventoryRequests = pgTable("inventory_requests", {
+  id: serial("id").primaryKey(),
+  type: text("type").notNull(), // prepare_order, inventory_share, receive_inventory
+  requestedBy: integer("requested_by").notNull().references(() => users.id),
+  assignedTo: integer("assigned_to").references(() => users.id), // Stock keeper or other PM
+  status: text("status").notNull().default("pending"),
+  title: text("title").notNull(),
+  description: text("description"),
+  notes: text("notes"), // For approver/denier notes
+  fileUrl: text("file_url"), // For Excel uploads
+  requestData: text("request_data"), // JSON data for specific request details
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  completedAt: timestamp("completed_at"),
+});
+
+// Request items table (for detailed item requests)
+export const requestItems = pgTable("request_items", {
+  id: serial("id").primaryKey(),
+  requestId: integer("request_id").notNull().references(() => inventoryRequests.id, { onDelete: "cascade" }),
+  stockItemId: integer("stock_item_id").references(() => stockItems.id),
+  itemName: text("item_name"), // For items not yet in system
+  quantity: integer("quantity").notNull(),
+  notes: text("notes"),
+});
+
+// Insert schemas for requests
+export const insertInventoryRequestSchema = createInsertSchema(inventoryRequests).pick({
+  type: true,
+  requestedBy: true,
+  assignedTo: true,
+  title: true,
+  description: true,
+  fileUrl: true,
+  requestData: true,
+});
+
+export const insertRequestItemSchema = createInsertSchema(requestItems).pick({
+  requestId: true,
+  stockItemId: true,
+  itemName: true,
+  quantity: true,
+  notes: true,
+});
+
+// Types
+export type InventoryRequest = typeof inventoryRequests.$inferSelect;
+export type InsertInventoryRequest = typeof inventoryRequests.$inferInsert;
+export type RequestItem = typeof requestItems.$inferSelect;
+export type InsertRequestItem = typeof requestItems.$inferInsert;
+
+
+
 // Stock movements - tracks movement history
 export const stockMovements = pgTable("stock_movements", {
   id: serial("id").primaryKey(),
@@ -179,7 +248,13 @@ export const ROLE_PERMISSIONS = {
     canViewReports: true,
     canAccessSettings: true,
     canManageSpecialties: true,
-    canSeeAllSpecialties: true
+    canSeeAllSpecialties: true,
+    canCreateRequests: true,
+    canUploadFiles: true,
+    canShareInventory: true,
+    canManageRequests: true,
+    canRestockInventory: true,
+    canValidateInventory: true
   },
   marketer: {
     canViewAll: false,
@@ -191,7 +266,13 @@ export const ROLE_PERMISSIONS = {
     canViewReports: false,
     canAccessSettings: false,
     canManageSpecialties: false,
-    canSeeAllSpecialties: false
+    canSeeAllSpecialties: false,
+    canCreateRequests: false,
+    canUploadFiles: false,
+    canShareInventory: false,
+    canManageRequests: false,
+    canRestockInventory: false,
+    canValidateInventory: false
   },
   salesManager: {
     canViewAll: false,
@@ -229,8 +310,98 @@ export const ROLE_PERMISSIONS = {
     canManageSpecialties: true,
     canSeeAllSpecialties: true
   },
+  salesManager: {
+    canViewAll: false,
+    canAddItems: true,
+    canEditItems: true,
+    canRemoveItems: true,
+    canMoveStock: true,
+    canManageUsers: false,
+    canViewReports: false,
+    canAccessSettings: false,
+    canManageSpecialties: false,
+    canSeeAllSpecialties: false,
+    canCreateRequests: false,
+    canUploadFiles: false,
+    canShareInventory: false,
+    canManageRequests: false,
+    canRestockInventory: false,
+    canValidateInventory: false
+  },
+  stockManager: {
+    canViewAll: false,
+    canAddItems: true,
+    canEditItems: true,
+    canRemoveItems: true,
+    canMoveStock: false,
+    canManageUsers: false,
+    canViewReports: false,
+    canAccessSettings: true,
+    canManageSpecialties: false,
+    canSeeAllSpecialties: false,
+    canCreateRequests: false,
+    canUploadFiles: false,
+    canShareInventory: false,
+    canManageRequests: false,
+    canRestockInventory: false,
+    canValidateInventory: false
+  },
+  admin: {
+    canViewAll: true,
+    canAddItems: true,
+    canEditItems: true,
+    canRemoveItems: true,
+    canMoveStock: false,
+    canManageUsers: true,
+    canViewReports: true,
+    canAccessSettings: true,
+    canManageSpecialties: true,
+    canSeeAllSpecialties: true,
+    canCreateRequests: true,
+    canUploadFiles: true,
+    canShareInventory: true,
+    canManageRequests: true,
+    canRestockInventory: true,
+    canValidateInventory: true
+  },
   medicalRep: {
     canViewAll: false,
+    canAddItems: false,
+    canEditItems: false,
+    canRemoveItems: false,
+    canMoveStock: false,
+    canManageUsers: false,
+    canViewReports: false,
+    canAccessSettings: false,
+    canManageSpecialties: false,
+    canSeeAllSpecialties: false,
+    canCreateRequests: false,
+    canUploadFiles: false,
+    canShareInventory: false,
+    canManageRequests: false,
+    canRestockInventory: false,
+    canValidateInventory: false
+  },
+  productManager: {
+    canViewAll: false,
+    canAddItems: true,
+    canEditItems: true,
+    canRemoveItems: false,
+    canMoveStock: true,
+    canManageUsers: false,
+    canViewReports: true,
+    canAccessSettings: false,
+    canManageSpecialties: false,
+    canSeeAllSpecialities: false,
+    canCreateRequests: true,
+    canUploadFiles: true,
+    canShareInventory: true,
+    canManageRequests: false,
+    canRestockInventory: false,
+    canValidateInventory: false
+  },
+  stockKeeper: {
+    canViewAll: true,
     canAddItems: false,
     canEditItems: false,
     canRemoveItems: false,

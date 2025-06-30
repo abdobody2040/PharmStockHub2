@@ -13,6 +13,7 @@ import InventoryPage from "@/pages/inventory-page";
 import StockMovementPage from "@/pages/stock-movement-page";
 import ReportsPage from "@/pages/reports-page";
 import AnalyticsDashboard from "@/pages/analytics-dashboard";
+import RequestManagementPage from "./pages/request-management-page";
 import UserManagementPage from "@/pages/user-management-page";
 import SettingsPage from "@/pages/settings-page";
 import MobileApp from "@/pages/mobile-app";
@@ -31,6 +32,7 @@ function Router() {
       <ProtectedRoute path="/settings" component={SettingsPage} roles={['ceo', 'admin']} />
       <ProtectedRoute path="/mobile" component={MobileApp} />
       <ProtectedRoute path="/mobile/:rest*" component={MobileApp} />
+      <ProtectedRoute path="/requests" component={RequestManagementPage} roles={['productManager', 'stockKeeper', 'ceo', 'admin']} />
       <Route component={NotFound} />
     </Switch>
   );

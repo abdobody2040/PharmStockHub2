@@ -18,9 +18,50 @@ import {
 } from "@shared/schema";
 import { User } from "@shared/schema";
 
+import { 
+  extendedInsertStockItemSchema, 
+  insertStockMovementSchema,
+  insertCategorySchema,
+  insertInventoryRequestSchema,
+  insertRequestItemSchema,
+  REQUEST_TYPES,
+  REQUEST_STATUS
+} from "@shared/schema";
+
+
 // Add multer type extensions to Request
 declare global {
   namespace Express {
+
+
+// Configure multer for Excel file uploads
+const excelUpload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => {
+      const excelDir = path.join(process.cwd(), 'uploads', 'excel');
+      if (!fs.existsSync(excelDir)) {
+        fs.mkdirSync(excelDir, { recursive: true });
+      }
+      cb(null, excelDir);
+    },
+    filename: (req, file, cb) => {
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+      const ext = path.extname(file.originalname);
+      cb(null, 'request-' + uniqueSuffix + ext);
+    }
+  }),
+  limits: { fileSize: 25 * 1024 * 1024 }, // 25MB limit for Excel files
+  fileFilter: (req, file, cb) => {
+    // Accept Excel files
+    if (file.mimetype.includes('spreadsheet') || file.originalname.match(/\.(xlsx|xls|csv)$/)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only Excel and CSV files are allowed'));
+    }
+  }
+});
+
+
     // Extend the Request interface to include file property from multer
     interface Request {
       file?: Express.Multer.File; // Type for multer file
@@ -556,6 +597,205 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // If password is provided, hash it
         if (userData.password) {
+
+
+  // Request System Routes
+
+  // Get all requests (filtered by user role)
+  app.get("/api/requests", isAuthenticated, async (req, res, next) => {
+    try {
+      const user = req.user as User;
+      let requests;
+
+      if (user.role === 'stockKeeper' || user.role === 'ceo' || user.role === 'admin') {
+        // Stock keepers and admins can see all requests
+        requests = await storage.getRequests();
+      } else if (user.role === 'productManager') {
+        // Product managers can see their own requests and requests assigned to them
+        const userRequests = await storage.getRequests(user.id);
+        const assignedRequests = await storage.getRequests(undefined, undefined);
+        const assignedToMe = assignedRequests.filter(r => r.assignedTo === user.id);
+        
+        // Merge and deduplicate
+        const allRequests = [...userRequests, ...assignedToMe];
+        requests = allRequests.filter((req, index, self) => 
+          index === self.findIndex(r => r.id === req.id)
+        );
+      } else {
+        // Other roles can only see their own requests
+        requests = await storage.getRequests(user.id);
+      }
+
+      res.json(requests);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Get single request with items
+  app.get("/api/requests/:id", isAuthenticated, async (req, res, next) => {
+    try {
+      const id = parseInt(req.params.id);
+      const request = await storage.getRequest(id);
+      
+      if (!request) {
+        return res.status(404).json({ message: "Request not found" });
+      }
+
+      const items = await storage.getRequestItems(id);
+      res.json({ ...request, items });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Create new request
+  app.post(
+    "/api/requests", 
+    isAuthenticated, 
+    hasPermission("canCreateRequests"),
+    excelUpload.single("file"),
+    async (req, res, next) => {
+      try {
+        const user = req.user as User;
+        
+        const requestData = {
+          ...req.body,
+          requestedBy: user.id,
+          assignedTo: req.body.assignedTo ? parseInt(req.body.assignedTo) : null,
+        };
+
+        // Handle file upload
+        if (req.file) {
+          requestData.fileUrl = `/uploads/excel/${req.file.filename}`;
+        }
+
+        // Parse request items if provided
+        let items = [];
+        if (req.body.items) {
+          try {
+            items = JSON.parse(req.body.items);
+          } catch (e) {
+            return res.status(400).json({ message: "Invalid items format" });
+          }
+        }
+
+        const validatedData = insertInventoryRequestSchema.parse(requestData);
+        const request = await storage.createRequest(validatedData);
+
+        // Create request items if provided
+        if (items.length > 0) {
+          for (const item of items) {
+            await storage.createRequestItem({
+              requestId: request.id,
+              stockItemId: item.stockItemId || null,
+              itemName: item.itemName || null,
+              quantity: parseInt(item.quantity),
+              notes: item.notes || null,
+            });
+          }
+        }
+
+        res.status(201).json(request);
+      } catch (error) {
+        console.error("Request creation error:", error);
+        next(error);
+      }
+    }
+  );
+
+  // Update request (approve/deny/complete)
+  app.put(
+    "/api/requests/:id", 
+    isAuthenticated,
+    async (req, res, next) => {
+      try {
+        const id = parseInt(req.params.id);
+        const user = req.user as User;
+        const updateData = req.body;
+
+        // Check if user can update this request
+        const request = await storage.getRequest(id);
+        if (!request) {
+          return res.status(404).json({ message: "Request not found" });
+        }
+
+        // Only assigned user, stock keeper, or requester can update
+        const canUpdate = request.assignedTo === user.id || 
+                         user.role === 'stockKeeper' || 
+                         request.requestedBy === user.id ||
+                         user.role === 'ceo' ||
+                         user.role === 'admin';
+
+        if (!canUpdate) {
+          return res.status(403).json({ message: "Not authorized to update this request" });
+        }
+
+        // If completing request, set completion timestamp
+        if (updateData.status === 'completed') {
+          updateData.completedAt = new Date();
+        }
+
+        const updatedRequest = await storage.updateRequest(id, updateData);
+        res.json(updatedRequest);
+      } catch (error) {
+        next(error);
+      }
+    }
+  );
+
+  // Delete request
+  app.delete(
+    "/api/requests/:id", 
+    isAuthenticated,
+    async (req, res, next) => {
+      try {
+        const id = parseInt(req.params.id);
+        const user = req.user as User;
+
+        const request = await storage.getRequest(id);
+        if (!request) {
+          return res.status(404).json({ message: "Request not found" });
+        }
+
+        // Only requester or admin can delete
+        if (request.requestedBy !== user.id && user.role !== 'ceo' && user.role !== 'admin') {
+          return res.status(403).json({ message: "Not authorized to delete this request" });
+        }
+
+        // Delete associated file if exists
+        if (request.fileUrl) {
+          const filePath = path.join(process.cwd(), request.fileUrl.replace(/^\/uploads\//, 'uploads/'));
+          if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+          }
+        }
+
+        const success = await storage.deleteRequest(id);
+        if (!success) {
+          return res.status(404).json({ message: "Request not found" });
+        }
+
+        res.status(204).end();
+      } catch (error) {
+        next(error);
+      }
+    }
+  );
+
+  // Get requests assigned to current user (for stock keepers)
+  app.get("/api/requests/assigned/me", isAuthenticated, async (req, res, next) => {
+    try {
+      const user = req.user as User;
+      const requests = await storage.getRequests();
+      const assignedRequests = requests.filter(r => r.assignedTo === user.id);
+      res.json(assignedRequests);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+
           const { hashPassword } = await import('./auth.js');
           userData.password = await hashPassword(userData.password);
         }

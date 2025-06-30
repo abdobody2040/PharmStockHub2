@@ -37,7 +37,7 @@ export function Sidebar({ className }: SidebarProps) {
     href: string;
     requiredPermission: string | null;
   };
-  
+
   const menuItems: MenuItem[] = [
     {
       title: "Dashboard",
@@ -91,7 +91,7 @@ export function Sidebar({ className }: SidebarProps) {
   const handleRoleChange = (role: RoleType) => {
     // Set active role for display
     setActiveRole(role);
-    
+
     // Update filtered menu items based on role permissions
     // This is just for demo/visualization purposes
     // In a real app, this would be handled by the backend
@@ -99,12 +99,12 @@ export function Sidebar({ className }: SidebarProps) {
     toast.className = 'fixed bottom-4 right-4 bg-primary text-white px-4 py-2 rounded-md shadow-lg';
     toast.textContent = `Switched to ${getRoleName(role)} view`;
     document.body.appendChild(toast);
-    
+
     // Remove toast after 2 seconds
     setTimeout(() => {
       document.body.removeChild(toast);
     }, 2000);
-    
+
     setIsMobileMenuOpen(false);
   };
 
@@ -112,14 +112,14 @@ export function Sidebar({ className }: SidebarProps) {
   // This allows the CEO to "preview" what other roles would see
   const filteredMenuItems = menuItems.filter(item => {
     if (!item.requiredPermission) return true;
-    
+
     // If we're in demo mode (activeRole is different from user's role)
     if (user?.role === 'ceo' && activeRole !== user.role) {
       // Simulate permissions for the selected role
       type RolePermissions = {
         [key in RoleType]: string[];
       };
-      
+
       const rolePermissions: RolePermissions = {
         'ceo': ['canMoveStock', 'canViewReports', 'canManageUsers', 'canAccessSettings'],
         'marketer': ['canMoveStock', 'canViewReports'],
@@ -128,11 +128,11 @@ export function Sidebar({ className }: SidebarProps) {
         'admin': ['canManageUsers', 'canAccessSettings'],
         'medicalRep': []
       };
-      
+
       const permissionList = rolePermissions[activeRole as keyof typeof rolePermissions] || [];
       return permissionList.includes(item.requiredPermission as string) || false;
     }
-    
+
     // Default behavior using actual permissions
     return item.requiredPermission ? hasPermission(item.requiredPermission) : true;
   });
@@ -166,7 +166,7 @@ export function Sidebar({ className }: SidebarProps) {
                 {(() => {
                   const settings = JSON.parse(localStorage.getItem('system_settings') || '{}');
                   const logoUrl = settings.companyLogoUrl;
-                  
+
                   if (logoUrl) {
                     return (
                       <img 
@@ -184,7 +184,7 @@ export function Sidebar({ className }: SidebarProps) {
                       />
                     );
                   }
-                  
+
                   return <FlaskRound className="w-8 h-8 text-primary" />;
                 })()}
               </div>
@@ -222,7 +222,7 @@ export function Sidebar({ className }: SidebarProps) {
                   <span>{getRoleName(role)}</span>
                 </button>
               ))}
-              
+
               <div className="border-t border-gray-200 my-4"></div>
             </>
           )}
