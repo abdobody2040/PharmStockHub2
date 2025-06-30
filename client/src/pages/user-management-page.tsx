@@ -72,10 +72,10 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const userFormSchema = z.object({
-  name: z.string().min(2, "Full name is required"),
+  name: z.string().min(2, "Name must be at least 2 characters"),
   username: z.string().min(3, "Username must be at least 3 characters"),
-  password: z.string().min(6, "Password must be at least 6 characters").optional(),
-  role: z.enum(["ceo", "marketer", "salesManager", "stockManager", "admin", "medicalRep"] as [RoleType, ...RoleType[]]),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  role: z.enum(['ceo', 'marketer', 'salesManager', 'stockManager', 'admin', 'medicalRep', 'productManager', 'stockKeeper'] as [RoleType, ...RoleType[]]),
   region: z.string().optional(),
   specialtyId: z.string().optional(),
 });
@@ -479,7 +479,9 @@ export default function UserManagementPage() {
                         <SelectItem value="salesManager">Sales Manager</SelectItem>
                         <SelectItem value="stockManager">Stock Manager</SelectItem>
                         <SelectItem value="admin">Admin</SelectItem>
-                        <SelectItem value="medicalRep">Medical Rep</SelectItem>
+                        <SelectItem value="medicalRep">Medical Representative</SelectItem>
+                        <SelectItem value="productManager">Product Manager</SelectItem>
+                        <SelectItem value="stockKeeper">Stock Keeper</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -618,7 +620,9 @@ export default function UserManagementPage() {
                         <SelectItem value="salesManager">Sales Manager</SelectItem>
                         <SelectItem value="stockManager">Stock Manager</SelectItem>
                         <SelectItem value="admin">Admin</SelectItem>
-                        <SelectItem value="medicalRep">Medical Rep</SelectItem>
+                        <SelectItem value="medicalRep">Medical Representative</SelectItem>
+                        <SelectItem value="productManager">Product Manager</SelectItem>
+                        <SelectItem value="stockKeeper">Stock Keeper</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
