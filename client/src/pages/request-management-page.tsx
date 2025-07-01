@@ -167,7 +167,7 @@ export default function RequestManagementPage() {
       data: {
         status: action,
         notes: approvalNotes,
-        completedAt: new Date(),
+        completedAt: new Date().toISOString(),
       },
     });
   };

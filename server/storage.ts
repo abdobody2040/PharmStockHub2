@@ -1000,11 +1000,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateRequest(id: number, requestData: Partial<InventoryRequest>): Promise<InventoryRequest | undefined> {
+    // Ensure dates are properly formatted as ISO strings
+    const cleanData = { ...requestData };
+    if (cleanData.completedAt && typeof cleanData.completedAt !== 'string') {
+      cleanData.completedAt = new Date(cleanData.completedAt).toISOString();
+    }
+    
     const [updatedRequest] = await db
       .update(inventoryRequests)
       .set({
-        ...requestData,
-        updatedAt: new Date(),
+        ...cleanData,
+        updatedAt: new Date().toISOString(),
       })
       .where(eq(inventoryRequests.id, id))
       .returning();
@@ -1037,7 +1043,7 @@ export class DatabaseStorage implements IStorage {
     return this.updateRequest(id, {
       status: "approved",
       notes,
-      completedAt: new Date(),
+      completedAt: new Date().toISOString(),
     });
   }
 
@@ -1045,7 +1051,7 @@ export class DatabaseStorage implements IStorage {
     return this.updateRequest(id, {
       status: "denied", 
       notes,
-      completedAt: new Date(),
+      completedAt: new Date().toISOString(),
     });
   }
 
