@@ -154,6 +154,35 @@ export default function RequestManagementPage() {
     },
   });
 
+  const finalApproveMutation = useMutation({
+    mutationFn: async ({ id, notes }: { id: number; notes?: string }) => {
+      const response = await fetch(`/api/requests/${id}/final-approve`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ notes }),
+      });
+      if (!response.ok) throw new Error('Failed to final approve request');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
+      setShowApprovalModal(false);
+      setCurrentRequest(null);
+      setApprovalNotes("");
+      toast({
+        title: "Success",
+        description: "Request finally approved and completed",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to final approve request",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleCreateRequest = (formData: FormData) => {
     createRequestMutation.mutate(formData);
   };
@@ -175,6 +204,15 @@ export default function RequestManagementPage() {
     if (!currentRequest) return;
 
     approveAndForwardMutation.mutate({
+      id: currentRequest.id,
+      notes: approvalNotes,
+    });
+  };
+
+  const handleFinalApprove = () => {
+    if (!currentRequest) return;
+
+    finalApproveMutation.mutate({
       id: currentRequest.id,
       notes: approvalNotes,
     });
@@ -316,7 +354,7 @@ export default function RequestManagementPage() {
 
           <TabsContent value="pending">
             <RequestTable 
-              requests={allRequests.filter(r => r.status === 'pending')}
+              requests={allRequests.filter(r => r.status === 'pending' || r.status === 'pending_secondary')}
               users={users}
               onView={(request) => {
                 setCurrentRequest(request);
@@ -402,6 +440,17 @@ export default function RequestManagementPage() {
                   >
                     {approveAndForwardMutation.isPending ? "Processing..." : "Approve & Forward to Stock Keeper"}
                   </Button>
+                ) : currentRequest?.type === 'inventory_share' && 
+                   currentRequest?.status === 'pending_secondary' && 
+                   approvalAction === "approved" ? (
+                  // Stock Keeper final approval for inventory sharing
+                  <Button
+                    onClick={handleFinalApprove}
+                    variant="default"
+                    disabled={finalApproveMutation.isPending}
+                  >
+                    {finalApproveMutation.isPending ? "Processing..." : "Final Approve"}
+                  </Button>
                 ) : (
                   // Regular approve/deny button for other cases
                   <Button
@@ -459,11 +508,23 @@ function RequestTable({ requests, users, onView, onApprove, onDeny, currentUser 
   };
 
   const canApprove = (request: InventoryRequest) => {
-    return request.status === 'pending' && 
-           (request.assignedTo === currentUser?.id || 
-            currentUser?.role === 'stockKeeper' ||
-            currentUser?.role === 'ceo' ||
-            currentUser?.role === 'admin');
+    // Handle regular pending status
+    if (request.status === 'pending') {
+      return (request.assignedTo === currentUser?.id || 
+              currentUser?.role === 'stockKeeper' ||
+              currentUser?.role === 'ceo' ||
+              currentUser?.role === 'admin');
+    }
+    
+    // Handle pending_secondary status (final approval for inventory sharing)
+    if (request.status === 'pending_secondary') {
+      return (request.assignedTo === currentUser?.id || 
+              currentUser?.role === 'stockKeeper' ||
+              currentUser?.role === 'ceo' ||
+              currentUser?.role === 'admin');
+    }
+    
+    return false;
   };
 
   return (
