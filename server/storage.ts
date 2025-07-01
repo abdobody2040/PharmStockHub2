@@ -714,8 +714,46 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteUser(id: number): Promise<boolean> {
-    const result = await db.delete(users).where(eq(users.id, id)).returning();
-    return result.length > 0;
+    try {
+      // First, update any requests that reference this user to remove the reference
+      await db
+        .update(inventoryRequests)
+        .set({ 
+          assignedTo: null,
+          finalAssignee: null,
+          secondaryApprover: null,
+          shareFromUserId: null,
+          shareToUserId: null
+        })
+        .where(eq(inventoryRequests.assignedTo, id));
+      
+      await db
+        .update(inventoryRequests)
+        .set({ finalAssignee: null })
+        .where(eq(inventoryRequests.finalAssignee, id));
+        
+      await db
+        .update(inventoryRequests)
+        .set({ secondaryApprover: null })
+        .where(eq(inventoryRequests.secondaryApprover, id));
+        
+      await db
+        .update(inventoryRequests)
+        .set({ shareFromUserId: null })
+        .where(eq(inventoryRequests.shareFromUserId, id));
+        
+      await db
+        .update(inventoryRequests)
+        .set({ shareToUserId: null })
+        .where(eq(inventoryRequests.shareToUserId, id));
+
+      // Then delete the user
+      const result = await db.delete(users).where(eq(users.id, id)).returning();
+      return result.length > 0;
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      return false;
+    }
   }
 
   // Category operations
@@ -1023,6 +1061,14 @@ export class DatabaseStorage implements IStorage {
 
   async updateRequest(id: number, requestData: Partial<InventoryRequest>): Promise<InventoryRequest | undefined> {
     const cleanData = { ...requestData };
+    
+    // Handle date fields properly
+    if (cleanData.completedAt && typeof cleanData.completedAt === 'string') {
+      cleanData.completedAt = new Date(cleanData.completedAt);
+    }
+    if (cleanData.createdAt && typeof cleanData.createdAt === 'string') {
+      cleanData.createdAt = new Date(cleanData.createdAt);
+    }
     
     const [updatedRequest] = await db
       .update(inventoryRequests)

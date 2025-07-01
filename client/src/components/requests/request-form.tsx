@@ -76,13 +76,13 @@ export function RequestForm({ onSubmit, isLoading = false }: RequestFormProps) {
 
   const handleSubmit = (data: FormValues) => {
     const formData = new FormData();
-    
+
     // Create the request data object
     const requestData = {
       ...data,
       items: items
     };
-    
+
     // Append the request data as a JSON string
     formData.append('requestData', JSON.stringify(requestData));
 
