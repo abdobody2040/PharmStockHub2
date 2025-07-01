@@ -1,4 +1,7 @@
+The code has been updated to handle the `pending_secondary` status by modifying the `getStatusBadge` function to include a new variant and display text for this status.
+```
 
+```replit_final_file
 import { useState } from "react";
 import { MainLayout } from "@/components/layout/main-layout";
 import { RequestForm } from "@/components/requests/request-form";
@@ -207,14 +210,18 @@ export default function RequestManagementPage() {
   const getStatusBadge = (status: string) => {
     const variants = {
       pending: "bg-yellow-100 text-yellow-800",
+      pending_secondary: "bg-orange-100 text-orange-800",
       approved: "bg-green-100 text-green-800", 
       denied: "bg-red-100 text-red-800",
       completed: "bg-blue-100 text-blue-800",
     } as const;
 
+    const displayStatus = status === 'pending_secondary' ? 'Pending Final Approval' : 
+                         status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ');
+
     return (
       <Badge className={variants[status as keyof typeof variants] || "bg-gray-100 text-gray-800"}>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
+        {displayStatus}
       </Badge>
     );
   };
@@ -238,7 +245,7 @@ export default function RequestManagementPage() {
               Manage inventory requests and workflow approvals
             </p>
           </div>
-          
+
           {(user?.role === 'productManager' || user?.role === 'stockKeeper' || hasPermission("canCreateRequests")) && (
             <Button onClick={() => setShowCreateModal(true)}>
               <Plus className="h-4 w-4 mr-2" />
@@ -364,7 +371,7 @@ export default function RequestManagementPage() {
                 }
               </DialogDescription>
             </DialogHeader>
-            
+
             <div className="space-y-4">
               <div>
                 <label className="text-sm font-medium">Notes</label>
@@ -378,7 +385,7 @@ export default function RequestManagementPage() {
                   className="mt-1"
                 />
               </div>
-              
+
               <div className="flex gap-2 justify-end">
                 <Button 
                   variant="outline" 
@@ -386,7 +393,7 @@ export default function RequestManagementPage() {
                 >
                   Cancel
                 </Button>
-                
+
                 {/* Show different buttons based on request type and workflow stage */}
                 {currentRequest?.type === 'inventory_share' && 
                  currentRequest?.status === 'pending' && 
@@ -439,14 +446,18 @@ function RequestTable({ requests, users, onView, onApprove, onDeny, currentUser 
   const getStatusBadge = (status: string) => {
     const variants = {
       pending: "bg-yellow-100 text-yellow-800",
+      pending_secondary: "bg-orange-100 text-orange-800",
       approved: "bg-green-100 text-green-800", 
       denied: "bg-red-100 text-red-800",
       completed: "bg-blue-100 text-blue-800",
     } as const;
 
+    const displayStatus = status === 'pending_secondary' ? 'Pending Final Approval' : 
+                         status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ');
+
     return (
       <Badge className={variants[status as keyof typeof variants] || "bg-gray-100 text-gray-800"}>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
+        {displayStatus}
       </Badge>
     );
   };
@@ -501,7 +512,7 @@ function RequestTable({ requests, users, onView, onApprove, onDeny, currentUser 
                     >
                       <FileText className="h-4 w-4" />
                     </Button>
-                    
+
                     {canApprove(request) && onApprove && (
                       <Button 
                         size="sm" 
@@ -511,7 +522,7 @@ function RequestTable({ requests, users, onView, onApprove, onDeny, currentUser 
                         <Check className="h-4 w-4" />
                       </Button>
                     )}
-                    
+
                     {canApprove(request) && onDeny && (
                       <Button 
                         size="sm" 
@@ -521,7 +532,7 @@ function RequestTable({ requests, users, onView, onApprove, onDeny, currentUser 
                         <X className="h-4 w-4" />
                       </Button>
                     )}
-                    
+
                     {request.fileUrl && (
                       <Button 
                         size="sm" 
