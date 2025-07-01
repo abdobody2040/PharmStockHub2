@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useQuery } from "@tanstack/react-query";
-import { User, StockItem, REQUEST_TYPES } from "@shared/schema";
+import { SafeUser, StockItem, REQUEST_TYPES } from "@shared/schema";
 import {
   Form,
   FormControl,
@@ -52,7 +52,7 @@ export function RequestForm({ onSubmit, isLoading = false }: RequestFormProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [items, setItems] = useState([{ stockItemId: "none", itemName: "", quantity: "", notes: "" }]);
 
-  const { data: users = [] } = useQuery<User[]>({
+  const { data: users = [] } = useQuery<SafeUser[]>({
     queryKey: ["/api/users"],
   });
 
@@ -314,7 +314,7 @@ export function RequestForm({ onSubmit, isLoading = false }: RequestFormProps) {
                       {requestType === REQUEST_TYPES.RECEIVE_INVENTORY ? "Item Name" : "Item Name (if not in stock)"}
                     </label>
                     <Input
-                      value={item.itemName}
+                      value={item.itemName || ""}
                       onChange={(e) => updateItem(index, 'itemName', e.target.value)}
                       placeholder={requestType === REQUEST_TYPES.RECEIVE_INVENTORY ? "e.g., Pen, Notebook" : "Custom item name"}
                     />
@@ -326,7 +326,7 @@ export function RequestForm({ onSubmit, isLoading = false }: RequestFormProps) {
                     </label>
                     <Input
                       type="number"
-                      value={item.quantity}
+                      value={item.quantity || ""}
                       onChange={(e) => updateItem(index, 'quantity', e.target.value)}
                       placeholder={requestType === REQUEST_TYPES.RECEIVE_INVENTORY ? "e.g., 100" : "0"}
                       min="1"
@@ -336,7 +336,7 @@ export function RequestForm({ onSubmit, isLoading = false }: RequestFormProps) {
                   <div>
                     <label className="text-sm font-medium">Notes</label>
                     <Input
-                      value={item.notes}
+                      value={item.notes || ""}
                       onChange={(e) => updateItem(index, 'notes', e.target.value)}
                       placeholder="Optional notes"
                     />

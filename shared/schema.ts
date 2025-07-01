@@ -247,6 +247,7 @@ export const extendedInsertStockItemSchema = insertStockItemSchema.extend({
 // Types
 export type InsertUser = z.infer<typeof extendedInsertUserSchema>;
 export type User = typeof users.$inferSelect;
+export type SafeUser = Omit<User, 'password'>;
 
 export type InsertSpecialty = z.infer<typeof insertSpecialtySchema>;
 export type Specialty = typeof specialties.$inferSelect;

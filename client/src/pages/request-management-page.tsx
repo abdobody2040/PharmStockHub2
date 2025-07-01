@@ -1,7 +1,3 @@
-The code has been updated to handle the `pending_secondary` status by modifying the `getStatusBadge` function to include a new variant and display text for this status.
-```
-
-```replit_final_file
 import { useState } from "react";
 import { MainLayout } from "@/components/layout/main-layout";
 import { RequestForm } from "@/components/requests/request-form";
@@ -48,7 +44,7 @@ import {
   useMutation 
 } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { InventoryRequest, User } from "@shared/schema";
+import { InventoryRequest, SafeUser } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { formatDate } from "@/lib/utils";
@@ -69,7 +65,7 @@ export default function RequestManagementPage() {
     queryKey: ["/api/requests"],
   });
 
-  const { data: users = [] } = useQuery<User[]>({
+  const { data: users = [] } = useQuery<SafeUser[]>({
     queryKey: ["/api/users"],
   });
 
@@ -430,11 +426,11 @@ export default function RequestManagementPage() {
 // Request Table Component
 interface RequestTableProps {
   requests: InventoryRequest[];
-  users: User[];
+  users: SafeUser[];
   onView: (request: InventoryRequest) => void;
   onApprove?: (request: InventoryRequest) => void;
   onDeny?: (request: InventoryRequest) => void;
-  currentUser: User | null;
+  currentUser: SafeUser | null;
 }
 
 function RequestTable({ requests, users, onView, onApprove, onDeny, currentUser }: RequestTableProps) {
