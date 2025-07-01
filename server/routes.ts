@@ -408,7 +408,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         requestData = req.body;
       }
       
-      console.log('Raw request data:', requestData);
+
       
       // Add the current user as requestedBy
       requestData.requestedBy = req.user?.id;
@@ -514,6 +514,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       const { notes } = req.body;
       const request = await storage.approveAndForward(id, notes);
+      
+      if (!request) {
+        return res.status(404).json({ error: "Request not found" });
+      }
+      
+      res.json(request);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Final approval for 2-step workflows (stock keeper final approval)
+  app.post("/api/requests/:id/final-approve", isAuthenticated, async (req, res, next) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { notes } = req.body;
+      const request = await storage.finalApprove(id, notes);
       
       if (!request) {
         return res.status(404).json({ error: "Request not found" });

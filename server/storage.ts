@@ -111,6 +111,7 @@ export interface IStorage {
   approveRequest(id: number, notes?: string): Promise<InventoryRequest | undefined>;
   denyRequest(id: number, notes?: string): Promise<InventoryRequest | undefined>;
   approveAndForward(id: number, notes?: string): Promise<InventoryRequest | undefined>;
+  finalApprove(id: number, notes?: string): Promise<InventoryRequest | undefined>;
 
   // Session store
   sessionStore: SessionStore;
@@ -552,6 +553,27 @@ async updateUser(id: number, userData: Partial<User>): Promise<User | undefined>
       movedBy: args.movedBy,
     });
     return movement;
+  }
+
+  // Final approval method for MemStorage
+  async finalApprove(id: number, notes?: string): Promise<InventoryRequest | undefined> {
+    const request = this.requestsMap.get(id);
+    if (!request) return undefined;
+
+    if (request.type === 'inventory_share' && request.status === "pending_secondary") {
+      // For MemStorage, just complete the approval
+      const updatedRequest = {
+        ...request,
+        status: "approved" as const,
+        notes: notes || null,
+        completedAt: new Date(),
+        updatedAt: new Date(),
+      };
+      this.requestsMap.set(id, updatedRequest);
+      return updatedRequest;
+    }
+
+    return this.approveRequest(id, notes);
   }
 }
 
@@ -1000,17 +1022,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateRequest(id: number, requestData: Partial<InventoryRequest>): Promise<InventoryRequest | undefined> {
-    // Ensure dates are properly formatted as ISO strings
     const cleanData = { ...requestData };
-    if (cleanData.completedAt && typeof cleanData.completedAt !== 'string') {
-      cleanData.completedAt = new Date(cleanData.completedAt).toISOString();
-    }
     
     const [updatedRequest] = await db
       .update(inventoryRequests)
       .set({
         ...cleanData,
-        updatedAt: new Date().toISOString(),
+        updatedAt: new Date(),
       })
       .where(eq(inventoryRequests.id, id))
       .returning();
@@ -1040,10 +1058,33 @@ export class DatabaseStorage implements IStorage {
   }
 
   async approveRequest(id: number, notes?: string): Promise<InventoryRequest | undefined> {
+    const request = await this.getRequest(id);
+    if (!request) return undefined;
+
+    // For direct approval (prepare_order, receive_inventory)
+    if (request.type === "prepare_order" || request.type === "receive_inventory") {
+      // Transfer inventory to requester
+      await this.processInventoryTransfer(request);
+      
+      return this.updateRequest(id, {
+        status: "approved",
+        notes,
+        completedAt: new Date(),
+      });
+    }
+
+    // For inventory sharing - this should go to pending_secondary first
+    if (request.type === "inventory_share") {
+      return this.updateRequest(id, {
+        status: "pending_secondary",
+        notes,
+      });
+    }
+
     return this.updateRequest(id, {
       status: "approved",
       notes,
-      completedAt: new Date().toISOString(),
+      completedAt: new Date(),
     });
   }
 
@@ -1051,8 +1092,33 @@ export class DatabaseStorage implements IStorage {
     return this.updateRequest(id, {
       status: "denied", 
       notes,
-      completedAt: new Date().toISOString(),
+      completedAt: new Date(),
     });
+  }
+
+  // Process inventory transfer when request is approved
+  async processInventoryTransfer(request: InventoryRequest): Promise<void> {
+    // Get all request items
+    const requestItems = await this.getRequestItems(request.id);
+    
+    for (const item of requestItems) {
+      if (item.stockItemId && item.quantity) {
+        try {
+          // Transfer stock from stock keeper to requester
+          await this.executeStockMovementTransaction({
+            stockItemId: item.stockItemId,
+            fromUserId: request.assignedTo, // Stock keeper
+            toUserId: request.requestedBy, // Requester
+            quantity: item.quantity,
+            notes: `Approved request: ${request.title}`,
+            movedBy: request.assignedTo || 1 // Stock keeper approving
+          });
+        } catch (error) {
+          console.error(`Failed to transfer stock item ${item.stockItemId}:`, error);
+          // Continue with other items even if one fails
+        }
+      }
+    }
   }
 
   async approveAndForward(id: number, notes?: string): Promise<InventoryRequest | undefined> {
@@ -1069,6 +1135,24 @@ export class DatabaseStorage implements IStorage {
     }
 
     // For other types, just approve
+    return this.approveRequest(id, notes);
+  }
+
+  // Final approval method for stock keepers (2-step approval)
+  async finalApprove(id: number, notes?: string): Promise<InventoryRequest | undefined> {
+    const request = await this.getRequest(id);
+    if (!request) return undefined;
+
+    if (request.type === 'inventory_share' && request.status === "pending_secondary") {
+      // Process inventory transfer and complete
+      await this.processInventoryTransfer(request);
+      return this.updateRequest(id, {
+        status: "approved",
+        notes,
+        completedAt: new Date(),
+      });
+    }
+
     return this.approveRequest(id, notes);
   }
 }
