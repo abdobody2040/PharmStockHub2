@@ -190,7 +190,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/users/:id", isAuthenticated, async (req, res, next) => {
     try {
       const id = parseInt(req.params.id);
-      const user = await storage.updateUser(id, req.body);
+      const updateData = { ...req.body };
+      
+      // If password is being updated, hash it first
+      if (updateData.password) {
+        const { hashPassword } = require('./auth');
+        updateData.password = await hashPassword(updateData.password);
+      }
+      
+      const user = await storage.updateUser(id, updateData);
       
       if (!user) {
         return res.status(404).json({ error: "User not found" });

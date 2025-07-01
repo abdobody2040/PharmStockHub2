@@ -186,7 +186,7 @@ export function RequestForm({ onSubmit, isLoading = false }: RequestFormProps) {
                   requestType === REQUEST_TYPES.RECEIVE_INVENTORY 
                     ? "e.g., Incoming Inventory - Pens and Notebooks" 
                     : "Enter request title"
-                } {...field} />
+                } {...field} value={field.value || ""} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -208,6 +208,7 @@ export function RequestForm({ onSubmit, isLoading = false }: RequestFormProps) {
                   }
                   className="min-h-[100px]"
                   {...field} 
+                  value={field.value || ""}
                 />
               </FormControl>
               <FormMessage />

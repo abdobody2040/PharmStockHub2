@@ -229,5 +229,28 @@ export function setupAuth(app: Express) {
     res.json(userWithoutPassword);
   });
 
+  app.put("/api/users/:id", isAuthenticated, async (req, res, next) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updateData = { ...req.body };
+
+      // If password is being updated, hash it first
+      if (updateData.password) {
+        updateData.password = await hashPassword(updateData.password);
+      }
+
+      const user = await storage.updateUser(id, updateData);
+
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      const { password, ...userWithoutPassword } = user;
+      res.json(userWithoutPassword);
+    } catch (error) {
+      next(error);
+    }
+  });
+
   return { isAuthenticated, hasPermission };
 }
