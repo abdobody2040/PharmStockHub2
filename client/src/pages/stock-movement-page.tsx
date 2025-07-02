@@ -51,9 +51,9 @@ export default function StockMovementPage() {
   const { toast } = useToast();
   const [showMoveStockModal, setShowMoveStockModal] = useState(false);
 
-  // Fetch data
+  // Fetch data - use allocated inventory for role-based filtering
   const { data: stockItems = [] } = useQuery<StockItem[]>({
-    queryKey: ["/api/stock-items"],
+    queryKey: ["/api/my-allocated-inventory"],
   });
 
   const { data: categories = [] } = useQuery<Category[]>({
@@ -70,9 +70,23 @@ export default function StockMovementPage() {
 
   // Create movement mutation
   const createMovementMutation = useMutation({
-    mutationFn: async (movementData: any) => {
-      const res = await apiRequest("POST", "/api/movements", movementData);
-      return await res.json();
+    mutationFn: async (data: { movements: any[] }) => {
+      // Process each movement individually
+      const results = [];
+      for (const movement of data.movements) {
+        const response = await fetch("/api/movements", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(movement),
+        });
+        if (!response.ok) {
+          const error = await response.text();
+          throw new Error(`Failed to create movement: ${error}`);
+        }
+        const result = await response.json();
+        results.push(result);
+      }
+      return results;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/movements"] });
@@ -81,7 +95,7 @@ export default function StockMovementPage() {
       setShowMoveStockModal(false);
       toast({
         title: "Success",
-        description: "Stock movement created successfully",
+        description: "Stock movements created successfully",
       });
     },
     onError: (error: Error) => {

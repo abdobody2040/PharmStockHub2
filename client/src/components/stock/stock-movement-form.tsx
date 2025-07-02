@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useQuery } from "@tanstack/react-query";
 import { User, StockItem } from "@shared/schema";
+import { getRoleName } from "@shared/roles";
 import { useAuth } from "@/hooks/use-auth";
 import { 
   Package, 
@@ -70,9 +71,9 @@ export function StockMovementForm({ onSubmit, isLoading = false }: StockMovement
     }
   };
 
-  // Fetch available stock items
+  // Fetch available stock items - use allocated inventory for role-based filtering
   const { data: stockItems = [] } = useQuery<StockItem[]>({
-    queryKey: ["/api/stock-items"],
+    queryKey: ["/api/my-allocated-inventory"],
   });
 
   // Fetch users who can receive stock
@@ -111,6 +112,16 @@ export function StockMovementForm({ onSubmit, isLoading = false }: StockMovement
       if (item.stockItem.id === stockItemId) {
         const newQuantity = Math.max(1, item.quantity + change);
         return { ...item, quantity: newQuantity };
+      }
+      return item;
+    }));
+  };
+
+  const handleQuantityInput = (stockItemId: number, value: string) => {
+    const numValue = parseInt(value) || 1;
+    setSelectedStockItems(selectedStockItems.map(item => {
+      if (item.stockItem.id === stockItemId) {
+        return { ...item, quantity: Math.max(1, numValue) };
       }
       return item;
     }));
@@ -203,7 +214,13 @@ export function StockMovementForm({ onSubmit, isLoading = false }: StockMovement
                         >
                           <Minus className="h-3 w-3" />
                         </Button>
-                        <span className="text-sm font-medium min-w-[2rem] text-center">{quantity}</span>
+                        <Input
+                          type="number"
+                          value={quantity}
+                          onChange={(e) => handleQuantityInput(stockItem.id, e.target.value)}
+                          className="h-8 w-16 text-center text-sm"
+                          min="1"
+                        />
                         <Button
                           variant="outline"
                           size="sm"
