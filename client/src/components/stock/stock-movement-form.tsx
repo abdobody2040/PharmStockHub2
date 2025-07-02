@@ -41,7 +41,7 @@ interface StockMovementFormProps {
 }
 
 // Helper function to get role display name
-function getRoleName(role: string): string {
+const getRoleName = (role: string): string => {
   switch (role) {
     case 'ceo':
       return 'CEO';
@@ -58,7 +58,7 @@ function getRoleName(role: string): string {
     default:
       return role;
   }
-}
+};
 
 const stockMovementSchema = z.object({
   stockItemId: z.string().min(1, "Stock item is required"),
@@ -154,14 +154,14 @@ export function StockMovementForm({ onSubmit, isLoading = false }: StockMovement
   };
 
   return (
-    <div className="flex flex-col gap-4 max-h-[80vh] overflow-hidden">
+    <div className="flex flex-col gap-4 h-full max-h-[75vh] overflow-hidden">
       {/* Stock Items Section */}
-      <div className="bg-white rounded-lg shadow">
+      <div className="bg-white rounded-lg shadow flex-shrink-0">
         <div className="px-4 py-3 border-b border-gray-200">
           <h3 className="text-lg font-medium text-gray-800">Available Stock</h3>
           <p className="text-sm text-gray-500 mt-1">Select items to move</p>
         </div>
-        <div className="p-4 max-h-64 overflow-y-auto">
+        <div className="p-4 max-h-48 overflow-y-auto">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
@@ -236,10 +236,10 @@ export function StockMovementForm({ onSubmit, isLoading = false }: StockMovement
       </div>
 
       {/* Recipients and Form Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 overflow-hidden">
         {/* Recipients */}
-        <div className="bg-white rounded-lg shadow">
-          <div className="px-4 py-3 border-b border-gray-200">
+        <div className="bg-white rounded-lg shadow flex flex-col">
+          <div className="px-4 py-3 border-b border-gray-200 flex-shrink-0">
             <h3 className="text-lg font-medium text-gray-800">Recipients</h3>
             <div className="mt-2">
               <Select 
@@ -257,7 +257,7 @@ export function StockMovementForm({ onSubmit, isLoading = false }: StockMovement
               </Select>
             </div>
           </div>
-          <div className="p-4 max-h-48 overflow-y-auto">
+          <div className="p-4 flex-1 overflow-y-auto">
             <ul className="space-y-2">
               {filteredUsers.map((user) => (
                 <li 
@@ -286,13 +286,13 @@ export function StockMovementForm({ onSubmit, isLoading = false }: StockMovement
         </div>
 
         {/* Movement Form */}
-        <div className="bg-white rounded-lg shadow">
-          <div className="px-4 py-3 border-b border-gray-200">
+        <div className="bg-white rounded-lg shadow flex flex-col">
+          <div className="px-4 py-3 border-b border-gray-200 flex-shrink-0">
             <h3 className="text-lg font-medium text-gray-800">Movement Details</h3>
           </div>
-          <div className="p-4">
+          <div className="p-4 flex-1 overflow-y-auto">
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+              <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 h-full flex flex-col">
                 <FormField
                   control={form.control}
                   name="stockItemId"
@@ -379,8 +379,8 @@ export function StockMovementForm({ onSubmit, isLoading = false }: StockMovement
                   )}
                 />
 
-                <div className="flex justify-end pt-2">
-                  <Button type="submit" disabled={isLoading} className="h-8 px-4">
+                <div className="flex justify-end pt-4 mt-auto border-t border-gray-100">
+                  <Button type="submit" disabled={isLoading} className="h-9 px-6">
                     {isLoading ? "Processing..." : "Confirm Transfer"}
                   </Button>
                 </div>
