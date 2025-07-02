@@ -18,6 +18,9 @@ import UserManagementPage from "@/pages/user-management-page";
 import SettingsPage from "@/pages/settings-page";
 import MobileApp from "@/pages/mobile-app";
 import { ProtectedRoute } from "@/lib/protected-route";
+import StockMovementPage from "./pages/stock-movement-page";
+import InventoryAllocationPage from "./pages/inventory-allocation-page";
+import NotFoundPage from "./pages/not-found";
 
 function Router() {
   return (
