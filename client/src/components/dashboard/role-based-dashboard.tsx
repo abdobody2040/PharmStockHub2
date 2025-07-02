@@ -32,9 +32,9 @@ interface DashboardStats {
 export function RoleBasedDashboard() {
   const { user } = useAuth();
 
-  // Use allocated inventory for role-based filtering
+  // Use allocated and transferred inventory for role-based filtering
   const { data: stockItems = [] } = useQuery<StockItem[]>({
-    queryKey: ["/api/my-allocated-inventory"],
+    queryKey: ["/api/my-dashboard-inventory"],
   });
 
   const { data: requests = [] } = useQuery<InventoryRequest[]>({
@@ -115,12 +115,73 @@ export function RoleBasedDashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Available Items</CardTitle>
+            <CardTitle className="text-sm font-medium">My Inventory</CardTitle>
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stockItems.length}</div>
-            <p className="text-xs text-muted-foreground">Items you can request</p>
+            <p className="text-xs text-muted-foreground">Allocated & transferred items</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Inventory Breakdown */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5 text-blue-600" />
+              Allocated Inventory
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {stockItems
+                .filter(item => (item as any).allocatedQuantity > 0)
+                .map(item => (
+                  <div key={item.id} className="flex items-center justify-between py-2 border-b last:border-0">
+                    <div>
+                      <p className="font-medium">{item.name}</p>
+                      <p className="text-sm text-muted-foreground">Allocated to you</p>
+                    </div>
+                    <Badge variant="outline" className="text-blue-600 border-blue-200">
+                      {(item as any).allocatedQuantity || 0}
+                    </Badge>
+                  </div>
+                ))}
+              {stockItems.filter(item => (item as any).allocatedQuantity > 0).length === 0 && (
+                <p className="text-muted-foreground text-center py-4">No allocated items</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-green-600" />
+              Transferred Inventory
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {stockItems
+                .filter(item => (item as any).transferredQuantity > 0)
+                .map(item => (
+                  <div key={item.id} className="flex items-center justify-between py-2 border-b last:border-0">
+                    <div>
+                      <p className="font-medium">{item.name}</p>
+                      <p className="text-sm text-muted-foreground">Transferred to you</p>
+                    </div>
+                    <Badge variant="outline" className="text-green-600 border-green-200">
+                      {(item as any).transferredQuantity || 0}
+                    </Badge>
+                  </div>
+                ))}
+              {stockItems.filter(item => (item as any).transferredQuantity > 0).length === 0 && (
+                <p className="text-muted-foreground text-center py-4">No transferred items</p>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>
