@@ -32,26 +32,7 @@ A comprehensive pharmaceutical promotional materials management platform designe
 
 ## Recent Changes
 
-### July 2, 2025 - Complete Role-Based Inventory Allocation System
-- **Role-Based Inventory Filtering**: Implemented complete system where each role sees only assigned inventory
-  - Admin, CEO, and Stock Keeper roles see all inventory items
-  - Product Managers and other roles see only their specifically allocated inventory
-  - New API endpoint `/api/my-allocated-inventory` handles role-based filtering
-- **Inventory Allocation Management**: Created comprehensive allocation interface
-  - Admin users can assign specific inventory quantities to individual users
-  - Real-time tracking of allocated vs available quantities
-  - Automatic deduction of allocated amounts from available stock
-  - Visual allocation summary with user-specific badges
-- **Enhanced Dashboard System**: Updated all dashboards to use allocated inventory
-  - Role-based statistics show only user's allocated items
-  - Inventory health indicators reflect user's actual inventory
-  - Mobile interface also respects allocation boundaries
-- **Role Activation Controls**: CEO can control which roles appear in navigation
-  - Dynamic role filtering based on activated roles
-  - Settings interface for role management
-  - Sidebar navigation adapts to active roles
-
-### June 30, 2025 - Request Approval System Implementation and Fixes (Previous)
+### June 30, 2025 - Request Approval System Implementation and Fixes
 - **Complete Request Management System**: Implemented comprehensive 3-workflow system
   - `prepare_order`: Product Manager → Stock Keeper direct requests
   - `inventory_share`: Product Manager → Product Manager → Stock Keeper (multi-step approval)

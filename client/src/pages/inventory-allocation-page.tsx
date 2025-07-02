@@ -153,7 +153,7 @@ export default function InventoryAllocationPage() {
   };
 
   const roleBasedUsers = users.filter(user => 
-    !['admin', 'stockKeeper', 'ceo'].includes(user.role)
+    ['marketer', 'salesManager', 'medicalRep'].includes(user.role)
   );
 
   if (itemsLoading) {
