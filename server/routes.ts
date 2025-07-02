@@ -67,6 +67,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ success: true });
   });
 
+  // Role activation endpoints
+  app.get('/api/active-roles', isAuthenticated, async (req, res, next) => {
+    try {
+      const activeRoles = await storage.getActiveRoles();
+      res.json(activeRoles);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post('/api/active-roles', isAuthenticated, hasPermission("canAccessSettings"), async (req, res, next) => {
+    try {
+      const { roles } = req.body;
+      await storage.updateActiveRoles(roles);
+      res.json({ success: true });
+    } catch (error) {
+      next(error);
+    }
+  });
+
   // Specialties
   app.get("/api/specialties", isAuthenticated, async (req, res, next) => {
     try {
@@ -230,7 +250,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/stock-items", isAuthenticated, async (req, res, next) => {
     try {
       const stockItems = await storage.getStockItems();
-      res.json(stockItems);
+      const user = req.user;
+      
+      // Filter inventory based on user role and allocations
+      if (user && (user.role === 'marketer' || user.role === 'salesManager' || user.role === 'medicalRep')) {
+        // Get allocated stock for this user
+        const userAllocations = await storage.getAllocations(user.id);
+        const allocatedItemIds = userAllocations.map(a => a.stockItemId);
+        
+        // Return only items allocated to this user
+        const allocatedItems = stockItems.filter(item => allocatedItemIds.includes(item.id));
+        res.json(allocatedItems);
+      } else {
+        // Admin, CEO, Stock Keeper, etc. see all items
+        res.json(stockItems);
+      }
     } catch (error) {
       next(error);
     }

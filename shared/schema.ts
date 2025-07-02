@@ -264,6 +264,22 @@ export type StockAllocation = typeof stockAllocations.$inferSelect;
 export type InsertStockMovement = z.infer<typeof insertStockMovementSchema>;
 export type StockMovement = typeof stockMovements.$inferSelect;
 
+// System settings for role activation
+export const systemSettings = pgTable("system_settings", {
+  id: serial("id").primaryKey(),
+  key: text("key").notNull().unique(),
+  value: text("value").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertSystemSettingsSchema = createInsertSchema(systemSettings).pick({
+  key: true,
+  value: true,
+});
+
+export type SystemSetting = typeof systemSettings.$inferSelect;
+export type InsertSystemSetting = z.infer<typeof insertSystemSettingsSchema>;
+
 // Role permissions
 export const ROLE_PERMISSIONS = {
   ceo: {

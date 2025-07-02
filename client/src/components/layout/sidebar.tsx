@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import { cn, getRoleColor, getRoleName } from "@/lib/utils";
 import {
   LayoutDashboard,
@@ -28,9 +29,15 @@ export function Sidebar({ className }: SidebarProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeRole, setActiveRole] = useState<RoleType>(user?.role as RoleType);
 
-  const roles: RoleType[] = [
-    'ceo', 'marketer', 'salesManager', 'stockManager', 'admin', 'medicalRep', 'productManager', 'stockKeeper'
-  ];
+  // Fetch active roles from the system
+  const { data: activeRoles = [], isLoading: rolesLoading } = useQuery<string[]>({
+    queryKey: ["/api/active-roles"],
+  });
+
+  // Filter roles to only show active ones
+  const roles: RoleType[] = activeRoles.filter(role => 
+    ['ceo', 'marketer', 'salesManager', 'stockManager', 'admin', 'medicalRep', 'productManager', 'stockKeeper'].includes(role)
+  ) as RoleType[];
 
   type MenuItem = {
     title: string;
@@ -75,6 +82,12 @@ export function Sidebar({ className }: SidebarProps) {
       icon: <FileText className="mr-3 h-5 w-5" />,
       href: "/requests",
       requiredPermission: null // Allow for both canCreateRequests OR canManageRequests users
+    },
+    {
+      title: "Inventory Allocation",
+      icon: <Users className="mr-3 h-5 w-5" />,
+      href: "/allocation",
+      requiredPermission: "canManageUsers" // Only for administrators
     },
     {
       title: "User Management",

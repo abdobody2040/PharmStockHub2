@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { MainLayout } from "@/components/layout/main-layout";
 import CategoryManagement from "@/components/settings/category-management";
 import { SpecialtyManagement } from "@/components/settings/specialty-management";
+import { RoleActivation } from "@/components/settings/role-activation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -48,6 +49,7 @@ import {
   Settings, 
   AlertTriangle as AlertTriangleIcon, 
   Save,
+  Users,
   Bell,
   Shield,
   Database,
@@ -407,7 +409,7 @@ export default function SettingsPage() {
         onValueChange={setActiveTab}
         className="space-y-4"
       >
-        <TabsList className="grid grid-cols-3 lg:grid-cols-5 w-full">
+        <TabsList className="grid grid-cols-3 lg:grid-cols-6 w-full">
           <TabsTrigger value="profile" className="flex items-center gap-2">
             <User className="h-4 w-4" />
             <span className="hidden sm:inline">Profile</span>
@@ -418,6 +420,10 @@ export default function SettingsPage() {
           </TabsTrigger>
           {hasPermission("canAccessSettings") && (
             <>
+              <TabsTrigger value="roles" className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                <span className="hidden sm:inline">Roles</span>
+              </TabsTrigger>
               <TabsTrigger value="system" className="flex items-center gap-2">
                 <Settings className="h-4 w-4" />
                 <span className="hidden sm:inline">System</span>
@@ -631,9 +637,13 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
 
-        {/* System Settings - Only for certain roles */}
+        {/* Role Activation Settings - Only for CEO/Admin */}
         {hasPermission("canAccessSettings") && (
           <>
+            <TabsContent value="roles">
+              <RoleActivation />
+            </TabsContent>
+
             <TabsContent value="system">
               <Card>
                 <CardHeader>

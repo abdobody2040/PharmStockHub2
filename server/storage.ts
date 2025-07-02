@@ -7,6 +7,7 @@ import {
   specialties,
   inventoryRequests,
   requestItems,
+  systemSettings,
   users as usersTable
 } from "@shared/schema";
 import type { 
@@ -89,6 +90,8 @@ export interface IStorage {
   // System settings operations
   getSystemSettings(): Promise<any>;
   updateSystemSettings(settings: any): Promise<void>;
+  getActiveRoles(): Promise<string[]>;
+  updateActiveRoles(roles: string[]): Promise<void>;
 
   // Stock movement transaction
   executeStockMovementTransaction(args: {
@@ -575,6 +578,16 @@ async updateUser(id: number, userData: Partial<User>): Promise<User | undefined>
 
     return this.approveRequest(id, notes);
   }
+
+  async getActiveRoles(): Promise<string[]> {
+    // For MemStorage, return default roles
+    return ['ceo', 'admin', 'productManager', 'stockKeeper'];
+  }
+
+  async updateActiveRoles(roles: string[]): Promise<void> {
+    // For MemStorage, this is a no-op since it's in-memory
+    console.log('Active roles updated (MemStorage):', roles);
+  }
 }
 
 // Database storage implementation
@@ -600,6 +613,51 @@ export class DatabaseStorage implements IStorage {
     Object.entries(settings).forEach(([key, value]) => {
       this.systemSettings.set(key, value);
     });
+  }
+
+  async getActiveRoles(): Promise<string[]> {
+    try {
+      const [setting] = await db
+        .select()
+        .from(systemSettings)
+        .where(eq(systemSettings.key, 'activeRoles'))
+        .limit(1);
+      
+      if (setting) {
+        return JSON.parse(setting.value);
+      }
+      
+      // Default active roles if not set
+      return ['ceo', 'admin', 'productManager', 'stockKeeper'];
+    } catch (error) {
+      console.error('Error getting active roles:', error);
+      return ['ceo', 'admin', 'productManager', 'stockKeeper'];
+    }
+  }
+
+  async updateActiveRoles(roles: string[]): Promise<void> {
+    try {
+      await db
+        .insert(systemSettings)
+        .values({
+          key: 'activeRoles',
+          value: JSON.stringify(roles),
+        });
+    } catch (error) {
+      // If insert fails due to conflict, update existing record
+      try {
+        await db
+          .update(systemSettings)
+          .set({
+            value: JSON.stringify(roles),
+            updatedAt: new Date(),
+          })
+          .where(eq(systemSettings.key, 'activeRoles'));
+      } catch (updateError) {
+        console.error('Error updating active roles:', updateError);
+        throw updateError;
+      }
+    }
   }
 
   // Initialize with default data if needed
