@@ -430,15 +430,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json(allItems);
       }
 
-      // Other roles see items matching their specialty
-      if (!user.specialtyId) {
-        return res.json([]);
-      }
-
+      // For Product Managers and other roles, show both specialty items AND allocated items
       const allItems = await storage.getStockItems();
-      const specialtyItems = allItems.filter(item => item.specialtyId === user.specialtyId);
+      const allocations = await storage.getAllocations(user.id);
+      const allocatedItemIds = allocations.map(a => a.stockItemId);
       
-      res.json(specialtyItems);
+      // Get items that match either specialty OR are allocated to user
+      const relevantItems = allItems.filter(item => {
+        const matchesSpecialty = user.specialtyId && item.specialtyId === user.specialtyId;
+        const isAllocated = allocatedItemIds.includes(item.id);
+        return matchesSpecialty || isAllocated;
+      });
+      
+      res.json(relevantItems);
     } catch (error) {
       next(error);
     }

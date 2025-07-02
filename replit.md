@@ -32,7 +32,13 @@ A comprehensive pharmaceutical promotional materials management platform designe
 
 ## Recent Changes
 
-### July 2, 2025 - Complete Role-Based Inventory Access Implementation
+### July 2, 2025 - Fixed Product Manager Inventory Visibility Issue
+- **Enhanced Specialty-Based Inventory API**: Updated `/api/my-specialty-inventory` endpoint to show both specialty-matched items AND allocated items
+- **Improved User Experience**: Product Managers now see consistent inventory across dashboard and inventory management pages
+- **Fixed Missing Inventory Bug**: Resolved issue where Product Managers with allocations couldn't see their assigned items in inventory management
+- **Cross-Specialty Allocation Support**: Users can now see items allocated to them regardless of specialty mismatch
+
+### July 2, 2025 - Complete Role-Based Inventory Access Implementation (Previous)
 - **Dual Inventory API System**: Implemented two distinct inventory filtering approaches
   - `/api/my-allocated-inventory`: Shows only items allocated to specific users (used in Dashboard)
   - `/api/my-specialty-inventory`: Shows all items matching user's specialty (used in Inventory Management)
