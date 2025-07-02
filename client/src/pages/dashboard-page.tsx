@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import Chart from 'chart.js/auto';
 import 'chartjs-adapter-date-fns';
+import { ProductManagerDashboard } from "@/components/dashboard/product-manager-dashboard";
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -198,6 +199,15 @@ export default function DashboardPage() {
   const getCategoryById = (categoryId: number) => {
     return categories.find(cat => cat.id === categoryId) || { name: 'Unknown', color: 'bg-gray-500' };
   };
+
+  // Show Product Manager Dashboard for Product Manager role
+  if (user?.role === 'productManager') {
+    return (
+      <MainLayout>
+        <ProductManagerDashboard />
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
