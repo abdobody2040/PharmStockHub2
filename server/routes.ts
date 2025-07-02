@@ -416,65 +416,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get allocated and transferred inventory for current user (Dashboard view)
-  app.get("/api/my-dashboard-inventory", isAuthenticated, async (req, res, next) => {
-    try {
-      const user = req.user;
-      if (!user) {
-        return res.status(401).json({ error: "User not authenticated" });
-      }
-
-      // Admin and stockKeeper see all items
-      if (user.role === 'admin' || user.role === 'stockKeeper' || user.role === 'ceo') {
-        const allItems = await storage.getStockItems();
-        return res.json(allItems);
-      }
-
-      // For Product Managers: combine allocated inventory + transferred inventory
-      const allocations = await storage.getAllocations(user.id);
-      const movements = await storage.getMovements();
-      
-      // Get items that have been transferred to this user
-      const transferredMovements = movements.filter(m => m.toUserId === user.id);
-      const transferredItemIds = [...new Set(transferredMovements.map(m => m.stockItemId))];
-      
-      // Get items that are allocated to this user
-      const allocatedItemIds = allocations.map(a => a.stockItemId);
-      
-      // Combine both lists (remove duplicates)
-      const relevantItemIds = [...new Set([...allocatedItemIds, ...transferredItemIds])];
-      
-      if (relevantItemIds.length === 0) {
-        return res.json([]);
-      }
-
-      const allItems = await storage.getStockItems();
-      const relevantItems = allItems.filter(item => relevantItemIds.includes(item.id));
-      
-      // Calculate quantities: allocated + transferred amounts
-      const adjustedItems = relevantItems.map(item => {
-        // Get allocated quantity
-        const userAllocations = allocations.filter(a => a.stockItemId === item.id);
-        const allocatedQuantity = userAllocations.reduce((sum, a) => sum + a.quantity, 0);
-        
-        // Get transferred quantity (sum of all transfers TO this user for this item)
-        const itemTransfers = transferredMovements.filter(m => m.stockItemId === item.id);
-        const transferredQuantity = itemTransfers.reduce((sum, m) => sum + m.quantity, 0);
-        
-        return {
-          ...item,
-          quantity: allocatedQuantity + transferredQuantity,
-          allocatedQuantity,
-          transferredQuantity
-        };
-      });
-
-      res.json(adjustedItems);
-    } catch (error) {
-      next(error);
-    }
-  });
-
   // Get inventory by specialty for current user
   app.get("/api/my-specialty-inventory", isAuthenticated, async (req, res, next) => {
     try {
