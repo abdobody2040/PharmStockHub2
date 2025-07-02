@@ -154,8 +154,12 @@ export default function InventoryPage() {
       await apiRequest("DELETE", `/api/stock-items/${id}`);
     },
     onSuccess: () => {
+      // Invalidate both stock items and specialty inventory queries
       queryClient.invalidateQueries({ queryKey: ["/api/stock-items"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/my-specialty-inventory"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/my-allocated-inventory"] });
       setShowDeleteConfirm(false);
+      setCurrentItem(null);
       toast({
         title: "Success",
         description: "Stock item deleted successfully",

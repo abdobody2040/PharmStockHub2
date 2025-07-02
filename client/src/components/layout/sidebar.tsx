@@ -84,12 +84,6 @@ export function Sidebar({ className }: SidebarProps) {
       requiredPermission: null // Allow for both canCreateRequests OR canManageRequests users
     },
     {
-      title: "Inventory Allocation",
-      icon: <Users className="mr-3 h-5 w-5" />,
-      href: "/allocation",
-      requiredPermission: "canManageUsers" // Only for administrators
-    },
-    {
       title: "User Management",
       icon: <Users className="mr-3 h-5 w-5" />,
       href: "/users",
