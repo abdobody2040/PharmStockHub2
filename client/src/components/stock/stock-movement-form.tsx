@@ -71,9 +71,9 @@ export function StockMovementForm({ onSubmit, isLoading = false }: StockMovement
     }
   };
 
-  // Fetch available stock items - use allocated inventory for role-based filtering
+  // Fetch available stock items - use specialty-based inventory for movement
   const { data: stockItems = [] } = useQuery<StockItem[]>({
-    queryKey: ["/api/my-allocated-inventory"],
+    queryKey: ["/api/my-specialty-inventory"],
   });
 
   // Fetch users who can receive stock

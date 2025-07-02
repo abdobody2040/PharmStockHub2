@@ -51,9 +51,9 @@ export default function StockMovementPage() {
   const { toast } = useToast();
   const [showMoveStockModal, setShowMoveStockModal] = useState(false);
 
-  // Fetch data - use allocated inventory for role-based filtering
+  // Fetch data - use specialty-based inventory for movement history
   const { data: stockItems = [] } = useQuery<StockItem[]>({
-    queryKey: ["/api/my-allocated-inventory"],
+    queryKey: ["/api/my-specialty-inventory"],
   });
 
   const { data: categories = [] } = useQuery<Category[]>({

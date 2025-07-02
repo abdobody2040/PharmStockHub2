@@ -382,6 +382,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get inventory by specialty for current user
+  app.get("/api/my-specialty-inventory", isAuthenticated, async (req, res, next) => {
+    try {
+      const user = req.user;
+      if (!user) {
+        return res.status(401).json({ error: "User not authenticated" });
+      }
+
+      // Admin and stockKeeper see all items
+      if (user.role === 'admin' || user.role === 'stockKeeper' || user.role === 'ceo') {
+        const allItems = await storage.getStockItems();
+        return res.json(allItems);
+      }
+
+      // Other roles see items matching their specialty
+      if (!user.specialtyId) {
+        return res.json([]);
+      }
+
+      const allItems = await storage.getStockItems();
+      const specialtyItems = allItems.filter(item => item.specialtyId === user.specialtyId);
+      
+      res.json(specialtyItems);
+    } catch (error) {
+      next(error);
+    }
+  });
+
   app.put("/api/allocations/:id", isAuthenticated, async (req, res, next) => {
     try {
       const id = parseInt(req.params.id);

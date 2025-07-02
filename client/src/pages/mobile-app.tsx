@@ -207,7 +207,7 @@ function MobileInventory() {
   const filter = params.get('filter');
   
   const { data: stockItems = [] } = useQuery<StockItem[]>({
-    queryKey: ["/api/my-allocated-inventory"],
+    queryKey: ["/api/my-specialty-inventory"],
   });
   
   const { data: categories = [] } = useQuery<Category[]>({
