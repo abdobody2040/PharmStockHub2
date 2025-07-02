@@ -1,398 +1,378 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useQuery } from "@tanstack/react-query";
-import { StockItem, Category, User } from "@shared/schema";
-import { useAuth } from "@/hooks/use-auth";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Package, Users } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { useQuery } from "@tanstack/react-query";
+import { User, StockItem } from "@shared/schema";
+import { useAuth } from "@/hooks/use-auth";
+import { 
+  Package, 
+  Users, 
+  ArrowRight,
+  Minus,
+  Plus,
+  Search,
+  UserCircle
+} from "lucide-react";
+
+const movementSchema = z.object({
+  notes: z.string().optional(),
+});
+
+type MovementFormData = z.infer<typeof movementSchema>;
 
 interface StockMovementFormProps {
   onSubmit: (data: any) => void;
   isLoading?: boolean;
 }
 
-// Helper function to get role display name
-function getRoleName(role: string): string {
-  switch (role) {
-    case 'ceo':
-      return 'CEO';
-    case 'admin':
-      return 'Admin';
-    case 'productManager':
-      return 'Product Manager';
-    case 'stockKeeper':
-      return 'Stock Keeper';
-    case 'medicalRep':
-      return 'Medical Rep';
-    case 'salesManager':
-      return 'Sales Manager';
-    default:
-      return role;
-  }
+interface SelectedStockItem {
+  stockItem: StockItem;
+  quantity: number;
 }
 
-const stockMovementSchema = z.object({
-  stockItemId: z.string().min(1, "Stock item is required"),
-  toUserId: z.string().min(1, "Recipient is required"),
-  quantity: z.string().min(1, "Quantity is required"),
-  notes: z.string().optional(),
-});
-
-type FormValues = z.infer<typeof stockMovementSchema>;
-
 export function StockMovementForm({ onSubmit, isLoading = false }: StockMovementFormProps) {
-  const [selectedStockItems, setSelectedStockItems] = useState<StockItem[]>([]);
-  const [selectedRecipients, setSelectedRecipients] = useState<User[]>([]);
-  const [filterRole, setFilterRole] = useState<string>("all");
-
-  const { data: stockItems = [] } = useQuery<StockItem[]>({
-    queryKey: ["/api/stock-items"],
-  });
-
-  const { data: categories = [] } = useQuery<Category[]>({
-    queryKey: ["/api/categories"],
-  });
-
-  const { data: users = [] } = useQuery<User[]>({
-    queryKey: ["/api/users"],
-  });
-
   const { user } = useAuth();
+  const [selectedStockItems, setSelectedStockItems] = useState<SelectedStockItem[]>([]);
+  const [selectedRecipients, setSelectedRecipients] = useState<User[]>([]);
+  const [stockSearchTerm, setStockSearchTerm] = useState("");
+  const [recipientSearchTerm, setRecipientSearchTerm] = useState("");
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(stockMovementSchema),
+  const form = useForm<MovementFormData>({
+    resolver: zodResolver(movementSchema),
     defaultValues: {
-      stockItemId: "",
-      toUserId: "",
-      quantity: "",
       notes: "",
     },
   });
 
-  const getCategoryForItem = (categoryId: number) => {
-    return categories.find(c => c.id === categoryId) || { name: "Unknown", color: "bg-gray-100" };
-  };
-
-  const filteredUsers = user?.role === 'ceo'
-    ? users
-    : filterRole === "all"
-      ? users.filter(u => u.role === 'medicalRep' || u.role === 'salesManager')
-      : users.filter(u => u.role === filterRole);
-
-  const toggleStockItemSelection = (item: StockItem) => {
-    if (selectedStockItems.find(i => i.id === item.id)) {
-      setSelectedStockItems(selectedStockItems.filter(i => i.id !== item.id));
-    } else {
-      setSelectedStockItems([...selectedStockItems, item]);
-
-      // Set form value if it's the first selection
-      if (selectedStockItems.length === 0) {
-        form.setValue("stockItemId", item.id.toString());
-      }
+  // Get role name helper function
+  const getRoleName = (role: string) => {
+    switch (role) {
+      case "admin":
+        return "Administrator";
+      case "stockKeeper":
+        return "Stock Keeper";
+      case "productManager":
+        return "Product Manager";
+      case "auditor":
+        return "Auditor";
+      default:
+        return role;
     }
   };
 
-  const isStockItemSelected = (itemId: number) => {
-    return !!selectedStockItems.find(i => i.id === itemId);
-  };
+  // Fetch available stock items
+  const { data: stockItems = [] } = useQuery<StockItem[]>({
+    queryKey: ["/api/stock-items"],
+  });
 
-  const toggleRecipientSelection = (user: User) => {
-    if (selectedRecipients.find(u => u.id === user.id)) {
-      setSelectedRecipients(selectedRecipients.filter(u => u.id !== user.id));
-    } else {
-      setSelectedRecipients([...selectedRecipients, user]);
+  // Fetch users who can receive stock
+  const { data: users = [] } = useQuery<User[]>({
+    queryKey: ["/api/users"],
+  });
 
-      // Set form value if it's the first selection
-      if (selectedRecipients.length === 0) {
-        form.setValue("toUserId", user.id.toString());
-      }
+  // Filter users to exclude current user and include warehouse option
+  const availableRecipients = users.filter(u => u.id !== user?.id);
+
+  // Filter stock items based on search
+  const filteredStockItems = stockItems.filter(item =>
+    item.name.toLowerCase().includes(stockSearchTerm.toLowerCase()) ||
+    item.uniqueNumber?.toLowerCase().includes(stockSearchTerm.toLowerCase())
+  );
+
+  // Filter recipients based on search
+  const filteredRecipients = availableRecipients.filter(recipient =>
+    recipient.name.toLowerCase().includes(recipientSearchTerm.toLowerCase()) ||
+    getRoleName(recipient.role).toLowerCase().includes(recipientSearchTerm.toLowerCase())
+  );
+
+  const handleStockItemSelect = (stockItem: StockItem) => {
+    const existingIndex = selectedStockItems.findIndex(item => item.stockItem.id === stockItem.id);
+    if (existingIndex === -1) {
+      setSelectedStockItems([...selectedStockItems, { stockItem, quantity: 1 }]);
     }
   };
 
-  const isRecipientSelected = (userId: number) => {
-    return !!selectedRecipients.find(u => u.id === userId);
+  const handleStockItemRemove = (stockItemId: number) => {
+    setSelectedStockItems(selectedStockItems.filter(item => item.stockItem.id !== stockItemId));
   };
 
-  const handleSubmit = (values: FormValues) => {
-    const movementData = {
-      stockItemId: parseInt(values.stockItemId),
-      toUserId: parseInt(values.toUserId),
-      quantity: parseInt(values.quantity),
-      notes: values.notes,
-    };
+  const handleQuantityChange = (stockItemId: number, change: number) => {
+    setSelectedStockItems(selectedStockItems.map(item => {
+      if (item.stockItem.id === stockItemId) {
+        const newQuantity = Math.max(1, item.quantity + change);
+        return { ...item, quantity: newQuantity };
+      }
+      return item;
+    }));
+  };
 
-    onSubmit(movementData);
+  const handleRecipientToggle = (recipient: User) => {
+    const isSelected = selectedRecipients.some(r => r.id === recipient.id);
+    if (isSelected) {
+      setSelectedRecipients(selectedRecipients.filter(r => r.id !== recipient.id));
+    } else {
+      setSelectedRecipients([...selectedRecipients, recipient]);
+    }
+  };
+
+  const handleSubmit = (data: MovementFormData) => {
+    const movements = [];
+    
+    for (const recipient of selectedRecipients) {
+      for (const selectedItem of selectedStockItems) {
+        movements.push({
+          stockItemId: selectedItem.stockItem.id,
+          fromUserId: user?.id || null,
+          toUserId: recipient.id,
+          quantity: selectedItem.quantity,
+          notes: data.notes || "",
+          movedBy: user?.id || null,
+        });
+      }
+    }
+
+    onSubmit({ movements });
   };
 
   return (
-    <div className="flex flex-col h-full max-h-[75vh] overflow-hidden">
-      {/* Fixed height scrollable container */}
-      <div className="flex-1 overflow-y-auto space-y-4 pr-2">
-        {/* Stock Items Section */}
-        <div className="bg-white rounded-lg shadow border">
-          <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
-            <h3 className="text-lg font-medium text-gray-800">Available Stock</h3>
-            <p className="text-sm text-gray-500 mt-1">Select items to move</p>
-          </div>
-          <div className="p-4">
-            <div className="max-h-48 overflow-y-auto border rounded">
-              <Table>
-                <TableHeader className="sticky top-0 bg-white z-10">
-                  <TableRow>
-                    <TableHead className="w-[50px]">
-                      <Checkbox />
-                    </TableHead>
-                    <TableHead className="min-w-[200px]">Item</TableHead>
-                    <TableHead className="min-w-[100px]">Category</TableHead>
-                    <TableHead className="min-w-[80px]">Available</TableHead>
-                    <TableHead className="min-w-[80px]">Move Qty</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {stockItems.map((item) => (
-                    <TableRow key={item.id} className={isStockItemSelected(item.id) ? "bg-blue-50" : ""}>
-                      <TableCell>
-                        <Checkbox 
-                          checked={isStockItemSelected(item.id)}
-                          onCheckedChange={() => toggleStockItemSelection(item)}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center min-w-0">
-                          {item.imageUrl ? (
-                            <div className="h-8 w-8 flex-shrink-0">
-                              <img 
-                                src={item.imageUrl} 
-                                alt={item.name} 
-                                className="h-8 w-8 rounded object-cover" 
-                              />
-                            </div>
+    <div className="flex flex-col h-full overflow-hidden">
+      {/* Scrollable Content */}
+      <div className="flex-1 overflow-y-auto space-y-6 p-1">
+        {/* Stock Items Selection */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center">
+              <Package className="mr-2 h-5 w-5" />
+              Select Stock Items
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Search Stock Items */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="Search stock items..."
+                value={stockSearchTerm}
+                onChange={(e) => setStockSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+
+            {/* Selected Stock Items */}
+            {selectedStockItems.length > 0 && (
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-gray-700">Selected Items:</Label>
+                <div className="space-y-2 max-h-32 overflow-y-auto">
+                  {selectedStockItems.map(({ stockItem, quantity }) => (
+                    <div key={stockItem.id} className="flex items-center justify-between p-2 bg-blue-50 rounded-lg border">
+                      <div className="flex items-center space-x-3">
+                        <div className="h-8 w-8 flex-shrink-0">
+                          {stockItem.imageUrl ? (
+                            <img 
+                              src={stockItem.imageUrl}
+                              alt={stockItem.name}
+                              className="h-8 w-8 rounded object-cover"
+                            />
                           ) : (
-                            <div className="h-8 w-8 flex-shrink-0 bg-gray-200 rounded flex items-center justify-center">
+                            <div className="h-8 w-8 rounded bg-gray-200 flex items-center justify-center">
                               <Package className="h-4 w-4 text-gray-500" />
                             </div>
                           )}
-                          <div className="ml-3 min-w-0">
-                            <div className="text-sm font-medium text-gray-900 truncate">{item.name}</div>
-                            <div className="text-xs text-gray-500 truncate">{item.uniqueNumber}</div>
-                          </div>
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="font-medium text-xs">
-                          {getCategoryForItem(item.categoryId).name}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-sm">{item.quantity}</TableCell>
-                      <TableCell>
-                        <Input 
-                          type="number"
-                          min="0"
-                          max={item.quantity.toString()}
-                          disabled={!isStockItemSelected(item.id)}
-                          className="w-16 h-8 text-sm"
-                          defaultValue="0"
-                          onInput={(e) => {
-                            if (isStockItemSelected(item.id)) {
-                              form.setValue("stockItemId", item.id.toString());
-                              form.setValue("quantity", e.currentTarget.value);
-                            }
-                          }}
-                        />
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
-        </div>
-
-        {/* Recipients and Form Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* Recipients */}
-          <div className="bg-white rounded-lg shadow border">
-            <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
-              <h3 className="text-lg font-medium text-gray-800">Recipients</h3>
-              <div className="mt-2">
-                <Select 
-                  value={filterRole}
-                  onValueChange={setFilterRole}
-                >
-                  <SelectTrigger className="h-8">
-                    <SelectValue placeholder="Filter by role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Recipients</SelectItem>
-                    <SelectItem value="medicalRep">Medical Representatives</SelectItem>
-                    <SelectItem value="salesManager">Sales Managers</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="p-4">
-              <div className="max-h-48 overflow-y-auto border rounded">
-                <ul className="space-y-2 p-2">
-                  {filteredUsers.map((user) => (
-                    <li 
-                      key={user.id}
-                      className="p-2 flex items-center justify-between hover:bg-gray-50 rounded-md cursor-pointer"
-                      onClick={() => toggleRecipientSelection(user)}
-                    >
-                      <div className="flex items-center min-w-0">
-                        <Checkbox 
-                          checked={isRecipientSelected(user.id)}
-                          onCheckedChange={() => toggleRecipientSelection(user)}
-                          className="mr-2"
-                        />
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium text-gray-900 truncate">{user.name}</p>
-                          <p className="text-xs text-gray-500 truncate">{user.region || "No region"}</p>
+                        <div>
+                          <span className="text-sm font-medium">{stockItem.name}</span>
+                          <div className="text-xs text-gray-500">{stockItem.uniqueNumber}</div>
                         </div>
                       </div>
-                      <Badge variant="outline" className={`text-xs ml-2 ${user.role === 'medicalRep' ? 'bg-purple-100 text-purple-800' : 'bg-green-100 text-green-800'}`}>
-                        {getRoleName(user.role)}
-                      </Badge>
-                    </li>
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleQuantityChange(stockItem.id, -1)}
+                          className="h-8 w-8 p-0"
+                        >
+                          <Minus className="h-3 w-3" />
+                        </Button>
+                        <span className="text-sm font-medium min-w-[2rem] text-center">{quantity}</span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleQuantityChange(stockItem.id, 1)}
+                          className="h-8 w-8 p-0"
+                        >
+                          <Plus className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleStockItemRemove(stockItem.id)}
+                          className="h-8 px-2 text-red-600 hover:text-red-700"
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    </div>
                   ))}
-                </ul>
+                </div>
+              </div>
+            )}
+
+            {/* Available Stock Items */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-gray-700">Available Items:</Label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-60 overflow-y-auto">
+                {filteredStockItems
+                  .filter(item => !selectedStockItems.some(selected => selected.stockItem.id === item.id))
+                  .map((stockItem) => (
+                    <div
+                      key={stockItem.id}
+                      className="p-3 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                      onClick={() => handleStockItemSelect(stockItem)}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div className="h-10 w-10 flex-shrink-0">
+                          {stockItem.imageUrl ? (
+                            <img 
+                              src={stockItem.imageUrl}
+                              alt={stockItem.name}
+                              className="h-10 w-10 rounded object-cover"
+                            />
+                          ) : (
+                            <div className="h-10 w-10 rounded bg-gray-200 flex items-center justify-center">
+                              <Package className="h-5 w-5 text-gray-500" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900 truncate">{stockItem.name}</p>
+                          <p className="text-xs text-gray-500 truncate">{stockItem.uniqueNumber}</p>
+                          <Badge variant="secondary" className="text-xs">
+                            Qty: {stockItem.quantity}
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
               </div>
             </div>
-          </div>
+          </CardContent>
+        </Card>
 
-          {/* Movement Form */}
-          <div className="bg-white rounded-lg shadow border">
-            <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
-              <h3 className="text-lg font-medium text-gray-800">Movement Details</h3>
+        <Separator />
+
+        {/* Recipients Selection */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center">
+              <Users className="mr-2 h-5 w-5" />
+              Select Recipients
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Search Recipients */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="Search recipients..."
+                value={recipientSearchTerm}
+                onChange={(e) => setRecipientSearchTerm(e.target.value)}
+                className="pl-10"
+              />
             </div>
-            <div className="p-4">
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="stockItemId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm">Selected Item</FormLabel>
-                        <FormControl>
-                          <Select
-                            value={field.value}
-                            onValueChange={field.onChange}
-                            disabled={selectedStockItems.length === 0}
-                          >
-                            <SelectTrigger className="h-8">
-                              <SelectValue placeholder="Select an item" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {selectedStockItems.map(item => (
-                                <SelectItem key={item.id} value={item.id.toString()}>
-                                  {item.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
 
-                  <FormField
-                    control={form.control}
-                    name="toUserId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm">Recipient</FormLabel>
-                        <FormControl>
-                          <Select
-                            value={field.value}
-                            onValueChange={field.onChange}
-                            disabled={selectedRecipients.length === 0}
-                          >
-                            <SelectTrigger className="h-8">
-                              <SelectValue placeholder="Select a recipient" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {selectedRecipients.map(user => (
-                                <SelectItem key={user.id} value={user.id.toString()}>
-                                  {user.name} ({getRoleName(user.role)})
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+            {/* Selected Recipients */}
+            {selectedRecipients.length > 0 && (
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-gray-700">Selected Recipients:</Label>
+                <div className="flex flex-wrap gap-2">
+                  {selectedRecipients.map((recipient) => (
+                    <Badge key={recipient.id} variant="secondary" className="flex items-center space-x-1">
+                      <UserCircle className="h-3 w-3" />
+                      <span>{recipient.name}</span>
+                      <span className="text-xs">({getRoleName(recipient.role)})</span>
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
 
-                  <FormField
-                    control={form.control}
-                    name="quantity"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm">Quantity to Move</FormLabel>
-                        <FormControl>
-                          <Input type="number" min="1" className="h-8" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="notes"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm">Notes (Optional)</FormLabel>
-                        <FormControl>
-                          <Textarea rows={2} className="text-sm" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </form>
-              </Form>
+            {/* Available Recipients */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-gray-700">Available Recipients:</Label>
+              <div className="space-y-2 max-h-60 overflow-y-auto">
+                {filteredRecipients.map((recipient) => {
+                  const isSelected = selectedRecipients.some(r => r.id === recipient.id);
+                  return (
+                    <div
+                      key={recipient.id}
+                      className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                      onClick={() => handleRecipientToggle(recipient)}
+                    >
+                      <Checkbox
+                        checked={isSelected}
+                        onChange={() => handleRecipientToggle(recipient)}
+                      />
+                      <UserCircle className="h-8 w-8 text-gray-400" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900">{recipient.name}</p>
+                        <p className="text-xs text-gray-500">{getRoleName(recipient.role)}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
+
+        <Separator />
+
+        {/* Movement Details */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">Movement Details</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="notes">Notes (Optional)</Label>
+                <Textarea
+                  id="notes"
+                  placeholder="Add any notes about this stock movement..."
+                  {...form.register("notes")}
+                  className="mt-1"
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Fixed Footer with Submit Button */}
+      {/* Fixed Footer with Buttons on Same Line */}
       <div className="flex-shrink-0 border-t bg-white p-4 mt-4">
-        <div className="flex justify-end">
+        <div className="flex justify-end space-x-3">
+          <Button 
+            type="button" 
+            variant="outline"
+            onClick={() => {
+              setSelectedStockItems([]);
+              setSelectedRecipients([]);
+              form.reset();
+            }}
+            className="px-6 py-2"
+          >
+            Cancel
+          </Button>
           <Button 
             type="submit" 
             disabled={isLoading || selectedStockItems.length === 0 || selectedRecipients.length === 0}
