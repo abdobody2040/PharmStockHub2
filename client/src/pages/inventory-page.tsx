@@ -87,9 +87,9 @@ export default function InventoryPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [currentItem, setCurrentItem] = useState<StockItem | null>(null);
 
-  // Fetch data
+  // Fetch data - use allocated inventory for role-based filtering
   const { data: stockItems = [], isLoading: isLoadingItems } = useQuery<StockItem[]>({
-    queryKey: ["/api/stock-items"],
+    queryKey: ["/api/my-allocated-inventory"],
   });
 
   const { data: categories = [] } = useQuery<Category[]>({

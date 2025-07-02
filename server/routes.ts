@@ -341,6 +341,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get allocated inventory for current user
+  app.get("/api/my-allocated-inventory", isAuthenticated, async (req, res, next) => {
+    try {
+      const user = req.user;
+      if (!user) {
+        return res.status(401).json({ error: "User not authenticated" });
+      }
+
+      // Admin and stockKeeper see all items
+      if (user.role === 'admin' || user.role === 'stockKeeper' || user.role === 'ceo') {
+        const allItems = await storage.getStockItems();
+        return res.json(allItems);
+      }
+
+      // Other roles see only their allocated inventory
+      const allocations = await storage.getAllocations(user.id);
+      const allocatedItemIds = allocations.map(a => a.stockItemId);
+      
+      if (allocatedItemIds.length === 0) {
+        return res.json([]);
+      }
+
+      const allItems = await storage.getStockItems();
+      const allocatedItems = allItems.filter(item => allocatedItemIds.includes(item.id));
+      
+      // Adjust quantities to show only allocated amounts
+      const adjustedItems = allocatedItems.map(item => {
+        const userAllocations = allocations.filter(a => a.stockItemId === item.id);
+        const allocatedQuantity = userAllocations.reduce((sum, a) => sum + a.quantity, 0);
+        return {
+          ...item,
+          quantity: allocatedQuantity
+        };
+      });
+
+      res.json(adjustedItems);
+    } catch (error) {
+      next(error);
+    }
+  });
+
   app.put("/api/allocations/:id", isAuthenticated, async (req, res, next) => {
     try {
       const id = parseInt(req.params.id);

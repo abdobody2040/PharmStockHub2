@@ -36,7 +36,7 @@ function MobileDashboard() {
   const { user } = useAuth();
   const userName = user?.name || "User";
   const { data: stockItems = [] } = useQuery<StockItem[]>({
-    queryKey: ["/api/stock-items"],
+    queryKey: ["/api/my-allocated-inventory"],
   });
   
   const { data: categories = [] } = useQuery<Category[]>({
@@ -207,7 +207,7 @@ function MobileInventory() {
   const filter = params.get('filter');
   
   const { data: stockItems = [] } = useQuery<StockItem[]>({
-    queryKey: ["/api/stock-items"],
+    queryKey: ["/api/my-allocated-inventory"],
   });
   
   const { data: categories = [] } = useQuery<Category[]>({

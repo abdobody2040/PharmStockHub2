@@ -32,8 +32,9 @@ interface DashboardStats {
 export function RoleBasedDashboard() {
   const { user } = useAuth();
 
+  // Use allocated inventory for role-based filtering
   const { data: stockItems = [] } = useQuery<StockItem[]>({
-    queryKey: ["/api/stock-items"],
+    queryKey: ["/api/my-allocated-inventory"],
   });
 
   const { data: requests = [] } = useQuery<InventoryRequest[]>({
