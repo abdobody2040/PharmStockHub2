@@ -20,7 +20,6 @@ import MobileApp from "@/pages/mobile-app";
 import { ProtectedRoute } from "@/lib/protected-route";
 import StockMovementPage from "./pages/stock-movement-page";
 import InventoryAllocationPage from "./pages/inventory-allocation-page";
-import NotFoundPage from "./pages/not-found";
 
 function Router() {
   return (
@@ -36,6 +35,8 @@ function Router() {
       <ProtectedRoute path="/mobile" component={MobileApp} />
       <ProtectedRoute path="/mobile/:rest*" component={MobileApp} />
       <ProtectedRoute path="/requests" component={RequestManagementPage} roles={['productManager', 'stockKeeper', 'ceo', 'admin']} />
+      <ProtectedRoute path="/inventory-allocation" component={InventoryAllocationPage} roles={['ceo', 'admin', 'stockKeeper']} />
+      <ProtectedRoute path="/stock-movements" component={StockMovementPage} roles={['ceo', 'admin', 'stockKeeper']} />
       <Route component={NotFound} />
     </Switch>
   );
