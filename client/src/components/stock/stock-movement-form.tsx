@@ -40,6 +40,26 @@ interface StockMovementFormProps {
   isLoading?: boolean;
 }
 
+// Helper function to get role display name
+function getRoleName(role: string): string {
+  switch (role) {
+    case 'ceo':
+      return 'CEO';
+    case 'admin':
+      return 'Admin';
+    case 'productManager':
+      return 'Product Manager';
+    case 'stockKeeper':
+      return 'Stock Keeper';
+    case 'medicalRep':
+      return 'Medical Rep';
+    case 'salesManager':
+      return 'Sales Manager';
+    default:
+      return role;
+  }
+}
+
 const stockMovementSchema = z.object({
   stockItemId: z.string().min(1, "Stock item is required"),
   toUserId: z.string().min(1, "Recipient is required"),
