@@ -224,20 +224,22 @@ export default function StockMovementPage() {
 
       {/* Move Stock Modal */}
       <Dialog open={showMoveStockModal} onOpenChange={setShowMoveStockModal}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
+        <DialogContent className="max-w-6xl max-h-[90vh] w-[95vw] overflow-hidden">
+          <DialogHeader className="pb-2">
             <DialogTitle>Move Stock</DialogTitle>
             <DialogDescription>
               Select items and recipients to create a stock transfer.
             </DialogDescription>
           </DialogHeader>
           
-          <StockMovementForm
-            onSubmit={handleSubmitMovement}
-            isLoading={createMovementMutation.isPending}
-          />
+          <div className="flex-1 overflow-hidden">
+            <StockMovementForm
+              onSubmit={handleSubmitMovement}
+              isLoading={createMovementMutation.isPending}
+            />
+          </div>
           
-          <DialogFooter>
+          <DialogFooter className="pt-2">
             <Button variant="outline" onClick={() => setShowMoveStockModal(false)}>
               Cancel
             </Button>

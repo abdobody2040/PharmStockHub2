@@ -154,13 +154,14 @@ export function StockMovementForm({ onSubmit, isLoading = false }: StockMovement
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <div className="lg:col-span-2 bg-white rounded-lg shadow">
-        <div className="px-6 py-4 border-b border-gray-200">
+    <div className="flex flex-col gap-4 max-h-[80vh] overflow-hidden">
+      {/* Stock Items Section */}
+      <div className="bg-white rounded-lg shadow">
+        <div className="px-4 py-3 border-b border-gray-200">
           <h3 className="text-lg font-medium text-gray-800">Available Stock</h3>
           <p className="text-sm text-gray-500 mt-1">Select items to move</p>
         </div>
-        <div className="p-6">
+        <div className="p-4 max-h-64 overflow-y-auto">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
@@ -168,10 +169,10 @@ export function StockMovementForm({ onSubmit, isLoading = false }: StockMovement
                   <TableHead className="w-[50px]">
                     <Checkbox />
                   </TableHead>
-                  <TableHead>Item</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Available Qty</TableHead>
-                  <TableHead>Move Qty</TableHead>
+                  <TableHead className="min-w-[200px]">Item</TableHead>
+                  <TableHead className="min-w-[100px]">Category</TableHead>
+                  <TableHead className="min-w-[80px]">Available</TableHead>
+                  <TableHead className="min-w-[80px]">Move Qty</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -184,39 +185,39 @@ export function StockMovementForm({ onSubmit, isLoading = false }: StockMovement
                       />
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center">
+                      <div className="flex items-center min-w-0">
                         {item.imageUrl ? (
-                          <div className="h-10 w-10 flex-shrink-0">
+                          <div className="h-8 w-8 flex-shrink-0">
                             <img 
                               src={item.imageUrl} 
                               alt={item.name} 
-                              className="h-10 w-10 rounded object-cover" 
+                              className="h-8 w-8 rounded object-cover" 
                             />
                           </div>
                         ) : (
-                          <div className="h-10 w-10 flex-shrink-0 bg-gray-200 rounded flex items-center justify-center">
-                            <span className="text-xs text-gray-500">No img</span>
+                          <div className="h-8 w-8 flex-shrink-0 bg-gray-200 rounded flex items-center justify-center">
+                            <Package className="h-4 w-4 text-gray-500" />
                           </div>
                         )}
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">{item.name}</div>
-                          <div className="text-sm text-gray-500">{item.uniqueNumber}</div>
+                        <div className="ml-3 min-w-0">
+                          <div className="text-sm font-medium text-gray-900 truncate">{item.name}</div>
+                          <div className="text-xs text-gray-500 truncate">{item.uniqueNumber}</div>
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline" className="font-medium">
+                      <Badge variant="outline" className="font-medium text-xs">
                         {getCategoryForItem(item.categoryId).name}
                       </Badge>
                     </TableCell>
-                    <TableCell>{item.quantity}</TableCell>
+                    <TableCell className="text-sm">{item.quantity}</TableCell>
                     <TableCell>
                       <Input 
                         type="number"
                         min="0"
                         max={item.quantity.toString()}
                         disabled={!isStockItemSelected(item.id)}
-                        className="w-20"
+                        className="w-16 h-8 text-sm"
                         defaultValue="0"
                         onInput={(e) => {
                           if (isStockItemSelected(item.id)) {
@@ -234,153 +235,159 @@ export function StockMovementForm({ onSubmit, isLoading = false }: StockMovement
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-medium text-gray-800">Recipients</h3>
-          <div className="mt-2">
-            <Select 
-              value={filterRole}
-              onValueChange={setFilterRole}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Filter by role" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Recipients</SelectItem>
-                <SelectItem value="medicalRep">Medical Representatives</SelectItem>
-                <SelectItem value="salesManager">Sales Managers</SelectItem>
-              </SelectContent>
-            </Select>
+      {/* Recipients and Form Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Recipients */}
+        <div className="bg-white rounded-lg shadow">
+          <div className="px-4 py-3 border-b border-gray-200">
+            <h3 className="text-lg font-medium text-gray-800">Recipients</h3>
+            <div className="mt-2">
+              <Select 
+                value={filterRole}
+                onValueChange={setFilterRole}
+              >
+                <SelectTrigger className="h-8">
+                  <SelectValue placeholder="Filter by role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Recipients</SelectItem>
+                  <SelectItem value="medicalRep">Medical Representatives</SelectItem>
+                  <SelectItem value="salesManager">Sales Managers</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="p-4 max-h-48 overflow-y-auto">
+            <ul className="space-y-2">
+              {filteredUsers.map((user) => (
+                <li 
+                  key={user.id}
+                  className="p-2 flex items-center justify-between hover:bg-gray-50 rounded-md cursor-pointer"
+                  onClick={() => toggleRecipientSelection(user)}
+                >
+                  <div className="flex items-center min-w-0">
+                    <Checkbox 
+                      checked={isRecipientSelected(user.id)}
+                      onCheckedChange={() => toggleRecipientSelection(user)}
+                      className="mr-2"
+                    />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">{user.name}</p>
+                      <p className="text-xs text-gray-500 truncate">{user.region || "No region"}</p>
+                    </div>
+                  </div>
+                  <Badge variant="outline" className={`text-xs ml-2 ${user.role === 'medicalRep' ? 'bg-purple-100 text-purple-800' : 'bg-green-100 text-green-800'}`}>
+                    {getRoleName(user.role)}
+                  </Badge>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
-        <div className="p-6">
-          <ul className="divide-y divide-gray-200">
-            {filteredUsers.map((user) => (
-              <li 
-                key={user.id}
-                className="py-4 flex items-center justify-between hover:bg-gray-50 rounded-md px-2 cursor-pointer"
-                onClick={() => toggleRecipientSelection(user)}
-              >
-                <div className="flex items-center">
-                  <Checkbox 
-                    checked={isRecipientSelected(user.id)}
-                    onCheckedChange={() => toggleRecipientSelection(user)}
-                    className="mr-2"
-                  />
-                  <div className="ml-3">
-                    <p className="text-sm font-medium text-gray-900">{user.name}</p>
-                    <p className="text-sm text-gray-500">{user.region || "No region"}</p>
-                  </div>
+
+        {/* Movement Form */}
+        <div className="bg-white rounded-lg shadow">
+          <div className="px-4 py-3 border-b border-gray-200">
+            <h3 className="text-lg font-medium text-gray-800">Movement Details</h3>
+          </div>
+          <div className="p-4">
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="stockItemId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm">Selected Item</FormLabel>
+                      <FormControl>
+                        <Select
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          disabled={selectedStockItems.length === 0}
+                        >
+                          <SelectTrigger className="h-8">
+                            <SelectValue placeholder="Select an item" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {selectedStockItems.map(item => (
+                              <SelectItem key={item.id} value={item.id.toString()}>
+                                {item.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="toUserId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm">Recipient</FormLabel>
+                      <FormControl>
+                        <Select
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          disabled={selectedRecipients.length === 0}
+                        >
+                          <SelectTrigger className="h-8">
+                            <SelectValue placeholder="Select a recipient" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {selectedRecipients.map(user => (
+                              <SelectItem key={user.id} value={user.id.toString()}>
+                                {user.name} ({getRoleName(user.role)})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="quantity"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm">Quantity to Move</FormLabel>
+                      <FormControl>
+                        <Input type="number" min="1" className="h-8" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="notes"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm">Notes (Optional)</FormLabel>
+                      <FormControl>
+                        <Textarea rows={2} className="text-sm" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="flex justify-end pt-2">
+                  <Button type="submit" disabled={isLoading} className="h-8 px-4">
+                    {isLoading ? "Processing..." : "Confirm Transfer"}
+                  </Button>
                 </div>
-                <Badge variant="outline" className={user.role === 'medicalRep' ? 'bg-purple-100 text-purple-800' : 'bg-green-100 text-green-800'}>
-                  {getRoleName(user.role)}
-                </Badge>
-              </li>
-            ))}
-          </ul>
+              </form>
+            </Form>
+          </div>
         </div>
-      </div>
-
-      <div className="lg:col-span-3">
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-lg font-medium text-gray-800 mb-4">Movement Details</h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormField
-                control={form.control}
-                name="stockItemId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Selected Item</FormLabel>
-                    <FormControl>
-                      <Select
-                        value={field.value}
-                        onValueChange={field.onChange}
-                        disabled={selectedStockItems.length === 0}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select an item" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {selectedStockItems.map(item => (
-                            <SelectItem key={item.id} value={item.id.toString()}>
-                              {item.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="toUserId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Recipient</FormLabel>
-                    <FormControl>
-                      <Select
-                        value={field.value}
-                        onValueChange={field.onChange}
-                        disabled={selectedRecipients.length === 0}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a recipient" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {selectedRecipients.map(user => (
-                            <SelectItem key={user.id} value={user.id.toString()}>
-                              {user.name} ({getRoleName(user.role)})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="quantity"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Quantity to Move</FormLabel>
-                    <FormControl>
-                      <Input type="number" min="1" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="notes"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Notes (Optional)</FormLabel>
-                    <FormControl>
-                      <Textarea rows={1} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="mt-6 flex justify-end">
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? "Processing..." : "Confirm Transfer"}
-              </Button>
-            </div>
-          </form>
-        </Form>
       </div>
     </div>
   );
