@@ -60,7 +60,7 @@ export function Sidebar({ className }: SidebarProps) {
       requiredPermission: null
     },
     {
-      title: "Stock Movement",
+      title: "Stock Management",
       icon: <MoveHorizontal className="mr-3 h-5 w-5" />,
       href: "/stock-movement",
       requiredPermission: "canMoveStock"

@@ -10,12 +10,11 @@ import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
 import DashboardPage from "@/pages/dashboard-page";
 import InventoryPage from "@/pages/inventory-page";
-import StockMovementPage from "@/pages/stock-movement-page";
+import StockManagementPage from "@/pages/stock-management-page";
 import ReportsPage from "@/pages/reports-page";
 import AnalyticsDashboard from "@/pages/analytics-dashboard";
 import RequestManagementPage from "./pages/request-management-page";
 import UserManagementPage from "@/pages/user-management-page";
-import InventoryAllocationPage from "@/pages/inventory-allocation-page";
 import SettingsPage from "@/pages/settings-page";
 import MobileApp from "@/pages/mobile-app";
 import { ProtectedRoute } from "@/lib/protected-route";
@@ -26,11 +25,10 @@ function Router() {
       <Route path="/auth" component={AuthPage} />
       <ProtectedRoute path="/" component={DashboardPage} />
       <ProtectedRoute path="/inventory" component={InventoryPage} />
-      <ProtectedRoute path="/stock-movement" component={StockMovementPage} />
+      <ProtectedRoute path="/stock-movement" component={StockManagementPage} />
       <ProtectedRoute path="/reports" component={ReportsPage} />
       <ProtectedRoute path="/analytics" component={AnalyticsDashboard} />
       <ProtectedRoute path="/users" component={UserManagementPage} />
-      <ProtectedRoute path="/allocation" component={InventoryAllocationPage} roles={['ceo', 'admin', 'stockKeeper']} />
       <ProtectedRoute path="/settings" component={SettingsPage} roles={['ceo', 'admin']} />
       <ProtectedRoute path="/mobile" component={MobileApp} />
       <ProtectedRoute path="/mobile/:rest*" component={MobileApp} />
