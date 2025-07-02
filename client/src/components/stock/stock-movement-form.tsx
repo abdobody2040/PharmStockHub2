@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useQuery } from "@tanstack/react-query";
 import { StockItem, Category, User } from "@shared/schema";
+import { useAuth } from "@/hooks/use-auth";
 import {
   Form,
   FormControl,
@@ -12,9 +13,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -30,9 +28,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Checkbox } from "@/components/ui/checkbox";
-import { getRoleName } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Package, Users } from "lucide-react";
 
 interface StockMovementFormProps {
   onSubmit: (data: any) => void;
@@ -52,19 +53,21 @@ export function StockMovementForm({ onSubmit, isLoading = false }: StockMovement
   const [selectedStockItems, setSelectedStockItems] = useState<StockItem[]>([]);
   const [selectedRecipients, setSelectedRecipients] = useState<User[]>([]);
   const [filterRole, setFilterRole] = useState<string>("all");
-  
+
   const { data: stockItems = [] } = useQuery<StockItem[]>({
     queryKey: ["/api/stock-items"],
   });
-  
+
   const { data: categories = [] } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
   });
-  
+
   const { data: users = [] } = useQuery<User[]>({
     queryKey: ["/api/users"],
   });
-  
+
+  const { user } = useAuth();
+
   const form = useForm<FormValues>({
     resolver: zodResolver(stockMovementSchema),
     defaultValues: {
@@ -74,49 +77,51 @@ export function StockMovementForm({ onSubmit, isLoading = false }: StockMovement
       notes: "",
     },
   });
-  
+
   const getCategoryForItem = (categoryId: number) => {
     return categories.find(c => c.id === categoryId) || { name: "Unknown", color: "bg-gray-100" };
   };
-  
-  const filteredUsers = filterRole === "all" 
-    ? users.filter(u => u.role === 'medicalRep' || u.role === 'salesManager')
-    : users.filter(u => u.role === filterRole);
-  
+
+  const filteredUsers = user?.role === 'ceo'
+    ? users
+    : filterRole === "all"
+      ? users.filter(u => u.role === 'medicalRep' || u.role === 'salesManager')
+      : users.filter(u => u.role === filterRole);
+
   const toggleStockItemSelection = (item: StockItem) => {
     if (selectedStockItems.find(i => i.id === item.id)) {
       setSelectedStockItems(selectedStockItems.filter(i => i.id !== item.id));
     } else {
       setSelectedStockItems([...selectedStockItems, item]);
-      
+
       // Set form value if it's the first selection
       if (selectedStockItems.length === 0) {
         form.setValue("stockItemId", item.id.toString());
       }
     }
   };
-  
+
   const isStockItemSelected = (itemId: number) => {
     return !!selectedStockItems.find(i => i.id === itemId);
   };
-  
+
   const toggleRecipientSelection = (user: User) => {
     if (selectedRecipients.find(u => u.id === user.id)) {
       setSelectedRecipients(selectedRecipients.filter(u => u.id !== user.id));
     } else {
       setSelectedRecipients([...selectedRecipients, user]);
-      
+
       // Set form value if it's the first selection
       if (selectedRecipients.length === 0) {
         form.setValue("toUserId", user.id.toString());
       }
     }
   };
-  
+
   const isRecipientSelected = (userId: number) => {
     return !!selectedRecipients.find(u => u.id === userId);
   };
-  
+
   const handleSubmit = (values: FormValues) => {
     const movementData = {
       stockItemId: parseInt(values.stockItemId),
@@ -124,10 +129,10 @@ export function StockMovementForm({ onSubmit, isLoading = false }: StockMovement
       quantity: parseInt(values.quantity),
       notes: values.notes,
     };
-    
+
     onSubmit(movementData);
   };
-  
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div className="lg:col-span-2 bg-white rounded-lg shadow">
@@ -260,7 +265,7 @@ export function StockMovementForm({ onSubmit, isLoading = false }: StockMovement
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="bg-white p-6 rounded-lg shadow">
             <h3 className="text-lg font-medium text-gray-800 mb-4">Movement Details</h3>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField
                 control={form.control}
@@ -290,7 +295,7 @@ export function StockMovementForm({ onSubmit, isLoading = false }: StockMovement
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={form.control}
                 name="toUserId"
@@ -319,7 +324,7 @@ export function StockMovementForm({ onSubmit, isLoading = false }: StockMovement
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={form.control}
                 name="quantity"
@@ -333,7 +338,7 @@ export function StockMovementForm({ onSubmit, isLoading = false }: StockMovement
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={form.control}
                 name="notes"
@@ -348,7 +353,7 @@ export function StockMovementForm({ onSubmit, isLoading = false }: StockMovement
                 )}
               />
             </div>
-            
+
             <div className="mt-6 flex justify-end">
               <Button type="submit" disabled={isLoading}>
                 {isLoading ? "Processing..." : "Confirm Transfer"}
