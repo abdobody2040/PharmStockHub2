@@ -280,9 +280,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/stock-items", isAuthenticated, async (req, res, next) => {
+  app.post("/api/stock-items", isAuthenticated, upload.single('image'), async (req, res, next) => {
     try {
-      const validatedData = extendedInsertStockItemSchema.parse(req.body);
+      // Parse form data - convert string values to appropriate types
+      const formData = req.body;
+      
+      const stockItemData = {
+        name: formData.name,
+        categoryId: parseInt(formData.categoryId),
+        specialtyId: formData.specialtyId ? parseInt(formData.specialtyId) : null,
+        quantity: parseInt(formData.quantity),
+        price: parseInt(formData.price) || 0,
+        expiry: formData.expiry ? new Date(formData.expiry) : null,
+        uniqueNumber: formData.uniqueNumber || null,
+        notes: formData.notes || null,
+        createdBy: req.user?.id || 1, // Add the current user as creator
+        imageUrl: req.file ? `/uploads/${req.file.filename}` : null
+      };
+      
+      const validatedData = extendedInsertStockItemSchema.parse(stockItemData);
       const stockItem = await storage.createStockItem(validatedData);
       res.json(stockItem);
     } catch (error) {
@@ -290,10 +306,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/stock-items/:id", isAuthenticated, async (req, res, next) => {
+  app.put("/api/stock-items/:id", isAuthenticated, upload.single('image'), async (req, res, next) => {
     try {
       const id = parseInt(req.params.id);
-      const validatedData = extendedInsertStockItemSchema.partial().parse(req.body);
+      const formData = req.body;
+      
+      const updateData: any = {};
+      
+      if (formData.name) updateData.name = formData.name;
+      if (formData.categoryId) updateData.categoryId = parseInt(formData.categoryId);
+      if (formData.specialtyId !== undefined) {
+        updateData.specialtyId = formData.specialtyId ? parseInt(formData.specialtyId) : null;
+      }
+      if (formData.quantity) updateData.quantity = parseInt(formData.quantity);
+      if (formData.price !== undefined) updateData.price = parseInt(formData.price) || 0;
+      if (formData.expiry !== undefined) {
+        updateData.expiry = formData.expiry ? new Date(formData.expiry) : null;
+      }
+      if (formData.uniqueNumber !== undefined) updateData.uniqueNumber = formData.uniqueNumber || null;
+      if (formData.notes !== undefined) updateData.notes = formData.notes || null;
+      if (req.file) updateData.imageUrl = `/uploads/${req.file.filename}`;
+      
+      const validatedData = extendedInsertStockItemSchema.partial().parse(updateData);
       const stockItem = await storage.updateStockItem(id, validatedData);
       
       if (!stockItem) {
