@@ -2,12 +2,19 @@ import { useState } from "react";
 import { MainLayout } from "@/components/layout/main-layout";
 import { StockMovementForm } from "@/components/stock/stock-movement-form";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { 
   ArrowLeft, 
   ArrowRight, 
   Calendar, 
   Package, 
-  UserCircle 
+  UserCircle,
+  Plus,
+  Minus,
+  Users,
+  Calculator,
+  UserCheck
 } from "lucide-react";
 import {
   Card,
@@ -31,6 +38,20 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { 
   useQuery,
   useMutation 
@@ -40,7 +61,9 @@ import {
   StockItem, 
   Category, 
   User, 
-  StockMovement 
+  StockMovement,
+  StockAllocation,
+  SafeUser
 } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
