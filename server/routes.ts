@@ -709,6 +709,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Sync and fix stock quantities
+  app.post("/api/sync-quantities", isAuthenticated, hasPermission("canManageUsers"), async (req, res, next) => {
+    try {
+      const stockItems = await storage.getStockItems();
+      const allocations = await storage.getAllocations();
+      
+      const syncReport = {
+        totalItems: stockItems.length,
+        fixedItems: 0,
+        errors: []
+      };
+      
+      for (const item of stockItems) {
+        try {
+          // Calculate total allocated quantity for this item
+          const itemAllocations = allocations.filter(a => a.stockItemId === item.id);
+          const totalAllocated = itemAllocations.reduce((sum, a) => sum + a.quantity, 0);
+          
+          // The real available quantity should be total - allocated
+          const realAvailable = Math.max(0, item.quantity - totalAllocated);
+          
+          // If there's a discrepancy, log it
+          if (totalAllocated > item.quantity) {
+            syncReport.errors.push({
+              itemId: item.id,
+              itemName: item.name,
+              issue: `Over-allocated: ${totalAllocated} allocated but only ${item.quantity} available`,
+              totalQuantity: item.quantity,
+              totalAllocated: totalAllocated,
+              realAvailable: realAvailable
+            });
+          }
+          
+          syncReport.fixedItems++;
+        } catch (error) {
+          syncReport.errors.push({
+            itemId: item.id,
+            itemName: item.name,
+            issue: `Error processing: ${error.message}`
+          });
+        }
+      }
+      
+      res.json(syncReport);
+    } catch (error) {
+      next(error);
+    }
+  });
+
   // Dedicated file upload endpoint for existing requests
   app.post("/api/requests/:id/upload", isAuthenticated, upload.single('attachment'), async (req, res, next) => {
     try {

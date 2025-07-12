@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -33,7 +32,16 @@ type MovementFormData = z.infer<typeof movementSchema>;
 
 interface StockMovementFormProps {
   onSubmit: (data: any) => void;
-  isLoading?: boolean;
+  isLoading: boolean;
+}
+
+interface StockAllocation {
+  id: number;
+  userId: number;
+  stockItemId: number;
+  quantity: number;
+  allocatedAt: string;
+  allocatedBy: number;
 }
 
 interface SelectedStockItem {
@@ -79,6 +87,20 @@ export function StockMovementForm({ onSubmit, isLoading = false }: StockMovement
   // Fetch users who can receive stock
   const { data: users = [] } = useQuery<User[]>({
     queryKey: ["/api/users"],
+    queryFn: async () => {
+      const response = await fetch("/api/users");
+      if (!response.ok) throw new Error("Failed to fetch users");
+      return response.json();
+    },
+  });
+
+  const { data: allocations = [] } = useQuery<StockAllocation[]>({
+    queryKey: ["allocations"],
+    queryFn: async () => {
+      const response = await fetch("/api/allocations");
+      if (!response.ok) throw new Error("Failed to fetch allocations");
+      return response.json();
+    },
   });
 
   // Filter users to exclude current user and include warehouse option
@@ -138,7 +160,7 @@ export function StockMovementForm({ onSubmit, isLoading = false }: StockMovement
 
   const handleSubmit = (data: MovementFormData) => {
     const movements = [];
-    
+
     for (const recipient of selectedRecipients) {
       for (const selectedItem of selectedStockItems) {
         movements.push({

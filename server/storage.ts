@@ -1012,7 +1012,7 @@ export class DatabaseStorage implements IStorage {
             `Not enough stock available in central inventory for item ID ${stockItemId}. Available: ${item.quantity}, Requested: ${quantity}`
           );
         }
-        // ii. Update the stockItem's quantity
+        // ii. Update the stockItem's quantity (reduce central inventory)
         await tx
           .update(stockItems)
           .set({ quantity: item.quantity - quantity })
@@ -1033,14 +1033,22 @@ export class DatabaseStorage implements IStorage {
         // ii. Check if the source allocation exists and has enough quantity
         if (!sourceAllocation || sourceAllocation.quantity < quantity) {
           throw new Error(
-            `Source user ID ${fromUserId} does not have enough stock of item ID ${stockItemId}. Available: ${sourceAllocation?.quantity || 0}, Requested: ${quantity}`
+            `Source user ID ${fromUserId} does not have enough allocated stock of item ID ${stockItemId}. Available: ${sourceAllocation?.quantity || 0}, Requested: ${quantity}`
           );
         }
-        // iii. Update the source user's allocation
-        await tx
-          .update(stockAllocations)
-          .set({ quantity: sourceAllocation.quantity - quantity })
-          .where(eq(stockAllocations.id, sourceAllocation.id));
+        // iii. Update the source user's allocation (reduce their allocation)
+        const newSourceQuantity = sourceAllocation.quantity - quantity;
+        if (newSourceQuantity === 0) {
+          // Remove allocation if quantity becomes 0
+          await tx
+            .delete(stockAllocations)
+            .where(eq(stockAllocations.id, sourceAllocation.id));
+        } else {
+          await tx
+            .update(stockAllocations)
+            .set({ quantity: newSourceQuantity })
+            .where(eq(stockAllocations.id, sourceAllocation.id));
+        }
       }
 
       // d. Update/Create Target User's Allocation
@@ -1056,7 +1064,7 @@ export class DatabaseStorage implements IStorage {
         );
 
       if (targetAllocation) {
-        // ii. If it exists, update it
+        // ii. If it exists, update it (increase their allocation)
         await tx
           .update(stockAllocations)
           .set({ quantity: targetAllocation.quantity + quantity })
@@ -1067,7 +1075,7 @@ export class DatabaseStorage implements IStorage {
           userId: toUserId,
           stockItemId: stockItemId,
           quantity: quantity,
-          allocatedBy: movedBy, // Assuming movedBy is the one allocating in this context
+          allocatedBy: movedBy,
           allocatedAt: new Date(),
         });
       }
