@@ -401,6 +401,116 @@ export default function RequestManagementPage() {
           </DialogContent>
         </Dialog>
 
+        {/* View Request Modal */}
+        <Dialog open={showViewModal} onOpenChange={setShowViewModal}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Request Details</DialogTitle>
+              <DialogDescription>
+                View detailed information about this request
+              </DialogDescription>
+            </DialogHeader>
+            
+            {currentRequest && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Title</label>
+                    <p className="mt-1">{currentRequest.title}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Type</label>
+                    <p className="mt-1">{currentRequest.type.replace('_', ' ').toLowerCase()}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Requested By</label>
+                    <p className="mt-1">{getUserName(currentRequest.requestedBy)}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Assigned To</label>
+                    <p className="mt-1">{currentRequest.assignedTo ? getUserName(currentRequest.assignedTo) : "Unassigned"}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Status</label>
+                    <div className="mt-1">{getStatusBadge(currentRequest.status)}</div>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Created</label>
+                    <p className="mt-1">{formatDate(currentRequest.createdAt)}</p>
+                  </div>
+                </div>
+                
+                {currentRequest.description && (
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Description</label>
+                    <p className="mt-1 text-sm bg-gray-50 p-3 rounded">{currentRequest.description}</p>
+                  </div>
+                )}
+                
+                {currentRequest.notes && (
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Notes</label>
+                    <p className="mt-1 text-sm bg-gray-50 p-3 rounded">{currentRequest.notes}</p>
+                  </div>
+                )}
+                
+                {currentRequest.fileUrl && (
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Attached File</label>
+                    <div className="mt-1">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => window.open(currentRequest.fileUrl!, '_blank')}
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        Download File
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                
+                <div className="flex gap-2 justify-end pt-4">
+                  <Button 
+                    variant="outline"
+                    onClick={() => setShowViewModal(false)}
+                  >
+                    Close
+                  </Button>
+                  
+                  {canApprove(currentRequest) && (
+                    <>
+                      <Button 
+                        variant="default"
+                        onClick={() => {
+                          setShowViewModal(false);
+                          setApprovalAction("approved");
+                          setShowApprovalModal(true);
+                        }}
+                      >
+                        <Check className="h-4 w-4 mr-2" />
+                        Approve
+                      </Button>
+                      
+                      <Button 
+                        variant="destructive"
+                        onClick={() => {
+                          setShowViewModal(false);
+                          setApprovalAction("denied");
+                          setShowApprovalModal(true);
+                        }}
+                      >
+                        <X className="h-4 w-4 mr-2" />
+                        Deny
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
         {/* Approval Modal */}
         <Dialog open={showApprovalModal} onOpenChange={setShowApprovalModal}>
           <DialogContent>
