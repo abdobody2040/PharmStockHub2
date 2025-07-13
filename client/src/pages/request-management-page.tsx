@@ -207,6 +207,64 @@ export default function RequestManagementPage() {
     },
   });
 
+  const approveMutation = useMutation({
+    mutationFn: async ({ id, notes }: { id: number; notes?: string }) => {
+      const response = await fetch(`/api/requests/${id}/approve`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ notes }),
+      });
+      if (!response.ok) throw new Error('Failed to approve request');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
+      setShowApprovalModal(false);
+      setCurrentRequest(null);
+      setApprovalNotes("");
+      toast({
+        title: "Success",
+        description: "Request approved and inventory transferred",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to approve request",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const denyMutation = useMutation({
+    mutationFn: async ({ id, notes }: { id: number; notes?: string }) => {
+      const response = await fetch(`/api/requests/${id}/deny`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ notes }),
+      });
+      if (!response.ok) throw new Error('Failed to deny request');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
+      setShowApprovalModal(false);
+      setCurrentRequest(null);
+      setApprovalNotes("");
+      toast({
+        title: "Success",
+        description: "Request denied",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to deny request",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleCreateRequest = (formData: FormData) => {
     createRequestMutation.mutate(formData);
   };
@@ -214,14 +272,19 @@ export default function RequestManagementPage() {
   const handleApproval = (action: "approved" | "denied") => {
     if (!currentRequest) return;
 
-    updateRequestMutation.mutate({
-      id: currentRequest.id,
-      data: {
-        status: action,
+    if (action === "approved") {
+      // Use the specific approve endpoint for proper inventory transfer
+      approveMutation.mutate({
+        id: currentRequest.id,
         notes: approvalNotes,
-        completedAt: new Date().toISOString(),
-      },
-    });
+      });
+    } else {
+      // Use the specific deny endpoint
+      denyMutation.mutate({
+        id: currentRequest.id,
+        notes: approvalNotes,
+      });
+    }
   };
 
   const handleApproveAndForward = () => {
@@ -731,9 +794,9 @@ export default function RequestManagementPage() {
                   <Button
                     onClick={() => handleApprovalAction(approvalAction)}
                     variant={approvalAction === "approved" ? "default" : "destructive"}
-                    disabled={updateRequestMutation.isPending}
+                    disabled={approveMutation.isPending || denyMutation.isPending}
                   >
-                    {updateRequestMutation.isPending ? "Processing..." : 
+                    {(approveMutation.isPending || denyMutation.isPending) ? "Processing..." : 
                       (approvalAction === "approved" ? "Approve" : "Deny")
                     }
                   </Button>
