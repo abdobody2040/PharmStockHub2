@@ -539,20 +539,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/requests/:id", isAuthenticated, async (req, res, next) => {
-    try {
-      const id = parseInt(req.params.id);
-      const request = await storage.getRequest(id);
-      
-      if (!request) {
-        return res.status(404).json({ error: "Request not found" });
-      }
-      
-      res.json(request);
-    } catch (error) {
-      next(error);
-    }
-  });
+
 
   app.post("/api/requests", isAuthenticated, upload.single('attachment'), async (req, res, next) => {
     try {

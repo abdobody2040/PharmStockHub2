@@ -69,6 +69,10 @@ export default function RequestManagementPage() {
     queryKey: ["/api/users"],
   });
 
+  const { data: specialties = [] } = useQuery({
+    queryKey: ["/api/specialties"],
+  });
+
   const { data: stockItems = [] } = useQuery({
     queryKey: ["/api/stock-items"],
   });
@@ -80,6 +84,10 @@ export default function RequestManagementPage() {
   });
 
   const requestItems = requestDetails?.items || [];
+  
+  // Debug logging
+  console.log("Request details:", requestDetails);
+  console.log("Request items:", requestItems);
 
   // Mutations
   const createRequestMutation = useMutation({
@@ -252,6 +260,17 @@ export default function RequestManagementPage() {
     if (!stockItemId) return null;
     const foundItem = stockItems.find((item: any) => item.id === stockItemId);
     return foundItem ? foundItem.name : `Item #${stockItemId}`;
+  };
+
+  const getSpecialtyName = (specialtyId: number | null) => {
+    if (!specialtyId) return null;
+    const foundSpecialty = specialties.find((specialty: any) => specialty.id === specialtyId);
+    return foundSpecialty ? foundSpecialty.name : `Specialty #${specialtyId}`;
+  };
+
+  const getUserSpecialty = (userId: number) => {
+    const foundUser = users.find(u => u.id === userId);
+    return foundUser?.specialtyId ? getSpecialtyName(foundUser.specialtyId) : null;
   };
 
   const getUserName = (userId: number) => {
@@ -446,7 +465,7 @@ export default function RequestManagementPage() {
 
         {/* View Request Modal */}
         <Dialog open={showViewModal} onOpenChange={setShowViewModal}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Request Details</DialogTitle>
               <DialogDescription>
@@ -481,6 +500,20 @@ export default function RequestManagementPage() {
                     <label className="text-sm font-medium text-gray-500">Created</label>
                     <p className="mt-1">{formatDate(currentRequest.createdAt)}</p>
                   </div>
+                </div>
+                
+                {/* Specialty Information */}
+                <div className="grid grid-cols-2 gap-4 border-t pt-4">
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Requester Specialty</label>
+                    <p className="mt-1">{getUserSpecialty(currentRequest.requestedBy) || 'N/A'}</p>
+                  </div>
+                  {currentRequest.assignedTo && (
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Assignee Specialty</label>
+                      <p className="mt-1">{getUserSpecialty(currentRequest.assignedTo) || 'N/A'}</p>
+                    </div>
+                  )}
                 </div>
                 
                 {currentRequest.description && (
