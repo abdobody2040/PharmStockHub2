@@ -521,29 +521,22 @@ function RequestTable({ requests, users, onView, onApprove, onDeny, currentUser 
   };
 
   const canApprove = (request: InventoryRequest) => {
-    console.log('Checking canApprove for request:', request.id, 'status:', request.status, 'assignedTo:', request.assignedTo, 'currentUser:', currentUser?.id, 'role:', currentUser?.role);
-    
     // Handle regular pending status
     if (request.status === 'pending') {
-      const result = (request.assignedTo === currentUser?.id || 
+      return (request.assignedTo === currentUser?.id || 
               currentUser?.role === 'stockKeeper' ||
               currentUser?.role === 'ceo' ||
               currentUser?.role === 'admin');
-      console.log('Pending status check result:', result);
-      return result;
     }
     
     // Handle pending_secondary status (final approval for inventory sharing)
     if (request.status === 'pending_secondary') {
-      const result = (request.assignedTo === currentUser?.id || 
+      return (request.assignedTo === currentUser?.id || 
               currentUser?.role === 'stockKeeper' ||
               currentUser?.role === 'ceo' ||
               currentUser?.role === 'admin');
-      console.log('Pending secondary status check result:', result);
-      return result;
     }
     
-    console.log('No approval permissions for status:', request.status);
     return false;
   };
 
@@ -597,12 +590,9 @@ function RequestTable({ requests, users, onView, onApprove, onDeny, currentUser 
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          console.log('Approve button clicked for request:', request.id);
-                          console.log('Request data:', request);
-                          console.log('Current user:', currentUser);
-                          console.log('onApprove function:', onApprove);
-                          onApprove(request);
+                          onView(request);
                         }}
+                        title="View request details"
                       >
                         <Check className="h-4 w-4" />
                       </Button>

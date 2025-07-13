@@ -32,6 +32,14 @@ A comprehensive pharmaceutical promotional materials management platform designe
 
 ## Recent Changes
 
+### July 13, 2025 - Request Management UI/UX Improvements
+- **Request Details Button**: Changed approve button (Check icon) to show request details instead of direct approval
+- **File Upload Fix**: Fixed file upload to accept CSV and Excel files for requests
+- **UI Alignment**: Improved "Expected Incoming Items" section layout with better grid spacing
+- **Download Functionality**: Fixed file download URLs to use proper relative paths
+- **Button Handlers**: Added missing approve/deny handlers across all request management tabs
+- **Stock Movement Transaction**: Fixed stock movement system to properly update inventory quantities and create allocations
+
 ### July 2, 2025 - Enhanced Product Manager Inventory Access
 - **Specialty-Based Inventory Display**: Product Managers now see all inventory items matching their specialty for ordering purposes
 - **Sample Data Added**: Added Primary Care 1 specialty items to demonstrate complete inventory visibility
