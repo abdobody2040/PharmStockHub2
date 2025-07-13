@@ -478,7 +478,7 @@ export default function ReportsPage() {
               onGenerate={handleGenerateReport}
               isLoading={isGeneratingReport}
             />
-
+                
           </CardContent>
         </Card>
 
@@ -584,141 +584,9 @@ export default function ReportsPage() {
                 </span>
               </CardHeader>
               <CardContent className="p-6">
-                <div className="mb-6" style={{ height: '300px' }}>
-                  <canvas ref={inventoryChartRef}></canvas>
+                <div className="mb-6">
+                  <canvas ref={inventoryChartRef} height="200"></canvas>
                 </div>
-                {(() => {
-                    // Filter movements by date range
-                    const now = new Date();
-                    let startDate: Date;
-
-                    switch(dateRange) {
-                      case 'week':
-                        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-                        break;
-                      case 'month':
-                        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-                        break;
-                      case 'quarter':
-                        startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
-                        break;
-                      case 'year':
-                        startDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
-                        break;
-                      default:
-                        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-                    }
-
-                    const filteredMovements = movements.filter(movement => {
-                      const movementDate = new Date(movement.createdAt);
-                      return movementDate >= startDate;
-                    });
-
-                    // Group movements by date
-                    const movementsByDate = filteredMovements.reduce((acc, movement) => {
-                      const date = new Date(movement.createdAt).toLocaleDateString();
-                      acc[date] = (acc[date] || 0) + 1;
-                      return acc;
-                    }, {} as Record<string, number>);
-
-                    // Create complete date range with zero values for missing dates
-                    const dateArray = [];
-                    const currentDate = new Date(startDate);
-                    while (currentDate <= now) {
-                      const dateStr = currentDate.toLocaleDateString();
-                      dateArray.push({
-                        date: dateStr,
-                        movements: movementsByDate[dateStr] || 0
-                      });
-                      currentDate.setDate(currentDate.getDate() + 1);
-                    }
-
-                    const chartData = dateArray;
-                  
-                    // Create chart
-                    const ctx = inventoryChartRef.current.getContext('2d');
-                    if (ctx) {
-                      inventoryChart.current = new Chart(ctx, {
-                        type: 'line',
-                        data: {
-                          labels: chartData.map(d => {
-                            const date = new Date(d.date);
-                            return date.toLocaleDateString('en-US', { 
-                              month: 'short', 
-                              day: 'numeric' 
-                            });
-                          }),
-                          datasets: [{
-                            label: 'Stock Movements',
-                            data: chartData.map(d => d.movements),
-                            borderColor: '#3B82F6',
-                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                            borderWidth: 2,
-                            fill: true,
-                            tension: 0.2,
-                            pointBackgroundColor: '#3B82F6',
-                            pointBorderColor: '#ffffff',
-                            pointBorderWidth: 2,
-                            pointRadius: 4,
-                            pointHoverRadius: 6
-                          }]
-                        },
-                        options: {
-                          responsive: true,
-                          maintainAspectRatio: false,
-                          plugins: {
-                            legend: {
-                              display: true,
-                              position: 'top'
-                            },
-                            tooltip: {
-                              mode: 'index',
-                              intersect: false,
-                              callbacks: {
-                                title: function(context) {
-                                  return `Date: ${context[0].label}`;
-                                },
-                                label: function(context) {
-                                  return `Movements: ${context.parsed.y}`;
-                                }
-                              }
-                            }
-                          },
-                          scales: {
-                            x: {
-                              display: true,
-                              title: {
-                                display: true,
-                                text: 'Date'
-                              },
-                              ticks: {
-                                maxTicksLimit: 10
-                              }
-                            },
-                            y: {
-                              display: true,
-                              title: {
-                                display: true,
-                                text: 'Number of Movements'
-                              },
-                              beginAtZero: true,
-                              ticks: {
-                                stepSize: 1,
-                                callback: function(value) {
-                                  return Number.isInteger(value) ? value : '';
-                                }
-                              }
-                            },
-                            interaction: {
-                              mode: 'nearest',
-                              axis: 'x',
-                              intersect: false
-                            }
-                          }
-                        });
-                      }
-                    }
-                  })()}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
                   <div className="bg-gray-50 rounded-lg p-4">
                     <h5 className="text-sm font-medium text-gray-700 mb-2">Total Movements</h5>
@@ -730,7 +598,7 @@ export default function ReportsPage() {
                   <div className="bg-gray-50 rounded-lg p-4">
                     <h5 className="text-sm font-medium text-gray-700 mb-2">Recent Movements</h5>
                     <p className="text-3xl font-bold text-green-600">
-                      {filteredMovements.length}
+                      {movements.filter(m => m.movedAt && new Date(m.movedAt).getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000).length}
                     </p>
                     <p className="text-sm text-gray-500 mt-1">Last 7 days</p>
                   </div>
