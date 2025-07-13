@@ -594,7 +594,9 @@ function RequestTable({ requests, users, onView, onApprove, onDeny, currentUser 
                       <Button 
                         size="sm" 
                         variant="default"
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
                           console.log('Approve button clicked for request:', request.id);
                           console.log('Request data:', request);
                           console.log('Current user:', currentUser);
