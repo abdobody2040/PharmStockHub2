@@ -1173,8 +1173,11 @@ export class DatabaseStorage implements IStorage {
     const request = await this.getRequest(id);
     if (!request) return undefined;
 
-    // For prepare_order and receive_inventory - just approve without transferring inventory
+    // For prepare_order and receive_inventory - process inventory transfer and approve
     if (request.type === "prepare_order" || request.type === "receive_inventory") {
+      // Process inventory transfer to requester
+      await this.processInventoryTransfer(request);
+      
       return this.updateRequest(id, {
         status: "approved",
         notes,
@@ -1213,8 +1216,50 @@ export class DatabaseStorage implements IStorage {
     for (const item of requestItems) {
       if (item.stockItemId && item.quantity) {
         try {
-          // Only process inventory transfers for inventory_share requests
-          if (request.type === "inventory_share") {
+          if (request.type === "prepare_order" || request.type === "receive_inventory") {
+            // For prepare_order and receive_inventory - add to requester's allocation
+            // Check if user already has allocation for this item
+            const existingAllocation = await db
+              .select()
+              .from(stockAllocations)
+              .where(
+                and(
+                  eq(stockAllocations.userId, request.requestedBy),
+                  eq(stockAllocations.stockItemId, item.stockItemId)
+                )
+              )
+              .limit(1);
+            
+            if (existingAllocation.length > 0) {
+              // Update existing allocation
+              await db
+                .update(stockAllocations)
+                .set({ quantity: existingAllocation[0].quantity + item.quantity })
+                .where(eq(stockAllocations.id, existingAllocation[0].id));
+            } else {
+              // Create new allocation
+              await db.insert(stockAllocations).values({
+                userId: request.requestedBy,
+                stockItemId: item.stockItemId,
+                quantity: item.quantity,
+                allocatedBy: request.assignedTo || 1,
+                allocatedAt: new Date(),
+              });
+            }
+            
+            // Create movement record
+            await db.insert(stockMovements).values({
+              stockItemId: item.stockItemId,
+              fromUserId: null, // From central inventory
+              toUserId: request.requestedBy,
+              quantity: item.quantity,
+              movedBy: request.assignedTo || 1,
+              notes: `Approved ${request.type} request: ${request.title}`,
+              movedAt: new Date(),
+            });
+            
+            console.log(`Successfully allocated ${item.quantity} units of item ${item.stockItemId} for ${request.type} request ${request.id}`);
+          } else if (request.type === "inventory_share") {
             // For inventory sharing, transfer from one user to another
             await this.executeStockMovementTransaction({
               stockItemId: item.stockItemId,
@@ -1226,8 +1271,6 @@ export class DatabaseStorage implements IStorage {
             });
             console.log(`Successfully transferred ${item.quantity} units of item ${item.stockItemId} for inventory sharing request ${request.id}`);
           }
-          // prepare_order and receive_inventory requests no longer transfer inventory
-          // They are now just notifications/approvals
         } catch (error) {
           console.error(`Failed to transfer stock item ${item.stockItemId}:`, error);
           // Continue with other items even if one fails
