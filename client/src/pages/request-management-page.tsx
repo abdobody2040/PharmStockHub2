@@ -73,13 +73,17 @@ export default function RequestManagementPage() {
     queryKey: ["/api/specialties"],
   });
 
+  const { data: categories = [] } = useQuery({
+    queryKey: ["/api/categories"],
+  });
+
   const { data: stockItems = [] } = useQuery({
     queryKey: ["/api/stock-items"],
   });
 
   // Fetch detailed request data including items when viewing a request
   const { data: requestDetails } = useQuery({
-    queryKey: ["/api/requests", currentRequest?.id],
+    queryKey: [`/api/requests/${currentRequest?.id}`],
     enabled: !!currentRequest?.id && showViewModal,
   });
 
@@ -260,6 +264,12 @@ export default function RequestManagementPage() {
     if (!stockItemId) return null;
     const foundItem = stockItems.find((item: any) => item.id === stockItemId);
     return foundItem ? foundItem.name : `Item #${stockItemId}`;
+  };
+
+  const getStockItemDetails = (stockItemId: number | null) => {
+    if (!stockItemId) return null;
+    const foundItem = stockItems.find((item: any) => item.id === stockItemId);
+    return foundItem || null;
   };
 
   const getSpecialtyName = (specialtyId: number | null) => {
@@ -530,33 +540,71 @@ export default function RequestManagementPage() {
                   </div>
                 )}
 
-                {requestItems.length > 0 && (
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Requested Items</label>
+                {/* Requested Items Section */}
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Requested Items</label>
+                  {requestItems.length > 0 ? (
                     <div className="mt-1 border rounded-lg overflow-hidden">
                       <Table>
                         <TableHeader>
                           <TableRow>
-                            <TableHead className="py-2">Item</TableHead>
-                            <TableHead className="py-2">Quantity</TableHead>
+                            <TableHead className="py-2">Item Name</TableHead>
+                            <TableHead className="py-2">Requested Qty</TableHead>
+                            <TableHead className="py-2">Available Qty</TableHead>
+                            <TableHead className="py-2">Category</TableHead>
+                            <TableHead className="py-2">Type</TableHead>
                             <TableHead className="py-2">Notes</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {requestItems.map((item: any) => (
-                            <TableRow key={item.id}>
-                              <TableCell className="py-2">
-                                {item.stockItemId ? getStockItemName(item.stockItemId) : item.itemName || "Unknown Item"}
-                              </TableCell>
-                              <TableCell className="py-2 font-medium">{item.quantity}</TableCell>
-                              <TableCell className="py-2 text-sm text-gray-600">{item.notes || "-"}</TableCell>
-                            </TableRow>
-                          ))}
+                          {requestItems.map((item: any) => {
+                            const stockItem = getStockItemDetails(item.stockItemId);
+                            const category = stockItem ? categories.find(c => c.id === stockItem.categoryId) : null;
+                            
+                            return (
+                              <TableRow key={item.id}>
+                                <TableCell className="py-2 font-medium">
+                                  {item.stockItemId ? getStockItemName(item.stockItemId) : item.itemName || "Unknown Item"}
+                                </TableCell>
+                                <TableCell className="py-2 font-medium text-blue-600">{item.quantity}</TableCell>
+                                <TableCell className="py-2">
+                                  {stockItem ? (
+                                    <span className={`font-medium ${stockItem.quantity >= item.quantity ? 'text-green-600' : 'text-red-600'}`}>
+                                      {stockItem.quantity}
+                                    </span>
+                                  ) : (
+                                    <span className="text-gray-400">N/A</span>
+                                  )}
+                                </TableCell>
+                                <TableCell className="py-2">
+                                  {category ? (
+                                    <span className={`px-2 py-1 rounded-full text-xs ${category.color} text-white`}>
+                                      {category.name}
+                                    </span>
+                                  ) : (
+                                    <span className="text-gray-400">N/A</span>
+                                  )}
+                                </TableCell>
+                                <TableCell className="py-2">
+                                  <span className={`px-2 py-1 rounded-full text-xs ${
+                                    item.stockItemId ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
+                                  }`}>
+                                    {item.stockItemId ? 'Stock Item' : 'Custom Item'}
+                                  </span>
+                                </TableCell>
+                                <TableCell className="py-2 text-sm text-gray-600">{item.notes || "-"}</TableCell>
+                              </TableRow>
+                            );
+                          })}
                         </TableBody>
                       </Table>
                     </div>
-                  </div>
-                )}
+                  ) : (
+                    <div className="mt-1 p-4 bg-gray-50 rounded-lg text-center text-gray-500">
+                      No specific items requested for this request
+                    </div>
+                  )}
+                </div>
                 
                 {currentRequest.fileUrl && (
                   <div>

@@ -36,11 +36,16 @@ A comprehensive pharmaceutical promotional materials management platform designe
 - **Request Details Button**: Changed approve button (Check icon) to show request details instead of direct approval
 - **Enhanced Request Details Modal**: Added comprehensive request details including requested items table with quantities and notes
 - **Stock Item Integration**: Request details now show both stock items (from inventory) and custom items with proper item name resolution
+- **Inventory Details Display**: Added complete inventory information including requested quantity, available quantity, category, and item type
+- **Specialty Information**: Added requester and assignee specialty details in request modal
+- **Enhanced Items Table**: Comprehensive table showing item name, requested quantity, available quantity, category, type, and notes
+- **Color-coded Indicators**: Visual indicators for stock availability (green for sufficient, red for insufficient)
 - **File Upload Fix**: Fixed file upload to accept CSV and Excel files for requests
 - **UI Alignment**: Improved "Expected Incoming Items" section layout with better grid spacing
 - **Download Functionality**: Fixed file download URLs to use proper relative paths
 - **Button Handlers**: Added missing approve/deny handlers across all request management tabs
 - **Stock Movement Transaction**: Fixed stock movement system to properly update inventory quantities and create allocations
+- **API Endpoint Fix**: Fixed duplicate API endpoints that were preventing request items from being returned properly
 
 ### July 2, 2025 - Enhanced Product Manager Inventory Access
 - **Specialty-Based Inventory Display**: Product Managers now see all inventory items matching their specialty for ordering purposes
