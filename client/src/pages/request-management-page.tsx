@@ -37,7 +37,10 @@ import {
   X,
   Clock,
   Download,
-  MessageSquare
+  MessageSquare,
+  Filter,
+  BarChart3,
+  Sparkles
 } from "lucide-react";
 import { 
   useQuery,
@@ -49,6 +52,12 @@ import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { formatDate } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
+import { AnimatedRequestStatus } from "@/components/requests/animated-request-status";
+import { InteractiveFilterChips } from "@/components/requests/interactive-filter-chips";
+import { RequestInsightsWidget } from "@/components/requests/request-insights-widget";
+import { QuickActionTooltips } from "@/components/requests/quick-action-tooltips";
+import { InteractiveButton, FloatingNotification } from "@/components/requests/micro-interactions";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function RequestManagementPage() {
   const { user, hasPermission } = useAuth();
@@ -59,6 +68,15 @@ export default function RequestManagementPage() {
   const [currentRequest, setCurrentRequest] = useState<InventoryRequest | null>(null);
   const [approvalNotes, setApprovalNotes] = useState("");
   const [approvalAction, setApprovalAction] = useState<"approved" | "denied">("approved");
+  
+  // Enhanced state for new features
+  const [activeFilters, setActiveFilters] = useState<string[]>([]);
+  const [notification, setNotification] = useState<{
+    message: string;
+    type: "success" | "error" | "info" | "warning";
+    show: boolean;
+  }>({ message: "", type: "info", show: false });
+  const [showInsights, setShowInsights] = useState(true);
 
   // Fetch data
   const { data: requests = [], isLoading } = useQuery<InventoryRequest[]>({
@@ -93,6 +111,55 @@ export default function RequestManagementPage() {
   console.log("Request details:", requestDetails);
   console.log("Request items:", requestItems);
 
+  // Enhanced filtering logic
+  const getFilteredRequests = () => {
+    if (activeFilters.length === 0) return requests;
+    
+    return requests.filter(request => {
+      return activeFilters.some(filter => {
+        switch (filter) {
+          case "pending":
+            return request.status === "pending";
+          case "pending_secondary":
+            return request.status === "pending_secondary";
+          case "approved":
+            return request.status === "approved";
+          case "denied":
+            return request.status === "denied";
+          case "completed":
+            return request.status === "completed";
+          default:
+            return true;
+        }
+      });
+    });
+  };
+
+  const filteredRequests = getFilteredRequests();
+
+  // Calculate counts for filter chips
+  const getFilterCounts = () => {
+    return {
+      all: requests.length,
+      pending: requests.filter(r => r.status === "pending").length,
+      pending_secondary: requests.filter(r => r.status === "pending_secondary").length,
+      approved: requests.filter(r => r.status === "approved").length,
+      denied: requests.filter(r => r.status === "denied").length,
+      completed: requests.filter(r => r.status === "completed").length,
+    };
+  };
+
+  const filterCounts = getFilterCounts();
+
+  // Enhanced notification system
+  const showNotification = (message: string, type: "success" | "error" | "info" | "warning") => {
+    setNotification({ message, type, show: true });
+  };
+
+  const hideNotification = () => {
+    setNotification(prev => ({ ...prev, show: false }));
+  };
+
   // Mutations
   const createRequestMutation = useMutation({
     mutationFn: async (formData: FormData) => {
@@ -110,12 +177,14 @@ export default function RequestManagementPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/my-specialty-inventory"] });
       queryClient.invalidateQueries({ queryKey: ["/api/movements"] });
       setShowCreateModal(false);
+      showNotification("Request created successfully", "success");
       toast({
         title: "Success",
         description: "Request created successfully",
       });
     },
     onError: (error: any) => {
+      showNotification(error.message || "Failed to create request", "error");
       toast({
         title: "Error",
         description: error.message || "Failed to create request",
@@ -306,6 +375,33 @@ export default function RequestManagementPage() {
   const handleApproveAndForward = () => {
     if (!currentRequest) return;
 
+  // Enhanced action handlers with micro-interactions
+  const handleQuickApprove = (requestId: number) => {
+    showNotification("Processing approval...", "info");
+    approveMutation.mutate({
+      id: requestId,
+      notes: "Quick approval",
+    });
+  };
+
+  const handleQuickDeny = (requestId: number) => {
+    showNotification("Processing denial...", "info");
+    denyMutation.mutate({
+      id: requestId,
+      notes: "Quick denial",
+    });
+  };
+
+  const handleViewRequest = (request: InventoryRequest) => {
+    setCurrentRequest(request);
+    setShowViewModal(true);
+  };
+
+  const handleCommentRequest = (requestId: number) => {
+    showNotification("Comment feature coming soon!", "info");
+    // TODO: Implement comment functionality
+  };
+
     approveAndForwardMutation.mutate({
       id: currentRequest.id,
       notes: approvalNotes,
@@ -405,21 +501,74 @@ export default function RequestManagementPage() {
   return (
     <MainLayout>
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
+        {/* Header with Enhanced Actions */}
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex justify-between items-center"
+        >
           <div>
-            <h1 className="text-3xl font-bold">Request Management</h1>
+            <h1 className="text-3xl font-bold flex items-center gap-2">
+              <Sparkles className="h-8 w-8 text-blue-600" />
+              Request Management
+            </h1>
             <p className="text-gray-600">
               Manage inventory requests and workflow approvals
             </p>
           </div>
 
-          {(user?.role === 'productManager' || user?.role === 'stockKeeper' || hasPermission("canCreateRequests")) && (
-            <Button onClick={() => setShowCreateModal(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              New Request
+          <div className="flex items-center gap-3">
+            {/* Insights Toggle */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowInsights(!showInsights)}
+              className="flex items-center gap-2"
+            >
+              <BarChart3 className="h-4 w-4" />
+              {showInsights ? "Hide" : "Show"} Insights
             </Button>
+
+            {/* Create Request Button */}
+            {(user?.role === 'productManager' || user?.role === 'stockKeeper' || hasPermission("canCreateRequests")) && (
+              <InteractiveButton
+                onClick={() => setShowCreateModal(true)}
+                variant="celebration"
+                className="flex items-center gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                New Request
+              </InteractiveButton>
+            )}
+          </div>
+        </motion.div>
+
+        {/* Interactive Filter Chips */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <InteractiveFilterChips
+            activeFilters={activeFilters}
+            onFilterChange={setActiveFilters}
+            totalCounts={filterCounts}
+          />
+        </motion.div>
+
+        {/* Request Insights Widget */}
+        <AnimatePresence>
+          {showInsights && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <RequestInsightsWidget userId={user?.id} />
+            </motion.div>
           )}
-        </div>
+        </AnimatePresence>
 
         <Tabs defaultValue="all" className="space-y-4">
           <TabsList>
@@ -430,26 +579,85 @@ export default function RequestManagementPage() {
           </TabsList>
 
           <TabsContent value="all">
-            <RequestTable 
-              requests={allRequests}
-              users={users}
-              onView={(request) => {
-                setCurrentRequest(request);
-                setShowViewModal(true);
-              }}
-              onApprove={(request) => {
-                setCurrentRequest(request);
-                setApprovalAction("approved");
-                setShowApprovalModal(true);
-              }}
-              onDeny={(request) => {
-                setCurrentRequest(request);
-                setApprovalAction("denied");
-                setShowApprovalModal(true);
-              }}
-              currentUser={user}
-              canApprove={canApprove}
-            />
+            <Card>
+              <CardHeader>
+                <CardTitle>All Requests</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Request ID</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Title</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Requested By</TableHead>
+                      <TableHead>Assigned To</TableHead>
+                      <TableHead>Created</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {isLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={8} className="text-center">
+                          Loading...
+                        </TableCell>
+                      </TableRow>
+                    ) : filteredRequests.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={8} className="text-center">
+                          {activeFilters.length > 0 ? "No requests match your filters" : "No requests found"}
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      <AnimatePresence>
+                        {filteredRequests.map((request, index) => (
+                          <motion.tr
+                            key={request.id}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                            transition={{ delay: index * 0.05 }}
+                            className="hover:bg-gray-50 transition-colors duration-200"
+                          >
+                            <TableCell>{request.id}</TableCell>
+                            <TableCell>
+                              <Badge variant="outline">
+                                {request.type.replace('_', ' ').toUpperCase()}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{request.title}</TableCell>
+                            <TableCell>
+                              <AnimatedRequestStatus
+                                status={request.status}
+                                type={request.type}
+                                showTransition={true}
+                              />
+                            </TableCell>
+                            <TableCell>{getUserName(request.requestedBy)}</TableCell>
+                            <TableCell>
+                              {request.assignedTo ? getUserName(request.assignedTo) : "Unassigned"}
+                            </TableCell>
+                            <TableCell>{formatDate(request.createdAt)}</TableCell>
+                            <TableCell>
+                              <QuickActionTooltips
+                                request={request}
+                                onApprove={handleQuickApprove}
+                                onDeny={handleQuickDeny}
+                                onView={handleViewRequest}
+                                onComment={handleCommentRequest}
+                                userRole={user?.role}
+                              />
+                            </TableCell>
+                          </motion.tr>
+                        ))}
+                      </AnimatePresence>
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="my-requests">
@@ -521,6 +729,14 @@ export default function RequestManagementPage() {
             />
           </TabsContent>
         </Tabs>
+
+        {/* Floating Notification */}
+        <FloatingNotification
+          message={notification.message}
+          type={notification.type}
+          show={notification.show}
+          onClose={hideNotification}
+        />
 
         {/* Create Request Modal */}
         <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
