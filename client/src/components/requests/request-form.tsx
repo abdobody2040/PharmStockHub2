@@ -127,7 +127,7 @@ export function RequestForm({ onSubmit, isLoading = false }: RequestFormProps) {
                   </FormControl>
                   <SelectContent>
                     <SelectItem value={REQUEST_TYPES.PREPARE_ORDER}>
-                      Incoming Inventory Notification (to Stock Keeper)
+                      Prepare Order (to Stock Keeper)
                     </SelectItem>
                     <SelectItem value={REQUEST_TYPES.INVENTORY_SHARE}>
                       Inventory Share (to Product Manager)

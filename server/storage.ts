@@ -1173,9 +1173,9 @@ export class DatabaseStorage implements IStorage {
     const request = await this.getRequest(id);
     if (!request) return undefined;
 
-    // For prepare_order and receive_inventory - process inventory transfer and approve
+    // For direct approval (prepare_order, receive_inventory)
     if (request.type === "prepare_order" || request.type === "receive_inventory") {
-      // Process inventory transfer to requester
+      // Transfer inventory to requester
       await this.processInventoryTransfer(request);
       
       return this.updateRequest(id, {
@@ -1216,49 +1216,66 @@ export class DatabaseStorage implements IStorage {
     for (const item of requestItems) {
       if (item.stockItemId && item.quantity) {
         try {
-          if (request.type === "prepare_order" || request.type === "receive_inventory") {
-            // For prepare_order and receive_inventory - add to requester's allocation
-            // Check if user already has allocation for this item
-            const existingAllocation = await db
-              .select()
-              .from(stockAllocations)
-              .where(
-                and(
-                  eq(stockAllocations.userId, request.requestedBy),
-                  eq(stockAllocations.stockItemId, item.stockItemId)
-                )
-              )
-              .limit(1);
-            
-            if (existingAllocation.length > 0) {
-              // Update existing allocation
-              await db
-                .update(stockAllocations)
-                .set({ quantity: existingAllocation[0].quantity + item.quantity })
-                .where(eq(stockAllocations.id, existingAllocation[0].id));
-            } else {
-              // Create new allocation
-              await db.insert(stockAllocations).values({
-                userId: request.requestedBy,
+          // For prepare_order requests, first try to transfer from central inventory
+          // If that fails, create a new allocation for the requester
+          if (request.type === "prepare_order") {
+            try {
+              // Try to transfer from central inventory first
+              await this.executeStockMovementTransaction({
                 stockItemId: item.stockItemId,
+                fromUserId: null, // Central inventory
+                toUserId: request.requestedBy,
                 quantity: item.quantity,
-                allocatedBy: request.assignedTo || 1,
-                allocatedAt: new Date(),
+                notes: `Approved request: ${request.title}`,
+                movedBy: request.assignedTo || 1
               });
+              console.log(`Successfully transferred ${item.quantity} units of item ${item.stockItemId} from central inventory for request ${request.id}`);
+            } catch (centralError) {
+              // If central inventory doesn't have enough, create a direct allocation
+              console.log(`Central inventory insufficient, creating direct allocation for request ${request.id}`);
+              
+              // Check if user already has allocation for this item
+              const existingAllocation = await db
+                .select()
+                .from(stockAllocations)
+                .where(
+                  and(
+                    eq(stockAllocations.userId, request.requestedBy),
+                    eq(stockAllocations.stockItemId, item.stockItemId)
+                  )
+                )
+                .limit(1);
+              
+              if (existingAllocation.length > 0) {
+                // Update existing allocation
+                await db
+                  .update(stockAllocations)
+                  .set({ quantity: existingAllocation[0].quantity + item.quantity })
+                  .where(eq(stockAllocations.id, existingAllocation[0].id));
+              } else {
+                // Create new allocation
+                await db.insert(stockAllocations).values({
+                  userId: request.requestedBy,
+                  stockItemId: item.stockItemId,
+                  quantity: item.quantity,
+                  allocatedBy: request.assignedTo || 1,
+                  allocatedAt: new Date(),
+                });
+              }
+              
+              // Create movement record
+              await db.insert(stockMovements).values({
+                stockItemId: item.stockItemId,
+                fromUserId: null,
+                toUserId: request.requestedBy,
+                quantity: item.quantity,
+                movedBy: request.assignedTo || 1,
+                notes: `Approved request (direct allocation): ${request.title}`,
+                movedAt: new Date(),
+              });
+              
+              console.log(`Successfully created direct allocation of ${item.quantity} units for item ${item.stockItemId} for request ${request.id}`);
             }
-            
-            // Create movement record
-            await db.insert(stockMovements).values({
-              stockItemId: item.stockItemId,
-              fromUserId: null, // From central inventory
-              toUserId: request.requestedBy,
-              quantity: item.quantity,
-              movedBy: request.assignedTo || 1,
-              notes: `Approved ${request.type} request: ${request.title}`,
-              movedAt: new Date(),
-            });
-            
-            console.log(`Successfully allocated ${item.quantity} units of item ${item.stockItemId} for ${request.type} request ${request.id}`);
           } else if (request.type === "inventory_share") {
             // For inventory sharing, transfer from one user to another
             await this.executeStockMovementTransaction({

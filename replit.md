@@ -32,15 +32,7 @@ A comprehensive pharmaceutical promotional materials management platform designe
 
 ## Recent Changes
 
-### July 13, 2025 - Request Type Functionality Change (Latest)
-- **Prepare Order Behavior Change**: Modified "prepare_order" requests to work like "receive_inventory" notifications
-- **Inventory Transfer Restoration**: Both "prepare_order" and "receive_inventory" now properly record stock movements and create allocations
-- **Stock Movement Recording**: Fixed issue where approved requests weren't creating movement records or updating allocations
-- **Consistent Allocation Logic**: Both request types now add inventory to requester's allocation from central inventory
-- **Updated UI Labels**: Changed "Prepare Order" to "Incoming Inventory Notification" in request form for clarity
-- **Proper Inventory Tracking**: All approved requests now properly deduct from available stock and create audit trails
-
-### July 13, 2025 - Request Management UI/UX Improvements (Previous)
+### July 13, 2025 - Request Management UI/UX Improvements
 - **Request Details Button**: Changed approve button (Check icon) to show request details instead of direct approval
 - **Enhanced Request Details Modal**: Added comprehensive request details including requested items table with quantities and notes
 - **Stock Item Integration**: Request details now show both stock items (from inventory) and custom items with proper item name resolution
