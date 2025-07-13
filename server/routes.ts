@@ -608,18 +608,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const request = await storage.createRequest(validatedData);
       
       if (requestData.items && requestData.items.length > 0) {
-        console.log('Processing request items:', requestData.items);
         for (const item of requestData.items) {
-          console.log('Processing item:', item);
           // Create request item if it has either a stock item ID or item name, and quantity
           if (item.quantity && (item.stockItemId !== "none" || item.itemName)) {
-            console.log('Creating request item:', {
-              requestId: request.id,
-              stockItemId: item.stockItemId !== "none" ? parseInt(item.stockItemId) : null,
-              itemName: item.itemName || null,
-              quantity: parseInt(item.quantity),
-              notes: item.notes || null
-            });
             await storage.createRequestItem({
               requestId: request.id,
               stockItemId: item.stockItemId !== "none" ? parseInt(item.stockItemId) : null,
@@ -627,12 +618,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               quantity: parseInt(item.quantity),
               notes: item.notes || null
             });
-          } else {
-            console.log('Skipping item due to validation:', item);
           }
         }
-      } else {
-        console.log('No items to process or items array is empty');
       }
       
       res.json(request);

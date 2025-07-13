@@ -35,6 +35,7 @@ function Router() {
       <ProtectedRoute path="/mobile" component={MobileApp} />
       <ProtectedRoute path="/mobile/:rest*" component={MobileApp} />
       <ProtectedRoute path="/requests" component={RequestManagementPage} roles={['productManager', 'stockKeeper', 'ceo', 'admin']} />
+      <ProtectedRoute path="/request-management" component={RequestManagementPage} roles={['productManager', 'stockKeeper', 'ceo', 'admin']} />
       <ProtectedRoute path="/inventory-allocation" component={InventoryAllocationPage} roles={['ceo', 'admin', 'stockKeeper']} />
       <ProtectedRoute path="/stock-movements" component={StockMovementPage} roles={['ceo', 'admin', 'stockKeeper']} />
       <Route component={NotFound} />
