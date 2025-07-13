@@ -105,6 +105,10 @@ export default function RequestManagementPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stock-items"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/allocations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/my-specialty-inventory"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/movements"] });
       setShowCreateModal(false);
       toast({
         title: "Success",
@@ -161,6 +165,10 @@ export default function RequestManagementPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stock-items"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/allocations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/my-specialty-inventory"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/movements"] });
       setShowApprovalModal(false);
       setCurrentRequest(null);
       setApprovalNotes("");
@@ -190,6 +198,10 @@ export default function RequestManagementPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stock-items"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/allocations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/my-specialty-inventory"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/movements"] });
       setShowApprovalModal(false);
       setCurrentRequest(null);
       setApprovalNotes("");
@@ -219,6 +231,10 @@ export default function RequestManagementPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stock-items"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/allocations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/my-specialty-inventory"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/movements"] });
       setShowApprovalModal(false);
       setCurrentRequest(null);
       setApprovalNotes("");
