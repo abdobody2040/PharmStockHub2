@@ -1,0 +1,211 @@
+Date,Description,Original Amount,Original Currency,Card Ending In,Card Holder,Transaction ID,Reference,Incoming (USD),Outgoing (USD),Balance (USD)
+25-Jun-2025,USD balance on 25 June 2025 [GMT+02:00],,,,,,,,528.18
+23-Jun-2025,"Card transaction of 400.00 ZAR issued by Yoco *Hair By Vaness Langebaan",400.00,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-2613659610,,,-22.33,528.18
+18-Jun-2025,Received money from STRIPE with reference TRANSFER,,,Osama Ahmed Saad Ibrahim,TRANSFER-1589018769,TRANSFER,411.09,,550.51
+18-Jun-2025,"Card transaction of 24.00 ZAR issued by Str Parking Ct 110 SEA POINT",24.00,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-2596303622,,,-1.34,139.42
+11-Jun-2025,"Card transaction of 550.00 ZAR issued by Yoco *Hair By Vaness Langebaan",550.00,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-2574839332,,,-31.28,140.76
+11-Jun-2025,"Card transaction of 88.01 ZAR issued by Spar Langebaan CAPE TOWN",88.01,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-2573992827,,,-4.97,172.04
+10-Jun-2025,"Card transaction of 50.00 ZAR issued by Yoco *Lancehoudt Pty Langebaan",50.00,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-2570348233,,,-2.84,177.01
+10-Jun-2025,"Card transaction of 86.21 ZAR issued by Spar Langebaan CAPE TOWN",86.21,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-2570326652,,,-4.88,179.85
+10-Jun-2025,"Card transaction of 136.00 ZAR issued by Langebaan Pharmacy LANGEBAAN",136.00,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-2570301838,,,-7.72,184.73
+07-Jun-2025,"Card transaction of 55.00 ZAR issued by Yoco *Lancehoudt Pty Langebaan",55.00,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-2561072340,,,-3.11,192.45
+05-Jun-2025,"Card transaction of 40.25 USD issued by Cloudflare CLOUDFLARE.CO",40.25,USD,8797,Osama Ahmed Saad Ibrahim,CARD-2555833611,,,-40.25,195.56
+05-Jun-2025,"Card transaction of 1,048.21 ZAR issued by Google *Ads2899764490 cc@google.com",1048.21,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-2555588727,,,-59.21,235.81
+05-Jun-2025,Received money from STRIPE with reference TRANSFER,,,Osama Ahmed Saad Ibrahim,TRANSFER-1570915284,TRANSFER,288.46,,295.02
+02-Jun-2025,"Card transaction of 1.85 USD issued by Google Cloud Bqgpx3 Dublin",1.85,USD,8797,Osama Ahmed Saad Ibrahim,CARD-2546083267,,,-1.85,6.56
+02-Jun-2025,"Card transaction of 16.00 USD issued by Krisp KRISP.AI",16.00,USD,8797,Osama Ahmed Saad Ibrahim,CARD-2545233458,,,-16.00,8.41
+02-Jun-2025,Card Cashback,,,,CARD_TRANSACTION_CASHBACK-3367139,,0.90,,24.41
+01-Jun-2025,"Card transaction of 16.42 USD issued by Google Gsuite_thetestadva Dublin",16.42,USD,8797,Osama Ahmed Saad Ibrahim,CARD-2542282889,,,-16.42,23.51
+31-May-2025,Sent money to zinab ahmed abd el fattah,,,,TRANSFER-1562612123,Sent via Wise,,-660.00,39.93
+30-May-2025,"Card transaction of 1,323.50 ZAR issued by Die Visfabriek WELLINGTON",1323.50,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-2534694792,,,-74.54,699.93
+30-May-2025,Received money from STRIPE with reference TRANSFER,,,Osama Ahmed Saad Ibrahim,TRANSFER-1560657134,TRANSFER,388.86,,774.47
+29-May-2025,"Card transaction of 66.88 ZAR issued by Spar Nautica Western Cape",66.88,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-2531694389,,,-3.75,385.61
+28-May-2025,"Card transaction of 45.76 EUR issued by Paynet*Alexhost.com Chisinau",45.76,EUR,8797,Osama Ahmed Saad Ibrahim,CARD-2530655608,,,-51.58,389.36
+27-May-2025,"Card transaction of 17.25 USD issued by Vmo*Vimeo.com 848-359-5618",17.25,USD,8797,Osama Ahmed Saad Ibrahim,CARD-2526200608,,,-17.25,440.94
+26-May-2025,"Card transaction of 200.00 ZAR issued by Yoco *Hair By Vaness Langebaan",200.00,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-2523983998,,,-11.25,458.19
+21-May-2025,Received money from STRIPE with reference TRANSFER,,,Osama Ahmed Saad Ibrahim,TRANSFER-1548055129,TRANSFER,310.13,,469.44
+18-May-2025,"Card transaction of 500.00 ZAR issued by Google *Ads2899764490 cc@google.com",500.00,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-2498775535,,,-27.86,159.31
+15-May-2025,"Card transaction of 100.00 ZAR issued by Google*Ads2899764490 CC GOOGLE.COM",100.00,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-2488075671,,,-4.82,187.17
+13-May-2025,"Card transaction of 5.00 USD issued by Thetestadvantage.com LONDON",5.00,USD,8797,Osama Ahmed Saad Ibrahim,CARD-2483117531,,,-5.00,191.99
+11-May-2025,"Card transaction of 100.00 ZAR issued by Google *Ads2899764490 cc@google.com",100.00,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-2477370800,,,4.83,196.99
+11-May-2025,"Card transaction of 100.00 ZAR issued by Google *Ads2899764490 cc@google.com (duplicate entry from page 2 bottom, different balance on page 3 implies it's a separate transaction or delayed posting; assuming as new due to new balance)",100.00,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-2477370800 (possible duplicate, check original statement context),,,-4.83,192.16
+11-May-2025,"Card transaction of 1,215.19 EGP issued by Google Ads2536057072 Dublin",1215.19,EGP,8797,Osama Ahmed Saad Ibrahim,CARD-2477297395,,,-24.21,196.99
+10-May-2025,"Card transaction of 32.16 USD issued by Amazon Mktpl*Ni99z2v00 Amzn.com/bill",32.16,USD,8797,Osama Ahmed Saad Ibrahim,CARD-2474042304,,,-32.16,221.20
+08-May-2025,Received money from STRIPE with reference TRANSFER,,,Osama Ahmed Saad Ibrahim,TRANSFER-1531063524,TRANSFER,253.36,,253.36
+06-May-2025,Sent money to zinab ahmed abd el fattah,,,,TRANSFER-1527896347,Sent via Wise,,-625.54,0.00
+02-May-2025,"Card transaction of 16.00 USD issued by Krisp KRISP.AI",16.00,USD,8797,Osama Ahmed Saad Ibrahim,CARD-2449669258,,,-16.00,625.54
+02-May-2025,"Card transaction of 40.25 USD issued by Cloudflare CLOUDFLARE.CO",40.25,USD,8797,Osama Ahmed Saad Ibrahim,CARD-2449651752,,,-40.25,641.54
+02-May-2025,"Card transaction of 5.29 USD issued by Cloudflare CLOUDFLARE.CO",5.29,USD,8797,Osama Ahmed Saad Ibrahim,CARD-2448469080,,,-5.29,681.79
+01-May-2025,"Card transaction of 1.85 USD issued by Google Cloud D3dtmk Dublin",1.85,USD,8797,Osama Ahmed Saad Ibrahim,CARD-2447417960,,,-1.85,687.08
+01-May-2025,"Card transaction of 16.42 USD issued by Google Gsuite_thetestadva Dublin",16.42,USD,8797,Osama Ahmed Saad Ibrahim,CARD-2446912318,,,-16.42,688.93
+01-May-2025,Card Cashback,,,,CARD_TRANSACTION_CASHBACK-3241964,,0.54,,705.35
+30-Apr-2025,"Card transaction of 1,372.88 EGP issued by Facebk *Tb72an4e92 fb.me/ads",1372.88,EGP,8797,Osama Ahmed Saad Ibrahim,CARD-2444618188,,,-27.23,704.81
+28-Apr-2025,"Card transaction of 52.00 USD issued by Paynet*Alexhost.com Chisinau",52.00,USD,8797,Osama Ahmed Saad Ibrahim,CARD-2437353859,,,-52.00,732.04
+27-Apr-2025,"Card transaction of 17.25 USD issued by Vmo*Vimeo.com 848-359-5618",17.25,USD,8797,Osama Ahmed Saad Ibrahim,CARD-2434713326,,,-17.25,784.04
+25-Apr-2025,Received money from STRIPE with reference TRANSFER,,,Osama Ahmed Saad Ibrahim,TRANSFER-1512161653,TRANSFER,300.85,,801.29
+21-Apr-2025,"Card transaction of 999.99 ZAR issued by Poe.com QUORA.COM",999.99,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-2416354059,,,-53.23,500.44
+16-Apr-2025,Received money from STRIPE with reference TRANSFER,,,Osama Ahmed Saad Ibrahim,TRANSFER-1500706894,TRANSFER,330.91,,553.67
+16-Apr-2025,"Card transaction of 6.13 USD issued by Cloudflare CLOUDFLARE.CO",6.13,USD,8797,Osama Ahmed Saad Ibrahim,CARD-2402293158,,,-6.13,222.76
+12-Apr-2025,"Card transaction of 7.80 USD issued by Reddit Inc Ads REDDIT.COM",7.80,USD,8797,Osama Ahmed Saad Ibrahim,CARD-2391638729,,,-7.80,228.89
+11-Apr-2025,"Card transaction of 5.19 USD issued by Reddit Inc Ads REDDIT.COM",5.19,USD,8797,Osama Ahmed Saad Ibrahim,CARD-2388560450,,,-5.19,236.69
+10-Apr-2025,"Card transaction of 6.07 USD issued by Reddit Inc Ads REDDIT.COM",6.07,USD,8797,Osama Ahmed Saad Ibrahim,CARD-2385544138,,,-6.07,241.88
+09-Apr-2025,"Card transaction of 1.09 USD issued by Reddit Inc Ads REDDIT.COM",1.09,USD,8797,Osama Ahmed Saad Ibrahim,CARD-2382981857,,,-1.09,247.95
+09-Apr-2025,"Card transaction of 10.00 USD issued by Reddit Inc Ads +14085335464 (Incoming)",10.00,USD,8797,Osama Ahmed Saad Ibrahim,CARD-2381799331,,10.00,,249.04
+09-Apr-2025,"Card transaction of 10.00 USD issued by Reddit Inc Ads +14085335464 (Outgoing)",10.00,USD,8797,Osama Ahmed Saad Ibrahim,CARD-2381799331,,,-10.00,239.04
+06-Apr-2025,"Card transaction of 16.00 USD issued by Krisp KRISP.AI",16.00,USD,8797,Osama Ahmed Saad Ibrahim,CARD-2374123413,,,-16.00,249.04
+04-Apr-2025,"Card transaction of 38.76 USD issued by Cloudflare CLOUDFLARE.CO",38.76,USD,8797,Osama Ahmed Saad Ibrahim,CARD-2367909602,,,-38.76,265.04
+03-Apr-2025,Received money from STRIPE with reference TRANSFER,,,Osama Ahmed Saad Ibrahim,TRANSFER-1482485709,TRANSFER,288.56,,303.80
+01-Apr-2025,"Card transaction of 16.42 USD issued by Google*Gsuite Thetesta CC GOOGLE.COM",16.42,USD,8797,Osama Ahmed Saad Ibrahim,CARD-2359275872,,,-16.42,15.24
+01-Apr-2025,Card Cashback,,,,CARD_TRANSACTION_CASHBACK-3116784,,0.95,,31.66
+31-Mar-2025,"Card transaction of 81.00 ZAR issued by Marina Supermarke146626 LANGEBAAN",81.00,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-2356870541,,,-4.42,30.71
+28-Mar-2025,"Card transaction of 49.80 ZAR issued by Total Langebaan C WC",49.80,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-2349455749,,,-2.72,35.13
+28-Mar-2025,"Card transaction of 45.76 EUR issued by Paynet*Alexhost.com Chisinau",45.76,EUR,8797,Osama Ahmed Saad Ibrahim,CARD-2347368104,,,-49.28,37.85
+27-Mar-2025,Sent money to zainab ahmed mohammed abdelfattah,,,,TRANSFER-1471838243,,,-820.00,87.13
+27-Mar-2025,Received money from STRIPE with reference TRANSFER,,,Osama Ahmed Saad Ibrahim,TRANSFER-1471830629,TRANSFER,459.28,,907.13
+27-Mar-2025,"Card transaction of 17.25 USD issued by Vmo*Vimeo.com 848-359-5618",17.25,USD,8797,Osama Ahmed Saad Ibrahim,CARD-2345417248,,,-17.25,447.85
+26-Mar-2025,"Card transaction of 375.00 ZAR issued by Ik *The Curry Bar Langebaan",375.00,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-2343453842,,,-20.66,465.10
+25-Mar-2025,"Card transaction of 716.73 ZAR issued by Flm Westcoast Mall SALDANHA",716.73,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-2340285286,,,-39.66,485.76
+21-Mar-2025,"Card transaction of 997.43 ZAR issued by Poe.com QUORA.COM",997.43,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-2328892117,,,-55.14,525.42
+18-Mar-2025,Received money from STRIPE with reference TRANSFER,,,Osama Ahmed Saad Ibrahim,TRANSFER-1460097516,TRANSFER,392.18,,580.56
+17-Mar-2025,"Card transaction of 5.30 USD issued by Paypal *Shenduqrwea 4029357733",5.30,USD,8797,Osama Ahmed Saad Ibrahim,CARD-2318168202,,,-5.30,188.38
+11-Mar-2025,"Card transaction of 48.00 USD issued by Paypal *Wwwufb2 4029357733",48.00,USD,8797,Osama Ahmed Saad Ibrahim,CARD-2302712323,,,-48.00,193.68
+10-Mar-2025,"Card transaction of 300.00 ZAR issued by Yoco *Hair By Vaness Langebaan",300.00,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-2300250705,,,-16.52,241.68
+08-Mar-2025,"Card transaction of 8.00 USD issued by Easy-Peasy.ai SINGAPORE",8.00,USD,8797,Osama Ahmed Saad Ibrahim,CARD-2296309389,,,-8.00,258.20
+07-Mar-2025,"Card transaction of 332.13 ZAR issued by Poe.com QUORA.COM",332.13,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-2292308636,,,-17.68,266.20
+07-Mar-2025,Received money from STRIPE with reference TRANSFER,,,Osama Ahmed Saad Ibrahim,TRANSFER-1445977276,TRANSFER,283.88,,283.88
+03-Mar-2025,"Card transaction of 16.00 USD issued by Krisp KRISP.AI",16.00,USD,8797,Osama Ahmed Saad Ibrahim,CARD-2280671832,,,-15.32,0.00
+03-Mar-2025,Card Cashback,,,,CARD_TRANSACTION_CASHBACK-3001796,,0.96,,15.32
+02-Mar-2025,"Card transaction of 37.61 USD issued by Cloudflare CLOUDFLARE.CO",37.61,USD,8797,Osama Ahmed Saad Ibrahim,CARD-2277692628,,,-37.61,14.36
+01-Mar-2025,"Card transaction of 16.42 USD issued by Google Gsuite_thetestadva Dublin",16.42,USD,8797,Osama Ahmed Saad Ibrahim,CARD-2275207082,,,-16.42,51.97
+27-Feb-2025,Sent money to zainab ahmed mohammed abdelfattah,,,,TRANSFER-1433810291,,,-720.00,68.39
+27-Feb-2025,Received money from STRIPE with reference TRANSFER,,,Osama Ahmed Saad Ibrahim,TRANSFER-1433257197,TRANSFER,430.74,,788.39
+27-Feb-2025,"Card transaction of 17.25 USD issued by Vmo*Vimeo.com 848-359-5618",17.25,USD,8797,Osama Ahmed Saad Ibrahim,CARD-2268527080,,,-17.25,357.65
+27-Feb-2025,"Card transaction of 250.00 ZAR issued by Yoco *Hair By Vaness Langebaan",250.00,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-2268011431,,,-13.62,374.90
+27-Feb-2025,"Card transaction of 47.98 USD issued by Paynet*Alexhost.com Chisinau",47.98,USD,8797,Osama Ahmed Saad Ibrahim,CARD-2267926701,,,-47.98,388.52
+26-Feb-2025,"Card transaction of 99.99 ZAR issued by Quora.com QUORA.COM",99.99,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-2265838904,,,-5.45,436.50
+25-Feb-2025,Sent money to Osama Ibrahim,,,,TRANSFER-1429710081,,,-80.00,441.95
+23-Feb-2025,"Card transaction of 120.00 ZAR issued by Club Mykonos Rental 3 LANGEBAAN",120.00,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-2257705335,,,-6.57,521.95
+22-Feb-2025,"Card transaction of 300.00 ZAR issued by Yoco *Hair By Vaness Langebaan",300.00,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-2255835788,,,-16.41,528.52
+22-Feb-2025,"Card transaction of 487.06 ZAR issued by Spar Langebaan CAPE TOWN",487.06,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-2255127054,,,-26.66,544.93
+21-Feb-2025,"Card transaction of 120.00 ZAR issued by Club Mykonos Rental 3 LANGEBAAN",120.00,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-2251952030,,,-6.58,571.59
+20-Feb-2025,"Card transaction of 460.00 ZAR issued by Langebaan Petrol Stati LANGEBAAN",460.00,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-2249573787,,,-25.06,578.17
+19-Feb-2025,"Card transaction of 910.00 ZAR issued by Langebaan Petrol Stati LANGEBAAN",910.00,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-2246341094,,,-49.75,603.23
+18-Feb-2025,Received money from STRIPE with reference TRANSFER,,,Osama Ahmed Saad Ibrahim,TRANSFER-1421444498,TRANSFER,342.66,,652.98
+16-Feb-2025,"Card transaction of 250.00 ZAR issued by Yoco *Hair By Vaness Langebaan",250.00,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-2238632610,,,-13.64,310.32
+11-Feb-2025,"Card transaction of 64.30 USD issued by Asics Corporation 949-4538888",64.30,USD,8797,Osama Ahmed Saad Ibrahim,CARD-2225095685,,,-64.30,323.96
+10-Feb-2025,Received money from STRIPE with reference TRANSFER,,,Osama Ahmed Saad Ibrahim,TRANSFER-1411169387,TRANSFER,387.04,,388.26
+10-Feb-2025,"Card transaction of 4.11 USD issued by Cloudflare CLOUDFLARE.CO",4.11,USD,8797,Osama Ahmed Saad Ibrahim,CARD-2221764861,,,-4.11,1.22
+08-Feb-2025,"Card transaction of 22.59 USD issued by Cloudflare CLOUDFLARE.CO",22.59,USD,8797,Osama Ahmed Saad Ibrahim,CARD-2216452107,,,-22.59,5.33
+05-Feb-2025,"Card transaction of 8.00 USD issued by Easy-Peasy.ai SINGAPORE",8.00,USD,8797,Osama Ahmed Saad Ibrahim,CARD-2208167692,,,-8.00,27.92
+03-Feb-2025,Card Cashback,,,,CARD_TRANSACTION_CASHBACK-2918194,,0.08,,35.92
+02-Feb-2025,"Card transaction of 16.00 USD issued by Krisp KRISP.AI",16.00,USD,8797,Osama Ahmed Saad Ibrahim,CARD-2200528065,,,-16.00,35.84
+01-Feb-2025,"Card transaction of 33.71 USD issued by Google*Gsuite Thetesta CC GOOGLE.COM",33.71,USD,8797,Osama Ahmed Saad Ibrahim,CARD-2198061992,,,-33.71,51.84
+29-Jan-2025,Sent money to zainab ahmed mohammed abdelfattah,,,,TRANSFER-1394173107,,,-820.00,85.55
+29-Jan-2025,"Card transaction of 47.92 USD issued by Paynet*Alexhost.com Chisinau",47.92,USD,8797,Osama Ahmed Saad Ibrahim,CARD-2188760627,,,-47.92,905.55
+25-Jan-2025,"Card transaction of 450.00 ZAR issued by Yoco *Hair By Vaness Langebaan",450.00,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-2178641829,,,-24.58,953.47
+23-Jan-2025,Received money from STRIPE with reference TRANSFER,,,Osama Ahmed Saad Ibrahim,TRANSFER-1386696929,TRANSFER,286.07,,978.05
+22-Jan-2025,"Card transaction of 178.16 ZAR issued by Checkers Laguna Mall LANGEBAAN",178.16,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-2170353457,,,-8.45,691.98
+16-Jan-2025,Received money from STRIPE with reference TRANSFER,,,Osama Ahmed Saad Ibrahim,TRANSFER-1378178228,TRANSFER,357.95,,700.43
+12-Jan-2025,"Card transaction of 16.00 USD issued by Easy-Peasy.ai SINGAPORE",16.00,USD,8797,Osama Ahmed Saad Ibrahim,CARD-2143424434,,,-16.00,342.48
+09-Jan-2025,Received money from STRIPE with reference TRANSFER,,,Osama Ahmed Saad Ibrahim,TRANSFER-1369261500,TRANSFER,358.06,,358.48
+03-Jan-2025,Card Cashback,,,,CARD_TRANSACTION_CASHBACK-2763137,,0.42,,0.42
+28-Dec-2024,Sent money to zainab ahmed mohammed abdelfattah,,,,TRANSFER-1353437394,,,-504.31,0.00
+28-Dec-2024,"Card transaction of 45.76 EUR issued by Paynet*Alexhost.com CHISINAU",45.76,EUR,8797,Osama Ahmed Saad Ibrahim,CARD-2099831677,,,-47.62,504.31
+28-Dec-2024,"Card transaction of 335.00 ZAR issued by Nandos Tableview U Western Cape",335.00,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-2090089883,,,-18.01,551.93
+27-Dec-2024,"Card transaction of 335.00 ZAR issued by Nandos Tableview U Western Cape",335.00,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-2090089883,,,18.13,569.94
+26-Dec-2024,"Card transaction of 30.00 ZAR issued by T's Tobac & Vape Langeb CAPE TOWN",30.00,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-2094486080,,,-1.62,551.81
+26-Dec-2024,"Card transaction of 360.00 ZAR issued by Langebaan Petrol Stati OLANGEBAAN",360.00,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-2094394923,,,-19.45,553.43
+25-Dec-2024,"Card transaction of 9.50 ZAR issued by Total Langebaan C WC",9.50,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-2092365281,,,-0.53,572.88
+24-Dec-2024,"Card transaction of 335.00 ZAR issued by Nandos Tableview U Western Cape",335.00,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-2090089883,,,-18.13,573.41
+24-Dec-2024,"Card transaction of 510.00 ZAR issued by Langebaan Petrol Stati OLANGEBAAN",510.00,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-2089538241,,,-27.67,591.54
+24-Dec-2024,"Card transaction of 96.00 ZAR issued by Total Langebaan C WC",96.00,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-2089535380,,,-5.20,619.21
+21-Dec-2024,"Card transaction of 639.82 ZAR issued by Spar Langebaan Western Cape",639.82,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-2082013905,,,-35.14,624.41
+21-Dec-2024,"Card transaction of 154.00 ZAR issued by Seattle Coffee Laguna Western Cape",154.00,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-2081919004,,,-8.46,659.55
+17-Dec-2024,"Card transaction of 1,100.00 ZAR issued by Yoco *Hair By Vaness Langebaan",1100.00,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-2070046334,,,-60.93,668.01
+14-Dec-2024,"Card transaction of 399.99 ZAR issued by Poe.com +16503328820",399.99,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-2061650588,,,-22.51,728.94
+12-Dec-2024,Received money from STRIPE with reference TRANSFER,,,Osama Ahmed Saad Ibrahim,TRANSFER-1333645463,TRANSFER,266.20,,751.45
+05-Dec-2024,Received money from STRIPE with reference TRANSFER,,,Osama Ahmed Saad Ibrahim,TRANSFER-1324427393,TRANSFER,318.86,,485.25
+05-Dec-2024,"Card transaction of 32.00 USD issued by Easy-Peasy.ai +6581853869",32.00,USD,8797,Osama Ahmed Saad Ibrahim,CARD-2035862025,,,-32.00,166.39
+03-Dec-2024,"Card transaction of 360.00 ZAR issued by Yoco *Hair By Vaness Langebaan",360.00,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-2030663367,,,-20.00,198.39
+03-Dec-2024,"Card transaction of 69.98 ZAR issued by Langebaan Pharmacy LANGEBAAN",69.98,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-2030417605,,,-3.88,218.39
+03-Dec-2024,"Card transaction of 135.73 ZAR issued by Spar Langebaan Western Cape",135.73,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-2030410264,,,-7.09,222.27
+02-Dec-2024,Card Cashback,,,,CARD_TRANSACTION_CASHBACK-2629547,,1.61,,229.36
+30-Nov-2024,"Card transaction of 5.00 USD issued by Centimental Ai +31652496418",5.00,USD,8797,Osama Ahmed Saad Ibrahim,CARD-2021418941,,,-5.00,227.75
+28-Nov-2024,"Card transaction of 48.25 USD issued by Paynet*Alexhost.com CHISINAU",48.25,USD,8797,Osama Ahmed Saad Ibrahim,CARD-2015222651,,,-48.25,232.75
+25-Nov-2024,"Card transaction of 400.00 ZAR issued by Yoco *Hair By Vaness Langebaan",400.00,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-2007513161,,,-22.27,281.00
+24-Nov-2024,"Card transaction of 2.90 USD issued by Easy-Peasy.ai +6581853869",2.90,USD,8797,Osama Ahmed Saad Ibrahim,CARD-2004848599,,,-2.90,303.27
+21-Nov-2024,Received money from STRIPE with reference TRANSFER,,,Osama Ahmed Saad Ibrahim,TRANSFER-1305185254,TRANSFER,265.19,,306.17
+19-Nov-2024,Sent money to Osama Ahmed Saad Ibrahim,,,,TRANSFER-1302190664,,,-650.00,40.98
+18-Nov-2024,Sent money to Osama Ahmed Saad Ibrahim,,,,TRANSFER-1300550991,,,-1.00,690.98
+17-Nov-2024,"Card transaction of 25.00 USD issued by Paypal *Sandhyahebb 35314369001",25.00,USD,8797,Osama Ahmed Saad Ibrahim,CARD-1984799180,,,-25.00,691.98
+15-Nov-2024,Sent money to ARURA TECH LTD,,,,TRANSFER-1297952450,,,-200.00,716.98
+14-Nov-2024,"Card transaction of 24.00 ZAR issued by Postnet Langebaan - New WESTERN CAPE",24.00,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-1976704031,,,-1.32,916.98
+14-Nov-2024,Received money from STRIPE with reference TRANSFER,,,Osama Ahmed Saad Ibrahim,TRANSFER-1296082574,TRANSFER,429.98,,918.30
+13-Nov-2024,"Card transaction of 5.00 USD issued by Openai +14158799686",5.00,USD,8797,Osama Ahmed Saad Ibrahim,CARD-1974091303,,,-5.00,488.32
+12-Nov-2024,"Card transaction of 65.00 ZAR issued by Uberdirectsa_2 Amsterdam",65.00,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-1971470743,,,-3.62,493.32
+12-Nov-2024,"Card transaction of 79.90 ZAR issued by Ster Kinekor Bays42800 Cape Town",79.90,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-1971443358,,,-4.44,496.94
+12-Nov-2024,"Card transaction of 330.00 ZAR issued by Spur Malibu Table View",330.00,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-1971222359,,,-18.38,501.38
+12-Nov-2024,"Card transaction of 154.00 ZAR issued by Uberdirectsa_2 Amsterdam",154.00,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-1971015961,,,-8.56,519.76
+12-Nov-2024,"Card transaction of 155.00 ZAR issued by Uberdirectsa_2 Amsterdam",155.00,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-1970755669,,,-8.66,528.32
+12-Nov-2024,"Card transaction of 35.00 ZAR issued by Yoco *Widow Maker Co Cape Town",35.00,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-1970754405,,,-1.68,536.98
+11-Nov-2024,"Card transaction of 10.00 ZAR issued by Uber Shopper Statement help.uber.com (Incoming)",10.00,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-1968783562,,0.30,,538.66
+11-Nov-2024,"Card transaction of 10.00 ZAR issued by Uber Shopper Statement help.uber.com (Outgoing)",10.00,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-1968783562,,,-0.30,538.36
+07-Nov-2024,Received money from STRIPE with reference TRANSFER,,,Osama Ahmed Saad Ibrahim,TRANSFER-1288045525,TRANSFER,327.53,,538.66
+06-Nov-2024,Sent money to Osama Ibrahim,,,,TRANSFER-1285799949,,,-130.00,211.13
+05-Nov-2024,"Card transaction of 24.00 USD issued by Easy-Peasy.ai +6581853869",24.00,USD,8797,Osama Ahmed Saad Ibrahim,CARD-1951331722,,,-24.00,341.13
+01-Nov-2024,Card Cashback,,,,CARD_TRANSACTION_CASHBACK-2578928,,0.05,,365.13
+01-Nov-2024,"Card transaction of 200.60 USD issued by Shein.com LOS ANGELES",200.60,USD,8797,Osama Ahmed Saad Ibrahim,CARD-1940041746,,,-200.60,365.08
+31-Oct-2024,"Card transaction of 590.13 EGP issued by Facebk* DUBLIN",590.13,EGP,8797,Osama Ahmed Saad Ibrahim,CARD-1938619084,,,-12.15,565.68
+31-Oct-2024,"Card transaction of 500.00 ZAR issued by Yoco *Hair By Vaness Langebaan",500.00,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-1938524229,,,-28.48,577.83
+31-Oct-2024,Received money from STRIPE with reference TRANSFER,,,Osama Ahmed Saad Ibrahim,TRANSFER-1278240119,TRANSFER,462.28,,606.31
+31-Oct-2024,"Card transaction of 120.86 ZAR issued by Game Vredenburg Vredenburg",120.86,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-1937189919,,,-6.85,144.03
+30-Oct-2024,Sent money to Osama Ibrahim,,,,TRANSFER-1276714271,,,-120.00,150.88
+30-Oct-2024,"Card transaction of 157.97 ZAR issued by Mustang Pay Kempton Park",157.97,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-1934502563,,,-9.04,270.88
+28-Oct-2024,Received payment from Sama Elsaadawy,,,,ACQUIRING_PAYMENT-e66df1da-532a-4c9a-85f9-6a762b696ac9,,67.97,,279.92
+28-Oct-2024,Sent money to zainab ahmed mohammed abdelfattah,,,,TRANSFER-1273798438,,,-1020.00,211.95
+28-Oct-2024,"Card transaction of 20.00 USD issued by Scholastic Education 573-632-1834",20.00,USD,8797,Osama Ahmed Saad Ibrahim,CARD-1929291382,,,-20.00,1231.95
+27-Oct-2024,"Card transaction of 49.57 USD issued by Paynet*Alexhost.com CHISINAU",49.57,USD,8797,Osama Ahmed Saad Ibrahim,CARD-1926926928,,,-49.57,1251.95
+27-Oct-2024,Received payment from Salwa samir,,,,ACQUIRING_PAYMENT-8941f0b6-48a7-4fee-9283-68fc7e6c8c1d,,77.68,,1301.52
+24-Oct-2024,Received money from STRIPE with reference TRANSFER,,,Osama Ahmed Saad Ibrahim,TRANSFER-1268770547,TRANSFER,320.78,,1223.84
+23-Oct-2024,"Card transaction of 667.00 ZAR issued by Temu.com Dublin 4",667.00,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-1914543373,,,-38.21,903.06
+20-Oct-2024,Received payment from elsharnoby elhusein,,,,ACQUIRING_PAYMENT-c2674787-2070-407a-a03e-faeb7064ac8c,,87.39,,941.27
+18-Oct-2024,Received payment from MAHA ABDELSALAM,,,,ACQUIRING_PAYMENT-bbfe28de-d6da-4b00-996a-836f11c5cd43,,116.52,,853.88
+16-Oct-2024,"Card transaction of 10.00 USD issued by Meta Wave Solutions +919441135632",10.00,USD,8797,Osama Ahmed Saad Ibrahim,CARD-1895671162,,,-10.00,737.36
+14-Oct-2024,Received payment from Haidy hossam,,,,ACQUIRING_PAYMENT-e54c6764-f027-4f9b-8b18-1080ef1f96fe,,116.52,,747.36
+14-Oct-2024,Received payment from Nada khaled,,,,ACQUIRING_PAYMENT-1b4777c4-349f-492b-b99a-a6fcbd19d4f2,,116.52,,630.84
+13-Oct-2024,Received payment from Ahmed mohamed,,,,ACQUIRING_PAYMENT-0a44d67e-b13b-486f-a493-7db4324ed9e4,,116.52,,514.32
+10-Oct-2024,Received payment from Badr Elsharnoby,,,,ACQUIRING_PAYMENT-e752833a-d0d4-4217-9bd7-5a1979287f80,,87.39,,397.80
+09-Oct-2024,Received payment from Amel Abouelfettoh,,,,ACQUIRING_PAYMENT-133f683c-289f-408d-a8b6-bd7f9dbbcd19,,14.56,,310.41
+09-Oct-2024,"Card transaction of 1,710.00 EGP issued by Facebk *B6swj9ud92 fb.me/ads",1710.00,EGP,8797,Osama Ahmed Saad Ibrahim,CARD-1875336768,,,-35.50,295.85
+07-Oct-2024,Received payment from Youssef abobaker,,,,ACQUIRING_PAYMENT-8bab72c8-07b0-4e6c-a891-7d70b8ffac3c,,14.56,,331.35
+06-Oct-2024,"Card transaction of 1,714.81 EGP issued by Facebk *Kynxm9gd92 fb.me/ads",1714.81,EGP,8797,Osama Ahmed Saad Ibrahim,CARD-1867176400,,,-35.76,316.79
+03-Oct-2024,Received payment from Ahmed idris,,,,ACQUIRING_PAYMENT-e5e06e65-1c13-4636-a267-f646fc7029a9,,165.07,,352.55
+03-Oct-2024,Sent money to Tahirah Iman Wallace,,,,TRANSFER-1243988128,,,-220.00,187.48
+03-Oct-2024,Sent money to zainab ahmed mohammed abdelfattah,,,,TRANSFER-1243986707,,,-500.00,407.48
+03-Oct-2024,"Card transaction of 799.99 EGP issued by Canva* 104291-45808532 +17372853388",799.99,EGP,8797,Osama Ahmed Saad Ibrahim,CARD-1857864924,,,-16.68,907.48
+03-Oct-2024,"Card transaction of 35.00 EGP issued by Canva* Paaaagjh275csbn +18052505001 (Incoming)",35.00,EGP,8797,Osama Ahmed Saad Ibrahim,CARD-1857856299,,0.73,,924.16
+03-Oct-2024,"Card transaction of 35.00 EGP issued by Canva* Paaaagjh275csbn +18052505001 (Outgoing)",35.00,EGP,8797,Osama Ahmed Saad Ibrahim,CARD-1857856299,,,-0.73,923.43
+30-Sep-2024,"Card transaction of 300.00 ZAR issued by The Daily Coffee Cafe * LANGEBAAN",300.00,ZAR,8797,Osama Ahmed Saad Ibrahim,CARD-1849241832,,,-16.84,924.16
+28-Sep-2024,"Card transaction of 45.76 EUR issued by Paynet*Alexhost.com CHISINAU",45.76,EUR,8797,Osama Ahmed Saad Ibrahim,CARD-1843813676,,,-51.24,941.00
+26-Sep-2024,Received money from STRIPE with reference TRANSFER,,,Osama Ahmed Saad Ibrahim,TRANSFER-1234067876,TRANSFER,256.04,,992.24
+24-Sep-2024,Received payment from Omar Mahmoud Mohammed,,,,ACQUIRING_PAYMENT-3b3cff8f-e886-41ed-b22e-f564712cd04a,,116.52,,736.20
+16-Sep-2024,Received payment from Mohamed Tarek,,,,ACQUIRING_PAYMENT-40bc39d0-cc0a-423a-b3c7-53a41f5d53f0,,116.52,,619.68
+13-Sep-2024,Received payment from Sama Elsaadawy,,,,ACQUIRING_PAYMENT-5d6fc6dc-36fe-4c27-909e-1cf02b0674a4,,67.97,,503.16
+11-Sep-2024,Received money from STRIPE with reference TRANSFER,,,Osama Ahmed Saad Ibrahim,TRANSFER-1216034246,TRANSFER,377.61,,435.19
+08-Sep-2024,Sent money to Tahirah Iman Wallace,,,,TRANSFER-1211758774,,,-102.00,57.58
+07-Sep-2024,Sent money to Tahirah Iman Wallace,,,,TRANSFER-1211296875,,,-102.00,159.58
+05-Sep-2024,Received money from STRIPE with reference TRANSFER,,,Osama Ahmed Saad Ibrahim,TRANSFER-1208737774,TRANSFER,261.58,,261.58
+03-Sep-2024,Sent money to zainab ahmed mohammed abdelfattah,,,,TRANSFER-1205574003,,,-1079.07,0.00
+31-Aug-2024,Received payment from elhussein ibrahim,,,,ACQUIRING_PAYMENT-4717fa82-4059-4c59-8d06-2eafe6ebb3d4,,87.39,,1079.07
+28-Aug-2024,Received money from STRIPE with reference TRANSFER,,,Osama Ahmed Saad Ibrahim,TRANSFER-1197809408,TRANSFER,297.71,,991.68
+22-Aug-2024,Received money from STRIPE with reference TRANSFER,,,Osama Ahmed Saad Ibrahim,TRANSFER-1190931032,TRANSFER,299.14,,693.97
+16-Aug-2024,Received payment from elsharnoby ehusein ibrahim,,,,ACQUIRING_PAYMENT-4eab054b-67c8-4652-9062-e540e1b90825,,87.39,,394.83
+15-Aug-2024,Received money from STRIPE with reference TRANSFER,,,Osama Ahmed Saad Ibrahim,TRANSFER-1182923045,TRANSFER,307.44,,307.44
+02-Aug-2024,Sent money to zainab ahmed mohammed abdelfattah,,,,TRANSFER-1167026123,,,-675.18,0.00
+02-Aug-2024,Sent money to Tahirah Iman Wallace,,,,TRANSFER-1167021538,,,-205.00,675.18
+01-Aug-2024,Received money from STRIPE with reference TRANSFER,,,Osama Ahmed Saad Ibrahim,TRANSFER-1165364351,TRANSFER,536.63,,880.18
+26-Jul-2024,Received payment from AHMED FATHY ELSAYED,,,,ACQUIRING_PAYMENT-cd22be2a-1295-4d39-9a9f-409890525f05,,67.97,,343.55
+18-Jul-2024,Received money from STRIPE with reference TRANSFER,,,Osama Ahmed Saad Ibrahim,TRANSFER-1148570532,TRANSFER,274.59,,275.58
+06-Jul-2024,Sent money to zainab ahmed mohammed abdelfattah,,,,TRANSFER-1134404919,,,-662.00,0.99
+05-Jul-2024,Received money from STRIPE with reference TRANSFER,,,Osama Ahmed Saad Ibrahim,TRANSFER-1133266338,TRANSFER,295.39,,662.99
+02-Jul-2024,Received money from STRIPE with reference TRANSFER,,,Osama Ahmed Saad Ibrahim,TRANSFER-1128903568,TRANSFER,363.02,,367.60
