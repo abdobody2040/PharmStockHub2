@@ -52,7 +52,7 @@ export function StockItemForm({ onSubmit, initialData, isLoading = false }: Stoc
   const { data: categories = [] } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
   });
-  
+
   const { data: specialties = [] } = useQuery<Specialty[]>({
     queryKey: ["/api/specialties"],
   });
@@ -88,27 +88,27 @@ export function StockItemForm({ onSubmit, initialData, isLoading = false }: Stoc
 
   const handleSubmit = (values: FormValues) => {
     const formData = new FormData();
-    
+
     // Add all fields to form data
     formData.append("name", values.name);
     formData.append("categoryId", values.categoryId);
-    
+
     // Handle specialty selection and ensure it's converted to a number
     if (values.specialtyId) {
       formData.append("specialtyId", parseInt(values.specialtyId).toString());
     } else if (user?.specialtyId && !hasPermission("canViewAllStockItems")) {
       formData.append("specialtyId", user.specialtyId.toString());
     }
-    
+
     formData.append("quantity", values.quantity);
-    
+
     // Convert dollar price to cents and store as integer
     // Convert string price to number, if empty or invalid use 0
     const price = values.price ? parseFloat(values.price) : 0;
     // Convert to cents without multiplying if already in cents
-    const priceInCents = Math.round(price);
+    const priceInCents = Math.round(price * 100);
     formData.append("price", priceInCents.toString());
-    
+
     // Handle expiry date properly
     if (values.expiry && values.expiry.trim() !== '') {
       // Ensure proper date format for server processing (ISO format)
@@ -125,19 +125,19 @@ export function StockItemForm({ onSubmit, initialData, isLoading = false }: Stoc
       // Explicitly set to null if empty
       formData.append("expiry", "");
     }
-    
+
     if (values.uniqueNumber) {
       formData.append("uniqueNumber", values.uniqueNumber);
     }
-    
+
     if (values.notes) {
       formData.append("notes", values.notes);
     }
-    
+
     if (values.imageFile) {
       formData.append("image", values.imageFile);
     }
-    
+
     onSubmit(formData);
   };
 
