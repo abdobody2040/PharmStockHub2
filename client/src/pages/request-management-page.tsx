@@ -600,6 +600,7 @@ function RequestTable({ requests, users, onView, onApprove, onDeny, currentUser 
                           console.log('Approve button clicked for request:', request.id);
                           console.log('Request data:', request);
                           console.log('Current user:', currentUser);
+                          console.log('onApprove function:', onApprove);
                           onApprove(request);
                         }}
                       >
