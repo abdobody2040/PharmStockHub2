@@ -65,48 +65,204 @@ export default function ReportsPage() {
     queryKey: ["/api/users"],
   });
 
+  // Helper function to get date range filter
+  const getDateRangeFilter = (range: string) => {
+    const now = new Date();
+    let daysBack = 30;
+    
+    switch(range) {
+      case 'week':
+        daysBack = 7;
+        break;
+      case 'month':
+        daysBack = 30;
+        break;
+      case 'quarter':
+        daysBack = 90;
+        break;
+      case 'year':
+        daysBack = 365;
+        break;
+      default:
+        daysBack = 30;
+    }
+    
+    const startDate = new Date(now.getTime() - (daysBack * 24 * 60 * 60 * 1000));
+    return startDate;
+  };
+
+  // Helper function to generate date range with no gaps
+  const generateDateRange = (startDate: Date, endDate: Date) => {
+    const dates = [];
+    const currentDate = new Date(startDate);
+    
+    while (currentDate <= endDate) {
+      dates.push(new Date(currentDate));
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+    
+    return dates;
+  };
+
   // Initialize charts
   useEffect(() => {
-    if (inventoryChartRef.current && stockItems.length > 0) {
+    if (inventoryChartRef.current) {
       // Clean up previous chart
       if (inventoryChart.current) {
         inventoryChart.current.destroy();
       }
 
-      // Group stock items by category
-      const categoryTotals = categories.reduce((acc, category) => {
-        const itemsInCategory = stockItems.filter(item => item.categoryId === category.id);
-        const total = itemsInCategory.reduce((sum, item) => sum + item.quantity, 0);
-        acc[category.name] = total;
-        return acc;
-      }, {} as Record<string, number>);
+      // For stock movement chart, process movements data with date filtering
+      if (reportType === 'movement' && movements.length > 0) {
+        const startDate = getDateRangeFilter(dateRange);
+        const endDate = new Date();
+        
+        // Filter movements by date range
+        const filteredMovements = movements.filter(movement => {
+          const movementDate = movement.movedAt ? new Date(movement.movedAt) : new Date();
+          return movementDate >= startDate && movementDate <= endDate;
+        });
 
-      // Create chart
-      const ctx = inventoryChartRef.current.getContext('2d');
-      if (ctx) {
-        inventoryChart.current = new Chart(ctx, {
-          type: 'line',
-          data: {
-            labels: Object.keys(categoryTotals),
-            datasets: [{
-              label: 'Total Inventory by Category',
-              data: Object.values(categoryTotals),
-              borderColor: '#3B82F6',
-              backgroundColor: 'rgba(59, 130, 246, 0.1)',
-              borderWidth: 2,
-              fill: true,
-              tension: 0.3
-            }]
-          },
-          options: {
-            responsive: true,
-            scales: {
-              y: {
-                beginAtZero: false
-              }
-            }
+        // Generate complete date range (no gaps)
+        const dateRange_array = generateDateRange(startDate, endDate);
+        
+        // Group movements by date
+        const movementsByDate = dateRange_array.reduce((acc: Record<string, number>, date) => {
+          const dateStr = date.toISOString().split('T')[0];
+          acc[dateStr] = 0;
+          return acc;
+        }, {});
+
+        // Count actual movements for each date
+        filteredMovements.forEach(movement => {
+          const movementDate = movement.movedAt ? new Date(movement.movedAt) : new Date();
+          const dateStr = movementDate.toISOString().split('T')[0];
+          if (movementsByDate[dateStr] !== undefined) {
+            movementsByDate[dateStr]++;
           }
         });
+
+        // Prepare chart data
+        const sortedDates = Object.keys(movementsByDate).sort();
+        const labels = sortedDates.map(date => {
+          const d = new Date(date);
+          return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        });
+        const data = sortedDates.map(date => movementsByDate[date]);
+
+        // Create chart
+        const ctx = inventoryChartRef.current.getContext('2d');
+        if (ctx) {
+          inventoryChart.current = new Chart(ctx, {
+            type: 'line',
+            data: {
+              labels,
+              datasets: [{
+                label: 'Stock Movements',
+                data,
+                borderColor: '#3B82F6',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.3,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                pointBackgroundColor: '#3B82F6',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 2
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: {
+                x: {
+                  grid: {
+                    display: false
+                  },
+                  ticks: {
+                    maxTicksLimit: 10
+                  }
+                },
+                y: {
+                  beginAtZero: true,
+                  grid: {
+                    color: 'rgba(0, 0, 0, 0.1)'
+                  },
+                  ticks: {
+                    stepSize: 1
+                  }
+                }
+              },
+              plugins: {
+                legend: {
+                  display: true,
+                  position: 'top',
+                  labels: {
+                    boxWidth: 12,
+                    padding: 20
+                  }
+                },
+                tooltip: {
+                  backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                  titleColor: '#ffffff',
+                  bodyColor: '#ffffff',
+                  borderColor: '#3B82F6',
+                  borderWidth: 1,
+                  callbacks: {
+                    title: function(context) {
+                      return `Date: ${context[0].label}`;
+                    },
+                    label: function(context) {
+                      return `${context.dataset.label}: ${context.parsed.y} movements`;
+                    }
+                  }
+                }
+              }
+            }
+          });
+        }
+      } else if (reportType === 'inventory' && stockItems.length > 0) {
+        // For inventory report, show category totals
+        const categoryTotals = categories.reduce((acc, category) => {
+          const itemsInCategory = stockItems.filter(item => item.categoryId === category.id);
+          const total = itemsInCategory.reduce((sum, item) => sum + item.quantity, 0);
+          acc[category.name] = total;
+          return acc;
+        }, {} as Record<string, number>);
+
+        // Create chart
+        const ctx = inventoryChartRef.current.getContext('2d');
+        if (ctx) {
+          inventoryChart.current = new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels: Object.keys(categoryTotals),
+              datasets: [{
+                label: 'Total Inventory by Category',
+                data: Object.values(categoryTotals),
+                backgroundColor: '#3B82F6',
+                borderColor: '#2563EB',
+                borderWidth: 1,
+                borderRadius: 4
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: {
+                y: {
+                  beginAtZero: true
+                }
+              },
+              plugins: {
+                legend: {
+                  display: false
+                }
+              }
+            }
+          });
+        }
       }
     }
 
@@ -166,7 +322,7 @@ export default function ReportsPage() {
         categoryChart.current.destroy();
       }
     };
-  }, [stockItems, categories, reportType]);
+  }, [stockItems, categories, movements, reportType, dateRange]);
 
   const handleGenerateReport = (data: FormData) => {
     setIsGeneratingReport(true);
@@ -206,9 +362,16 @@ export default function ReportsPage() {
         break;
 
       case 'movement':
+        const startDate = getDateRangeFilter(dateRange);
+        const endDate = new Date();
+        const filteredMovements = movements.filter(movement => {
+          const movementDate = movement.movedAt ? new Date(movement.movedAt) : new Date();
+          return movementDate >= startDate && movementDate <= endDate;
+        });
+        
         reportData = [
           ["ID", "Item", "From User", "To User", "Quantity", "Unit Price ($)", "Total Value ($)", "Date", "Status"],
-          ...movements.map(movement => {
+          ...filteredMovements.map(movement => {
             const stockItem = stockItems.find(i => i.id === movement.stockItemId);
             const item = stockItem?.name || 'Unknown';
             const fromUser = movement.fromUserId ? 
@@ -591,14 +754,34 @@ export default function ReportsPage() {
                   <div className="bg-gray-50 rounded-lg p-4">
                     <h5 className="text-sm font-medium text-gray-700 mb-2">Total Movements</h5>
                     <p className="text-3xl font-bold text-blue-600">
-                      {movements.length}
+                      {(() => {
+                        const startDate = getDateRangeFilter(dateRange);
+                        const endDate = new Date();
+                        const filteredMovements = movements.filter(movement => {
+                          const movementDate = movement.movedAt ? new Date(movement.movedAt) : new Date();
+                          return movementDate >= startDate && movementDate <= endDate;
+                        });
+                        return filteredMovements.length;
+                      })()}
                     </p>
-                    <p className="text-sm text-gray-500 mt-1">All time movements</p>
+                    <p className="text-sm text-gray-500 mt-1">
+                      {dateRange === 'week' ? 'Last 7 days' :
+                       dateRange === 'month' ? 'Last 30 days' :
+                       dateRange === 'quarter' ? 'Last 90 days' :
+                       dateRange === 'year' ? 'Last 12 months' : 'Selected period'}
+                    </p>
                   </div>
                   <div className="bg-gray-50 rounded-lg p-4">
                     <h5 className="text-sm font-medium text-gray-700 mb-2">Recent Movements</h5>
                     <p className="text-3xl font-bold text-green-600">
-                      {movements.filter(m => m.movedAt && new Date(m.movedAt).getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000).length}
+                      {(() => {
+                        const last7Days = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+                        const filteredMovements = movements.filter(movement => {
+                          const movementDate = movement.movedAt ? new Date(movement.movedAt) : new Date();
+                          return movementDate >= last7Days;
+                        });
+                        return filteredMovements.length;
+                      })()}
                     </p>
                     <p className="text-sm text-gray-500 mt-1">Last 7 days</p>
                   </div>
