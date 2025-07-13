@@ -286,63 +286,65 @@ export function RequestForm({ onSubmit, isLoading = false }: RequestFormProps) {
           <CardContent>
             <div className="space-y-4">
               {items.map((item, index) => (
-                <div key={index} className="grid grid-cols-1 md:grid-cols-5 gap-4 p-4 border rounded-lg">
-                  <div>
-                    <label className="text-sm font-medium">
-                      {requestType === REQUEST_TYPES.RECEIVE_INVENTORY ? "Existing Stock Item (Optional)" : "Stock Item"}
-                    </label>
-                    <Select
-                      value={item.stockItemId}
-                      onValueChange={(value) => updateItem(index, 'stockItemId', value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select existing item" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">No existing item</SelectItem>
-                        {stockItems.map((stockItem) => (
-                          <SelectItem key={stockItem.id} value={stockItem.id.toString()}>
-                            {stockItem.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                <div key={index} className="p-4 border rounded-lg">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div>
+                      <label className="text-sm font-medium block mb-1">
+                        {requestType === REQUEST_TYPES.RECEIVE_INVENTORY ? "Existing Stock Item (Optional)" : "Stock Item"}
+                      </label>
+                      <Select
+                        value={item.stockItemId}
+                        onValueChange={(value) => updateItem(index, 'stockItemId', value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select existing item" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">No existing item</SelectItem>
+                          {stockItems.map((stockItem) => (
+                            <SelectItem key={stockItem.id} value={stockItem.id.toString()}>
+                              {stockItem.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium block mb-1">
+                        {requestType === REQUEST_TYPES.RECEIVE_INVENTORY ? "Item Name" : "Item Name (if not in stock)"}
+                      </label>
+                      <Input
+                        value={item.itemName || ""}
+                        onChange={(e) => updateItem(index, 'itemName', e.target.value)}
+                        placeholder={requestType === REQUEST_TYPES.RECEIVE_INVENTORY ? "e.g., Pen, Notebook" : "Custom item name"}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium block mb-1">
+                        {requestType === REQUEST_TYPES.RECEIVE_INVENTORY ? "Expected Quantity" : "Quantity"}
+                      </label>
+                      <Input
+                        type="number"
+                        value={item.quantity || ""}
+                        onChange={(e) => updateItem(index, 'quantity', e.target.value)}
+                        placeholder={requestType === REQUEST_TYPES.RECEIVE_INVENTORY ? "e.g., 100" : "0"}
+                        min="1"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium block mb-1">Notes</label>
+                      <Input
+                        value={item.notes || ""}
+                        onChange={(e) => updateItem(index, 'notes', e.target.value)}
+                        placeholder="Optional notes"
+                      />
+                    </div>
                   </div>
 
-                  <div>
-                    <label className="text-sm font-medium">
-                      {requestType === REQUEST_TYPES.RECEIVE_INVENTORY ? "Item Name" : "Item Name (if not in stock)"}
-                    </label>
-                    <Input
-                      value={item.itemName || ""}
-                      onChange={(e) => updateItem(index, 'itemName', e.target.value)}
-                      placeholder={requestType === REQUEST_TYPES.RECEIVE_INVENTORY ? "e.g., Pen, Notebook" : "Custom item name"}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium">
-                      {requestType === REQUEST_TYPES.RECEIVE_INVENTORY ? "Expected Quantity" : "Quantity"}
-                    </label>
-                    <Input
-                      type="number"
-                      value={item.quantity || ""}
-                      onChange={(e) => updateItem(index, 'quantity', e.target.value)}
-                      placeholder={requestType === REQUEST_TYPES.RECEIVE_INVENTORY ? "e.g., 100" : "0"}
-                      min="1"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium">Notes</label>
-                    <Input
-                      value={item.notes || ""}
-                      onChange={(e) => updateItem(index, 'notes', e.target.value)}
-                      placeholder="Optional notes"
-                    />
-                  </div>
-
-                  <div className="flex items-end">
+                  <div className="flex justify-end mt-4">
                     <Button
                       type="button"
                       variant="destructive"
@@ -350,7 +352,8 @@ export function RequestForm({ onSubmit, isLoading = false }: RequestFormProps) {
                       onClick={() => removeItem(index)}
                       disabled={items.length === 1}
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Remove
                     </Button>
                   </div>
                 </div>

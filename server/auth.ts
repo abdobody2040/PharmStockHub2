@@ -39,11 +39,21 @@ export const upload = multer({
   storage: storage_config,
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
   fileFilter: (_req, file, cb) => {
-    // Accept only images
-    if (file.mimetype.startsWith('image/')) {
+    // Accept images, Excel files, and CSV files
+    const allowedMimes = [
+      'image/',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+      'application/vnd.ms-excel', // .xls
+      'text/csv',
+      'application/csv'
+    ];
+    
+    const isAllowed = allowedMimes.some(mime => file.mimetype.startsWith(mime) || file.mimetype === mime);
+    
+    if (isAllowed) {
       cb(null, true);
     } else {
-      cb(new Error('Only image files are allowed'));
+      cb(new Error('Only image files, Excel files, and CSV files are allowed'));
     }
   }
 });

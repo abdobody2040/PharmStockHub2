@@ -435,21 +435,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const allocations = await storage.getAllocations(user.id);
       const allocatedItemIds = allocations.map(a => a.stockItemId);
       
-      console.log(`Debug: User ${user.id} has specialtyId: ${user.specialtyId}`);
-      console.log(`Debug: Found ${allItems.length} total items`);
-      console.log(`Debug: User has ${allocations.length} allocations: ${allocatedItemIds.join(', ')}`);
-      
       // Get items that match either specialty OR are allocated to user
       const relevantItems = allItems.filter(item => {
         const matchesSpecialty = user.specialtyId && item.specialtyId === user.specialtyId;
         const isAllocated = allocatedItemIds.includes(item.id);
-        
-        console.log(`Debug: Item ${item.id} (${item.name}) - specialtyId: ${item.specialtyId}, matches: ${matchesSpecialty}, allocated: ${isAllocated}`);
-        
         return matchesSpecialty || isAllocated;
       });
       
-      console.log(`Debug: Returning ${relevantItems.length} items`);
       res.json(relevantItems);
     } catch (error) {
       next(error);
