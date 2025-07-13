@@ -34,7 +34,7 @@ import session, { Store as SessionStore } from "express-session";
 import createMemoryStore from "memorystore";
 import connectPg from "connect-pg-simple";
 import { db, pool } from "./db";
-import { eq, lte, and, isNotNull } from "drizzle-orm";
+import { eq, lte, and, isNotNull, sum } from "drizzle-orm";
 import { addDays } from "date-fns";
 
 const MemoryStore = createMemoryStore(session);
@@ -1006,17 +1006,22 @@ export class DatabaseStorage implements IStorage {
 
       // b. If fromUserId is null/undefined (movement from central inventory)
       if (fromUserId == null) {
-        // i. Check if stockItem.quantity >= quantity
-        if (item.quantity < quantity) {
+        // i. Calculate how much is available in central inventory
+        const totalAllocatedResult = await tx
+          .select({ total: sum(stockAllocations.quantity) })
+          .from(stockAllocations)
+          .where(eq(stockAllocations.stockItemId, stockItemId));
+        
+        const allocatedQuantity = totalAllocatedResult[0]?.total || 0;
+        const availableInCentral = item.quantity - Number(allocatedQuantity);
+        
+        if (availableInCentral < quantity) {
           throw new Error(
-            `Not enough stock available in central inventory for item ID ${stockItemId}. Available: ${item.quantity}, Requested: ${quantity}`
+            `Not enough stock available in central inventory for item ID ${stockItemId}. Available: ${availableInCentral}, Requested: ${quantity}`
           );
         }
-        // ii. Update the stockItem's quantity (reduce central inventory)
-        await tx
-          .update(stockItems)
-          .set({ quantity: item.quantity - quantity })
-          .where(eq(stockItems.id, stockItemId));
+        // NOTE: We don't reduce the total quantity in stock_items - it stays constant
+        // The allocation system handles tracking what's available vs allocated
       } else {
         // c. If fromUserId is provided (movement from a user)
         // i. Fetch the source user's allocation

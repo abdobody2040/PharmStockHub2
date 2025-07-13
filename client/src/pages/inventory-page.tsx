@@ -262,16 +262,6 @@ export default function InventoryPage() {
     const totalAllocated = itemAllocations.reduce((sum, alloc) => sum + alloc.quantity, 0);
     const available = Math.max(0, item.quantity - totalAllocated);
     
-    // Debug logging for the first few items
-    if (item.id === 14 || item.id === 16) {
-      console.log(`Item ${item.id} (${item.name}):`, {
-        totalQuantity: item.quantity,
-        allocations: itemAllocations,
-        totalAllocated,
-        available
-      });
-    }
-    
     return available;
   };
 

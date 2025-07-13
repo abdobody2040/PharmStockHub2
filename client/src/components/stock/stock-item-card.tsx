@@ -44,15 +44,6 @@ export function StockItemCard({
   const { hasPermission } = useAuth();
   const [isHovered, setIsHovered] = useState(false);
   
-  // Debug logging for specific items
-  if (item.id === 14 || item.id === 16) {
-    console.log(`StockItemCard - Item ${item.id} (${item.name}):`, {
-      totalQuantity: item.quantity,
-      availableQuantity,
-      receivedProp: availableQuantity
-    });
-  }
-  
   const expiryStatus = getExpiryStatus(item.expiry);
   const expiryStatusColor = getExpiryStatusColor(expiryStatus);
   const categoryColor = getCategoryColorClass(category.name);
