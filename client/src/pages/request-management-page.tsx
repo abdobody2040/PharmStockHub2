@@ -423,7 +423,10 @@ export default function RequestManagementPage() {
               <div className="flex gap-2 justify-end">
                 <Button 
                   variant="outline" 
-                  onClick={() => setShowApprovalModal(false)}
+                  onClick={() => {
+                    setShowApprovalModal(false);
+                    setApprovalNotes("");
+                  }}
                 >
                   Cancel
                 </Button>
@@ -438,7 +441,7 @@ export default function RequestManagementPage() {
                     variant="default"
                     disabled={approveAndForwardMutation.isPending}
                   >
-                    {approveAndForwardMutation.isPending ? "Processing..." : "Approve & Forward to Stock Keeper"}
+                    {approveAndForwardMutation.isPending ? "Processing..." : "Approve & Forward"}
                   </Button>
                 ) : currentRequest?.type === 'inventory_share' && 
                    currentRequest?.status === 'pending_secondary' && 
@@ -454,7 +457,7 @@ export default function RequestManagementPage() {
                 ) : (
                   // Regular approve/deny button for other cases
                   <Button
-                    onClick={() => handleApproval(approvalAction)}
+                    onClick={() => handleApprovalAction(approvalAction)}
                     variant={approvalAction === "approved" ? "default" : "destructive"}
                     disabled={updateRequestMutation.isPending}
                   >
