@@ -306,21 +306,7 @@ export default function RequestManagementPage() {
   };
 
   const handleApprovalAction = (action: "approved" | "denied") => {
-    if (!currentRequest) return;
-
-    const updateData: any = {
-      status: action,
-      notes: approvalNotes,
-    };
-
-    if (action === "approved") {
-      updateData.completedAt = new Date().toISOString();
-    }
-
-    updateRequestMutation.mutate({
-      id: currentRequest.id,
-      data: updateData,
-    });
+    handleApproval(action);
   };
 
   const getStockItemName = (stockItemId: number | null) => {
