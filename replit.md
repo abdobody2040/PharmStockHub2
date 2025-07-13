@@ -34,6 +34,8 @@ A comprehensive pharmaceutical promotional materials management platform designe
 
 ### July 13, 2025 - Request Management UI/UX Improvements
 - **Request Details Button**: Changed approve button (Check icon) to show request details instead of direct approval
+- **Enhanced Request Details Modal**: Added comprehensive request details including requested items table with quantities and notes
+- **Stock Item Integration**: Request details now show both stock items (from inventory) and custom items with proper item name resolution
 - **File Upload Fix**: Fixed file upload to accept CSV and Excel files for requests
 - **UI Alignment**: Improved "Expected Incoming Items" section layout with better grid spacing
 - **Download Functionality**: Fixed file download URLs to use proper relative paths

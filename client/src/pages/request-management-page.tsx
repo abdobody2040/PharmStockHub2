@@ -69,6 +69,18 @@ export default function RequestManagementPage() {
     queryKey: ["/api/users"],
   });
 
+  const { data: stockItems = [] } = useQuery({
+    queryKey: ["/api/stock-items"],
+  });
+
+  // Fetch detailed request data including items when viewing a request
+  const { data: requestDetails } = useQuery({
+    queryKey: ["/api/requests", currentRequest?.id],
+    enabled: !!currentRequest?.id && showViewModal,
+  });
+
+  const requestItems = requestDetails?.items || [];
+
   // Mutations
   const createRequestMutation = useMutation({
     mutationFn: async (formData: FormData) => {
@@ -234,6 +246,12 @@ export default function RequestManagementPage() {
       id: currentRequest.id,
       data: updateData,
     });
+  };
+
+  const getStockItemName = (stockItemId: number | null) => {
+    if (!stockItemId) return null;
+    const foundItem = stockItems.find((item: any) => item.id === stockItemId);
+    return foundItem ? foundItem.name : `Item #${stockItemId}`;
   };
 
   const getUserName = (userId: number) => {
@@ -476,6 +494,34 @@ export default function RequestManagementPage() {
                   <div>
                     <label className="text-sm font-medium text-gray-500">Notes</label>
                     <p className="mt-1 text-sm bg-gray-50 p-3 rounded">{currentRequest.notes}</p>
+                  </div>
+                )}
+
+                {requestItems.length > 0 && (
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Requested Items</label>
+                    <div className="mt-1 border rounded-lg overflow-hidden">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="py-2">Item</TableHead>
+                            <TableHead className="py-2">Quantity</TableHead>
+                            <TableHead className="py-2">Notes</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {requestItems.map((item: any) => (
+                            <TableRow key={item.id}>
+                              <TableCell className="py-2">
+                                {item.stockItemId ? getStockItemName(item.stockItemId) : item.itemName || "Unknown Item"}
+                              </TableCell>
+                              <TableCell className="py-2 font-medium">{item.quantity}</TableCell>
+                              <TableCell className="py-2 text-sm text-gray-600">{item.notes || "-"}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
                   </div>
                 )}
                 
