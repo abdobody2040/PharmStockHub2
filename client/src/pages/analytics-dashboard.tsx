@@ -695,9 +695,7 @@ export default function AnalyticsDashboard() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
                     <div>Low Stock Items ({inventoryHealth.lowStockPercentage}%)</div>
-                    <div className="text-muted-foreground">
-                      {stockItems.filter(item => item.quantity < 10).length} items
-                    </div>
+                    <div className="text-muted-foreground">{inventoryHealth.lowStockPercentage}/100</div>
                   </div>
                   <Progress value={inventoryHealth.lowStockPercentage} className="h-2" />
                 </div>
@@ -705,9 +703,7 @@ export default function AnalyticsDashboard() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
                     <div>Expiring Items ({inventoryHealth.expiringPercentage}%)</div>
-                    <div className="text-muted-foreground">
-                      {expiringItems.length} items
-                    </div>
+                    <div className="text-muted-foreground">{inventoryHealth.expiringPercentage}/100</div>
                   </div>
                   <Progress value={inventoryHealth.expiringPercentage} className="h-2" />
                 </div>
@@ -715,9 +711,7 @@ export default function AnalyticsDashboard() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
                     <div>Out of Stock ({inventoryHealth.outOfStockPercentage}%)</div>
-                    <div className="text-muted-foreground">
-                      {stockItems.filter(item => item.quantity === 0).length} items
-                    </div>
+                    <div className="text-muted-foreground">{inventoryHealth.outOfStockPercentage}/100</div>
                   </div>
                   <Progress value={inventoryHealth.outOfStockPercentage} className="h-2" />
                 </div>
