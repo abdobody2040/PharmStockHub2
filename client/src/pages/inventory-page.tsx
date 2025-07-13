@@ -53,7 +53,8 @@ import {
   StockItem, 
   Category, 
   StockMovement,
-  User
+  User,
+  StockAllocation
 } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -102,6 +103,10 @@ export default function InventoryPage() {
 
   const { data: movements = [] } = useQuery<StockMovement[]>({
     queryKey: ["/api/movements"],
+  });
+
+  const { data: allocations = [] } = useQuery<StockAllocation[]>({
+    queryKey: ["/api/allocations"],
   });
 
   // Mutations
@@ -246,6 +251,20 @@ export default function InventoryPage() {
     return user ? user.name : "Unknown User";
   };
 
+  // Calculate available amount for an item (total - allocated)
+  const getAvailableAmount = (item: StockItem) => {
+    const totalAllocated = allocations
+      .filter(alloc => alloc.stockItemId === item.id)
+      .reduce((sum, alloc) => sum + alloc.quantity, 0);
+    
+    return Math.max(0, item.quantity - totalAllocated);
+  };
+
+  // Get allocation details for an item
+  const getItemAllocations = (itemId: number) => {
+    return allocations.filter(alloc => alloc.stockItemId === itemId);
+  };
+
   return (
     <MainLayout onSearch={setSearchQuery}>
       <div className="flex justify-between items-center mb-6">
@@ -368,6 +387,7 @@ export default function InventoryPage() {
               onView={handleViewItem}
               onEdit={hasPermission("canEditItems") ? handleEditItem : undefined}
               onDelete={hasPermission("canRemoveItems") ? handleDeleteItem : undefined}
+              availableQuantity={getAvailableAmount(item)}
             />
           ))}
         </div>
@@ -382,7 +402,8 @@ export default function InventoryPage() {
                 <TableHead>Item</TableHead>
                 <TableHead>Category</TableHead>
                 <TableHead>Unique Number</TableHead>
-                <TableHead>Quantity</TableHead>
+                <TableHead>Total Qty</TableHead>
+                <TableHead>Available Qty</TableHead>
                 <TableHead>Expiry Date</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -422,7 +443,30 @@ export default function InventoryPage() {
                       {item.uniqueNumber || "—"}
                     </TableCell>
                     <TableCell className="text-sm text-gray-900">
-                      {item.quantity}
+                      <div className="flex items-center space-x-2">
+                        <span className="font-medium">{item.quantity}</span>
+                        <Badge variant="outline" className="text-xs">
+                          Total
+                        </Badge>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-sm text-gray-900">
+                      <div className="flex items-center space-x-2">
+                        <span className={cn(
+                          "font-medium",
+                          getAvailableAmount(item) === 0 ? "text-red-600" : 
+                          getAvailableAmount(item) <= 5 ? "text-orange-600" : "text-green-600"
+                        )}>
+                          {getAvailableAmount(item)}
+                        </span>
+                        <Badge variant="outline" className={cn(
+                          "text-xs",
+                          getAvailableAmount(item) === 0 ? "border-red-200 text-red-600" : 
+                          getAvailableAmount(item) <= 5 ? "border-orange-200 text-orange-600" : "border-green-200 text-green-600"
+                        )}>
+                          Available
+                        </Badge>
+                      </div>
                     </TableCell>
                     <TableCell>
                       <div className="text-sm text-gray-900">{formatDate(item.expiry)}</div>

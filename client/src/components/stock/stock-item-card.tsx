@@ -29,6 +29,7 @@ interface StockItemCardProps {
   onEdit?: (item: StockItem) => void;
   onDelete?: (item: StockItem) => void;
   className?: string;
+  availableQuantity?: number;
 }
 
 export function StockItemCard({ 
@@ -37,7 +38,8 @@ export function StockItemCard({
   onView, 
   onEdit, 
   onDelete,
-  className 
+  className,
+  availableQuantity = item.quantity
 }: StockItemCardProps) {
   const { hasPermission } = useAuth();
   const [isHovered, setIsHovered] = useState(false);
@@ -82,7 +84,16 @@ export function StockItemCard({
           <Badge variant="outline" className={cn("font-medium", categoryColor)}>
             {category.name}
           </Badge>
-          <span className="text-sm font-medium text-gray-900">Qty: {item.quantity}</span>
+          <div className="flex flex-col items-end">
+            <span className="text-sm font-medium text-gray-900">Total: {item.quantity}</span>
+            <span className={cn(
+              "text-sm font-medium",
+              availableQuantity === 0 ? "text-red-600" : 
+              availableQuantity <= 5 ? "text-orange-600" : "text-green-600"
+            )}>
+              Available: {availableQuantity}
+            </span>
+          </div>
         </div>
 
         <div className="mt-2 flex justify-between items-center">

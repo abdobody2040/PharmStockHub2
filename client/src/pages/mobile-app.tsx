@@ -21,7 +21,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
-import { StockItem, Category } from "@shared/schema";
+import { StockItem, Category, StockAllocation } from "@shared/schema";
 import { getExpiryStatus, getExpiryStatusColor, truncateText } from "@/lib/utils";
 import { MobileScanner } from "@/components/barcode/mobile-scanner";
 import { Progress } from "@/components/ui/progress";
@@ -213,8 +213,21 @@ function MobileInventory() {
   const { data: categories = [] } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
   });
+
+  const { data: allocations = [] } = useQuery<StockAllocation[]>({
+    queryKey: ["/api/allocations"],
+  });
   
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Calculate available amount for an item (total - allocated)
+  const getAvailableAmount = (item: StockItem) => {
+    const totalAllocated = allocations
+      .filter(alloc => alloc.stockItemId === item.id)
+      .reduce((sum, alloc) => sum + alloc.quantity, 0);
+    
+    return Math.max(0, item.quantity - totalAllocated);
+  };
   
   // Filter items based on filter parameter and search query
   const filteredItems = stockItems.filter(item => {
@@ -282,11 +295,22 @@ function MobileInventory() {
                                   {category.name}
                                 </Badge>
                               )}
-                              <p className="text-xs text-gray-500">
-                                Qty: <span className={item.quantity < 10 ? "text-red-500 font-medium" : ""}>
-                                  {item.quantity}
-                                </span>
-                              </p>
+                              <div className="flex items-center space-x-2">
+                                <p className="text-xs text-gray-500">
+                                  Total: <span className={item.quantity < 10 ? "text-red-500 font-medium" : ""}>
+                                    {item.quantity}
+                                  </span>
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  Available: <span className={cn(
+                                    "font-medium",
+                                    getAvailableAmount(item) === 0 ? "text-red-500" : 
+                                    getAvailableAmount(item) <= 5 ? "text-orange-500" : "text-green-500"
+                                  )}>
+                                    {getAvailableAmount(item)}
+                                  </span>
+                                </p>
+                              </div>
                             </div>
                           </div>
                           

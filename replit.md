@@ -54,6 +54,8 @@ A comprehensive pharmaceutical promotional materials management platform designe
 - **Stock Movement Timestamps**: Fixed stock movement system to include proper timestamps for reporting and audit trail
 - **Department Transfer System**: Implemented comprehensive atomic department transfer functionality with transaction support
 - **React Query Integration**: Added complete React Query hooks for department transfers with automatic cache invalidation
+- **Total vs Available Quantity Display**: Enhanced inventory views to show both total quantity and available quantity (total - allocated) with color-coded indicators
+- **Enhanced Mobile Inventory**: Updated mobile interface to display both total and available amounts for better inventory visibility
 
 ### July 2, 2025 - Enhanced Product Manager Inventory Access
 - **Specialty-Based Inventory Display**: Product Managers now see all inventory items matching their specialty for ordering purposes
