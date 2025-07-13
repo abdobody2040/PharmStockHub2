@@ -96,9 +96,9 @@ export const insertStockAllocationSchema = createInsertSchema(stockAllocations).
 
 // Request types enum
 export const REQUEST_TYPES = {
-  PREPARE_ORDER: "prepare_order",           // PM → Stock Keeper: Request to prepare order
+  PREPARE_ORDER: "prepare_order",           // PM → Stock Keeper: Notification about incoming inventory (same as receive_inventory)
   INVENTORY_SHARE: "inventory_share",       // PM1 → PM2 → Stock Keeper: Share quota between PMs
-  RECEIVE_INVENTORY: "receive_inventory"    // PM → Stock Keeper: Inform about incoming inventory
+  RECEIVE_INVENTORY: "receive_inventory"    // PM → Stock Keeper: Notification about incoming inventory
 } as const;
 
 export const REQUEST_STATUS = {
