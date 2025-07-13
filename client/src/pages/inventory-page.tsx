@@ -72,7 +72,8 @@ import {
   Trash2,
   ArrowLeftRight,
   Package,
-  QrCode
+  QrCode,
+  RefreshCw
 } from "lucide-react";
 import { BarcodeActions } from "@/components/barcode/barcode-actions";
 
@@ -117,6 +118,8 @@ export default function InventoryPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/stock-items"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/my-specialty-inventory"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/allocations"] });
       setShowAddItemModal(false);
       toast({
         title: "Success",
@@ -139,6 +142,8 @@ export default function InventoryPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/stock-items"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/my-specialty-inventory"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/allocations"] });
       setShowEditItemModal(false);
       toast({
         title: "Success",
@@ -253,16 +258,38 @@ export default function InventoryPage() {
 
   // Calculate available amount for an item (total - allocated)
   const getAvailableAmount = (item: StockItem) => {
-    const totalAllocated = allocations
-      .filter(alloc => alloc.stockItemId === item.id)
-      .reduce((sum, alloc) => sum + alloc.quantity, 0);
+    const itemAllocations = allocations.filter(alloc => alloc.stockItemId === item.id);
+    const totalAllocated = itemAllocations.reduce((sum, alloc) => sum + alloc.quantity, 0);
+    const available = Math.max(0, item.quantity - totalAllocated);
     
-    return Math.max(0, item.quantity - totalAllocated);
+    // Debug logging for the first few items
+    if (item.id === 14 || item.id === 16) {
+      console.log(`Item ${item.id} (${item.name}):`, {
+        totalQuantity: item.quantity,
+        allocations: itemAllocations,
+        totalAllocated,
+        available
+      });
+    }
+    
+    return available;
   };
 
   // Get allocation details for an item
   const getItemAllocations = (itemId: number) => {
     return allocations.filter(alloc => alloc.stockItemId === itemId);
+  };
+
+  // Manual refresh function
+  const handleRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: ["/api/my-specialty-inventory"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/allocations"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/stock-items"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/movements"] });
+    toast({
+      title: "Refreshed",
+      description: "Inventory data has been refreshed",
+    });
   };
 
   return (
@@ -286,6 +313,15 @@ export default function InventoryPage() {
             className={view === "list" ? "bg-gray-100" : ""}
           >
             <List className="h-5 w-5" />
+          </Button>
+          
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={handleRefresh}
+            title="Refresh inventory data"
+          >
+            <RefreshCw className="h-5 w-5" />
           </Button>
           
           {hasPermission("canAddItems") && (
