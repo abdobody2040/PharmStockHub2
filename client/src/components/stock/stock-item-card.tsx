@@ -75,9 +75,9 @@ export function StockItemCard({
       </div>
       
       <CardContent className="p-4">
-        <div className="flex justify-between">
-          <h3 className="text-lg font-medium text-gray-900 line-clamp-1">{item.name}</h3>
-          <span className="text-sm text-gray-500">{item.uniqueNumber}</span>
+        <div className="flex justify-between items-start">
+          <h3 className="text-lg font-medium text-gray-900 flex-1 mr-2 break-words">{item.name}</h3>
+          <span className="text-sm text-gray-500 flex-shrink-0">{item.uniqueNumber}</span>
         </div>
         
         <div className="mt-2 flex justify-between items-center">
