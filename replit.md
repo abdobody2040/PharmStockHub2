@@ -52,6 +52,8 @@ A comprehensive pharmaceutical promotional materials management platform designe
 - **Allocation Management**: Added fallback logic to create direct allocations when central inventory is insufficient
 - **Frontend Approval Fix**: Updated frontend to use dedicated approve/deny API endpoints instead of generic update method
 - **Stock Movement Timestamps**: Fixed stock movement system to include proper timestamps for reporting and audit trail
+- **Department Transfer System**: Implemented comprehensive atomic department transfer functionality with transaction support
+- **React Query Integration**: Added complete React Query hooks for department transfers with automatic cache invalidation
 
 ### July 2, 2025 - Enhanced Product Manager Inventory Access
 - **Specialty-Based Inventory Display**: Product Managers now see all inventory items matching their specialty for ordering purposes

@@ -13,8 +13,13 @@ import {
   insertRequestItemSchema,
   REQUEST_TYPES,
   REQUEST_STATUS,
-  User
+  User,
+  stockItems,
+  stockAllocations,
+  stockMovements
 } from "@shared/schema";
+import { db } from "./db";
+import { eq, and, desc } from "drizzle-orm";
 
 // Ensure uploads directory exists
 const uploadsDir = path.join(process.cwd(), 'uploads');
@@ -481,8 +486,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Stock movements
   app.get("/api/movements", isAuthenticated, async (req, res, next) => {
     try {
-      const movements = await storage.getMovements();
-      res.json(movements);
+      const { itemId } = req.query;
+      
+      if (itemId) {
+        // Get movements for specific item
+        const movements = await db
+          .select()
+          .from(stockMovements)
+          .where(eq(stockMovements.stockItemId, parseInt(itemId as string)))
+          .orderBy(desc(stockMovements.movedAt));
+        
+        res.json(movements);
+      } else {
+        // Get all movements
+        const movements = await storage.getMovements();
+        res.json(movements);
+      }
     } catch (error) {
       next(error);
     }
@@ -763,6 +782,186 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       next(error);
+    }
+  });
+
+  // Department Transfer Route - Move item from one department to another
+  app.post("/api/items/:itemId/transfer", isAuthenticated, async (req, res, next) => {
+    try {
+      const itemId = parseInt(req.params.itemId);
+      const { fromUserId, toUserId, quantity, notes } = req.body;
+      const movedBy = req.user?.id;
+
+      if (!movedBy) {
+        return res.status(401).json({ error: "User not authenticated" });
+      }
+
+      // Validate input
+      if (!toUserId || !quantity || quantity <= 0) {
+        return res.status(400).json({ 
+          error: "Missing required fields: toUserId and quantity must be provided" 
+        });
+      }
+
+      // Start transaction
+      const result = await db.transaction(async (tx) => {
+        // 1. Get the current item details before updating
+        const currentItem = await tx
+          .select()
+          .from(stockItems)
+          .where(eq(stockItems.id, itemId))
+          .limit(1);
+
+        if (currentItem.length === 0) {
+          throw new Error("Item not found");
+        }
+
+        const item = currentItem[0];
+
+        // 2. Get previous department/user allocation if exists
+        let previousDepartment = null;
+        if (fromUserId) {
+          const fromAllocation = await tx
+            .select()
+            .from(stockAllocations)
+            .where(
+              and(
+                eq(stockAllocations.stockItemId, itemId),
+                eq(stockAllocations.userId, fromUserId)
+              )
+            )
+            .limit(1);
+
+          if (fromAllocation.length === 0) {
+            throw new Error("Source allocation not found");
+          }
+
+          previousDepartment = fromAllocation[0];
+
+          // Check if source has enough quantity
+          if (previousDepartment.quantity < quantity) {
+            throw new Error("Insufficient quantity in source department");
+          }
+        } else {
+          // Check if central inventory has enough
+          if (item.quantity < quantity) {
+            throw new Error("Insufficient quantity in central inventory");
+          }
+        }
+
+        // 3. Update source allocation or central inventory
+        if (fromUserId && previousDepartment) {
+          if (previousDepartment.quantity === quantity) {
+            // Remove allocation if transferring all quantity
+            await tx
+              .delete(stockAllocations)
+              .where(eq(stockAllocations.id, previousDepartment.id));
+          } else {
+            // Reduce quantity in source allocation
+            await tx
+              .update(stockAllocations)
+              .set({ quantity: previousDepartment.quantity - quantity })
+              .where(eq(stockAllocations.id, previousDepartment.id));
+          }
+        } else {
+          // Reduce from central inventory
+          await tx
+            .update(stockItems)
+            .set({ quantity: item.quantity - quantity })
+            .where(eq(stockItems.id, itemId));
+        }
+
+        // 4. Update or create target allocation
+        const existingToAllocation = await tx
+          .select()
+          .from(stockAllocations)
+          .where(
+            and(
+              eq(stockAllocations.stockItemId, itemId),
+              eq(stockAllocations.userId, toUserId)
+            )
+          )
+          .limit(1);
+
+        if (existingToAllocation.length > 0) {
+          // Update existing allocation
+          await tx
+            .update(stockAllocations)
+            .set({ 
+              quantity: existingToAllocation[0].quantity + quantity,
+              allocatedBy: movedBy,
+              allocatedAt: new Date()
+            })
+            .where(eq(stockAllocations.id, existingToAllocation[0].id));
+        } else {
+          // Create new allocation
+          await tx
+            .insert(stockAllocations)
+            .values({
+              userId: toUserId,
+              stockItemId: itemId,
+              quantity: quantity,
+              allocatedBy: movedBy,
+              allocatedAt: new Date()
+            });
+        }
+
+        // 5. Insert movement history record
+        const movementRecord = await tx
+          .insert(stockMovements)
+          .values({
+            stockItemId: itemId,
+            fromUserId: fromUserId || null,
+            toUserId: toUserId,
+            quantity: quantity,
+            notes: notes || `Department transfer: ${quantity} units moved`,
+            movedBy: movedBy,
+            movedAt: new Date()
+          })
+          .returning();
+
+        // 6. Get updated item details
+        const updatedItem = await tx
+          .select()
+          .from(stockItems)
+          .where(eq(stockItems.id, itemId))
+          .limit(1);
+
+        // 7. Get updated allocations
+        const updatedAllocations = await tx
+          .select()
+          .from(stockAllocations)
+          .where(eq(stockAllocations.stockItemId, itemId));
+
+        return {
+          item: updatedItem[0],
+          allocations: updatedAllocations,
+          movement: movementRecord[0],
+          previousDepartment
+        };
+      });
+
+      res.json({
+        success: true,
+        message: "Item transferred successfully",
+        data: {
+          item: result.item,
+          allocations: result.allocations,
+          movement: result.movement,
+          transferDetails: {
+            fromUserId: fromUserId || null,
+            toUserId: toUserId,
+            quantity: quantity,
+            notes: notes
+          }
+        }
+      });
+
+    } catch (error) {
+      console.error("Department transfer error:", error);
+      res.status(500).json({ 
+        error: error instanceof Error ? error.message : "Failed to transfer item" 
+      });
     }
   });
 
