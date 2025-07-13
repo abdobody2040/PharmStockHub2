@@ -46,6 +46,10 @@ A comprehensive pharmaceutical promotional materials management platform designe
 - **Button Handlers**: Added missing approve/deny handlers across all request management tabs
 - **Stock Movement Transaction**: Fixed stock movement system to properly update inventory quantities and create allocations
 - **API Endpoint Fix**: Fixed duplicate API endpoints that were preventing request items from being returned properly
+- **Stock Movement System Fix**: Fixed critical issue where approved requests weren't creating stock movements or updating inventory
+- **Inventory Transfer Logic**: Enhanced processInventoryTransfer to handle both central inventory transfers and direct allocations
+- **Request Processing**: Fixed prepare_order requests to properly transfer stock from central inventory to requesters
+- **Allocation Management**: Added fallback logic to create direct allocations when central inventory is insufficient
 
 ### July 2, 2025 - Enhanced Product Manager Inventory Access
 - **Specialty-Based Inventory Display**: Product Managers now see all inventory items matching their specialty for ordering purposes

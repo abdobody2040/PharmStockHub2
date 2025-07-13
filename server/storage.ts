@@ -1216,15 +1216,78 @@ export class DatabaseStorage implements IStorage {
     for (const item of requestItems) {
       if (item.stockItemId && item.quantity) {
         try {
-          // Transfer stock from stock keeper to requester
-          await this.executeStockMovementTransaction({
-            stockItemId: item.stockItemId,
-            fromUserId: request.assignedTo, // Stock keeper
-            toUserId: request.requestedBy, // Requester
-            quantity: item.quantity,
-            notes: `Approved request: ${request.title}`,
-            movedBy: request.assignedTo || 1 // Stock keeper approving
-          });
+          // For prepare_order requests, first try to transfer from central inventory
+          // If that fails, create a new allocation for the requester
+          if (request.type === "prepare_order") {
+            try {
+              // Try to transfer from central inventory first
+              await this.executeStockMovementTransaction({
+                stockItemId: item.stockItemId,
+                fromUserId: null, // Central inventory
+                toUserId: request.requestedBy,
+                quantity: item.quantity,
+                notes: `Approved request: ${request.title}`,
+                movedBy: request.assignedTo || 1
+              });
+              console.log(`Successfully transferred ${item.quantity} units of item ${item.stockItemId} from central inventory for request ${request.id}`);
+            } catch (centralError) {
+              // If central inventory doesn't have enough, create a direct allocation
+              console.log(`Central inventory insufficient, creating direct allocation for request ${request.id}`);
+              
+              // Check if user already has allocation for this item
+              const existingAllocation = await db
+                .select()
+                .from(stockAllocations)
+                .where(
+                  and(
+                    eq(stockAllocations.userId, request.requestedBy),
+                    eq(stockAllocations.stockItemId, item.stockItemId)
+                  )
+                )
+                .limit(1);
+              
+              if (existingAllocation.length > 0) {
+                // Update existing allocation
+                await db
+                  .update(stockAllocations)
+                  .set({ quantity: existingAllocation[0].quantity + item.quantity })
+                  .where(eq(stockAllocations.id, existingAllocation[0].id));
+              } else {
+                // Create new allocation
+                await db.insert(stockAllocations).values({
+                  userId: request.requestedBy,
+                  stockItemId: item.stockItemId,
+                  quantity: item.quantity,
+                  allocatedBy: request.assignedTo || 1,
+                  allocatedAt: new Date(),
+                });
+              }
+              
+              // Create movement record
+              await db.insert(stockMovements).values({
+                stockItemId: item.stockItemId,
+                fromUserId: null,
+                toUserId: request.requestedBy,
+                quantity: item.quantity,
+                movedBy: request.assignedTo || 1,
+                notes: `Approved request (direct allocation): ${request.title}`,
+                movedAt: new Date(),
+              });
+              
+              console.log(`Successfully created direct allocation of ${item.quantity} units for item ${item.stockItemId} for request ${request.id}`);
+            }
+          } else if (request.type === "inventory_share") {
+            // For inventory sharing, transfer from one user to another
+            await this.executeStockMovementTransaction({
+              stockItemId: item.stockItemId,
+              fromUserId: request.shareFromUserId,
+              toUserId: request.requestedBy,
+              quantity: item.quantity,
+              notes: `Approved request: ${request.title}`,
+              movedBy: request.assignedTo || 1
+            });
+            console.log(`Successfully transferred ${item.quantity} units of item ${item.stockItemId} for inventory sharing request ${request.id}`);
+          }
         } catch (error) {
           console.error(`Failed to transfer stock item ${item.stockItemId}:`, error);
           // Continue with other items even if one fails
