@@ -595,7 +595,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = insertInventoryRequestSchema.parse(requestData);
       
       if (req.file) {
-        validatedData.fileUrl = req.file.path;
+        // Store relative path for proper serving
+        validatedData.fileUrl = `/uploads/${req.file.filename}`;
       }
       
       const request = await storage.createRequest(validatedData);
