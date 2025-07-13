@@ -260,6 +260,27 @@ export default function RequestManagementPage() {
     );
   };
 
+  // Check if user can approve a request
+  const canApprove = (request: InventoryRequest) => {
+    // Handle regular pending status
+    if (request.status === 'pending') {
+      return (request.assignedTo === user?.id || 
+              user?.role === 'stockKeeper' ||
+              user?.role === 'ceo' ||
+              user?.role === 'admin');
+    }
+    
+    // Handle pending_secondary status (final approval for inventory sharing)
+    if (request.status === 'pending_secondary') {
+      return (request.assignedTo === user?.id || 
+              user?.role === 'stockKeeper' ||
+              user?.role === 'ceo' ||
+              user?.role === 'admin');
+    }
+    
+    return false;
+  };
+
   // Filter requests based on user role
   const myRequests = requests.filter(r => r.requestedBy === user?.id);
   const assignedRequests = requests.filter(r => r.assignedTo === user?.id);
@@ -315,6 +336,7 @@ export default function RequestManagementPage() {
                 setShowApprovalModal(true);
               }}
               currentUser={user}
+              canApprove={canApprove}
             />
           </TabsContent>
 
@@ -337,6 +359,7 @@ export default function RequestManagementPage() {
                 setShowApprovalModal(true);
               }}
               currentUser={user}
+              canApprove={canApprove}
             />
           </TabsContent>
 
@@ -359,6 +382,7 @@ export default function RequestManagementPage() {
                 setShowApprovalModal(true);
               }}
               currentUser={user}
+              canApprove={canApprove}
             />
           </TabsContent>
 
@@ -381,6 +405,7 @@ export default function RequestManagementPage() {
                 setShowApprovalModal(true);
               }}
               currentUser={user}
+              canApprove={canApprove}
             />
           </TabsContent>
         </Tabs>
@@ -603,9 +628,10 @@ interface RequestTableProps {
   onApprove?: (request: InventoryRequest) => void;
   onDeny?: (request: InventoryRequest) => void;
   currentUser: SafeUser | null;
+  canApprove: (request: InventoryRequest) => boolean;
 }
 
-function RequestTable({ requests, users, onView, onApprove, onDeny, currentUser }: RequestTableProps) {
+function RequestTable({ requests, users, onView, onApprove, onDeny, currentUser, canApprove }: RequestTableProps) {
   const getUserName = (userId: number) => {
     const foundUser = users.find(u => u.id === userId);
     return foundUser ? foundUser.name : "Unknown User";
@@ -630,25 +656,7 @@ function RequestTable({ requests, users, onView, onApprove, onDeny, currentUser 
     );
   };
 
-  const canApprove = (request: InventoryRequest) => {
-    // Handle regular pending status
-    if (request.status === 'pending') {
-      return (request.assignedTo === currentUser?.id || 
-              currentUser?.role === 'stockKeeper' ||
-              currentUser?.role === 'ceo' ||
-              currentUser?.role === 'admin');
-    }
-    
-    // Handle pending_secondary status (final approval for inventory sharing)
-    if (request.status === 'pending_secondary') {
-      return (request.assignedTo === currentUser?.id || 
-              currentUser?.role === 'stockKeeper' ||
-              currentUser?.role === 'ceo' ||
-              currentUser?.role === 'admin');
-    }
-    
-    return false;
-  };
+
 
   return (
     <Card>
