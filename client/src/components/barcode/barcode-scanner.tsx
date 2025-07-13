@@ -88,13 +88,13 @@ export function BarcodeScanner({ onScan, isOpen, onClose }: BarcodeScannerProps)
               </Button>
             </div>
           )}
-          
+
           {permissionGranted === null && (
             <div className="p-10 flex items-center justify-center">
               <Loader2 className="h-10 w-10 animate-spin text-muted-foreground" />
             </div>
           )}
-          
+
           {permissionGranted === true && (
             <div className="relative">
               <div className="w-full max-w-sm aspect-[4/3] bg-muted rounded-md overflow-hidden relative">
@@ -104,7 +104,7 @@ export function BarcodeScanner({ onScan, isOpen, onClose }: BarcodeScannerProps)
                 />
                 <div className="absolute inset-0 border-2 border-dashed border-primary/50 pointer-events-none"></div>
               </div>
-              
+
               <div className="absolute bottom-2 right-2 flex space-x-2">
                 <Button 
                   variant="secondary" 

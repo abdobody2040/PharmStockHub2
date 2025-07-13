@@ -88,7 +88,7 @@ export default function RequestManagementPage() {
   });
 
   const requestItems = requestDetails?.items || [];
-  
+
   // Debug logging
   console.log("Request details:", requestDetails);
   console.log("Request items:", requestItems);
@@ -381,7 +381,7 @@ export default function RequestManagementPage() {
               user?.role === 'ceo' ||
               user?.role === 'admin');
     }
-    
+
     // Handle pending_secondary status (final approval for inventory sharing)
     if (request.status === 'pending_secondary') {
       return (request.assignedTo === user?.id || 
@@ -389,7 +389,7 @@ export default function RequestManagementPage() {
               user?.role === 'ceo' ||
               user?.role === 'admin');
     }
-    
+
     return false;
   };
 
@@ -401,6 +401,24 @@ export default function RequestManagementPage() {
     : [...myRequests, ...assignedRequests].filter((req, index, self) => 
         index === self.findIndex(r => r.id === req.id)
       );
+
+  const handleSubmit = (data: FormData) => {
+    createRequestMutation.mutate(data);
+  };
+
+  const handleQuickApprove = (request: InventoryRequest) => {
+    setCurrentRequest(request);
+    setApprovalAction("approved");
+    setApprovalNotes("");
+    setShowApprovalModal(true);
+  };
+
+  const handleQuickDeny = (request: InventoryRequest) => {
+    setCurrentRequest(request);
+    setApprovalAction("denied");
+    setApprovalNotes("");
+    setShowApprovalModal(true);
+  };
 
   return (
     <MainLayout>
@@ -449,6 +467,8 @@ export default function RequestManagementPage() {
               }}
               currentUser={user}
               canApprove={canApprove}
+              onQuickApprove={handleQuickApprove}
+              onQuickDeny={handleQuickDeny}
             />
           </TabsContent>
 
@@ -472,6 +492,8 @@ export default function RequestManagementPage() {
               }}
               currentUser={user}
               canApprove={canApprove}
+              onQuickApprove={handleQuickApprove}
+              onQuickDeny={handleQuickDeny}
             />
           </TabsContent>
 
@@ -495,6 +517,8 @@ export default function RequestManagementPage() {
               }}
               currentUser={user}
               canApprove={canApprove}
+              onQuickApprove={handleQuickApprove}
+              onQuickDeny={handleQuickDeny}
             />
           </TabsContent>
 
@@ -518,6 +542,8 @@ export default function RequestManagementPage() {
               }}
               currentUser={user}
               canApprove={canApprove}
+              onQuickApprove={handleQuickApprove}
+              onQuickDeny={handleQuickDeny}
             />
           </TabsContent>
         </Tabs>
@@ -547,7 +573,7 @@ export default function RequestManagementPage() {
                 View detailed information about this request
               </DialogDescription>
             </DialogHeader>
-            
+
             {currentRequest && (
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
@@ -576,7 +602,7 @@ export default function RequestManagementPage() {
                     <p className="mt-1">{formatDate(currentRequest.createdAt)}</p>
                   </div>
                 </div>
-                
+
                 {/* Specialty Information */}
                 <div className="grid grid-cols-2 gap-4 border-t pt-4">
                   <div>
@@ -590,14 +616,14 @@ export default function RequestManagementPage() {
                     </div>
                   )}
                 </div>
-                
+
                 {currentRequest.description && (
                   <div>
                     <label className="text-sm font-medium text-gray-500">Description</label>
                     <p className="mt-1 text-sm bg-gray-50 p-3 rounded">{currentRequest.description}</p>
                   </div>
                 )}
-                
+
                 {currentRequest.notes && (
                   <div>
                     <label className="text-sm font-medium text-gray-500">Notes</label>
@@ -625,7 +651,7 @@ export default function RequestManagementPage() {
                           {requestItems.map((item: any) => {
                             const stockItem = getStockItemDetails(item.stockItemId);
                             const category = stockItem ? categories.find(c => c.id === stockItem.categoryId) : null;
-                            
+
                             return (
                               <TableRow key={item.id}>
                                 <TableCell className="py-2 font-medium">
@@ -670,7 +696,7 @@ export default function RequestManagementPage() {
                     </div>
                   )}
                 </div>
-                
+
                 {currentRequest.fileUrl && (
                   <div>
                     <label className="text-sm font-medium text-gray-500">Attached File</label>
@@ -686,7 +712,7 @@ export default function RequestManagementPage() {
                     </div>
                   </div>
                 )}
-                
+
                 <div className="flex gap-2 justify-end pt-4">
                   <Button 
                     variant="outline"
@@ -694,7 +720,7 @@ export default function RequestManagementPage() {
                   >
                     Close
                   </Button>
-                  
+
                   {canApprove(currentRequest) && (
                     <>
                       <Button 
@@ -708,7 +734,7 @@ export default function RequestManagementPage() {
                         <Check className="h-4 w-4 mr-2" />
                         Approve
                       </Button>
-                      
+
                       <Button 
                         variant="destructive"
                         onClick={() => {
@@ -821,9 +847,11 @@ interface RequestTableProps {
   onDeny?: (request: InventoryRequest) => void;
   currentUser: SafeUser | null;
   canApprove: (request: InventoryRequest) => boolean;
+  onQuickApprove?: (request: InventoryRequest) => void;
+  onQuickDeny?: (request: InventoryRequest) => void;
 }
 
-function RequestTable({ requests, users, onView, onApprove, onDeny, currentUser, canApprove }: RequestTableProps) {
+function RequestTable({ requests, users, onView, onApprove, onDeny, currentUser, canApprove, onQuickApprove, onQuickDeny }: RequestTableProps) {
   const getUserName = (userId: number) => {
     const foundUser = users.find(u => u.id === userId);
     return foundUser ? foundUser.name : "Unknown User";
@@ -893,26 +921,27 @@ function RequestTable({ requests, users, onView, onApprove, onDeny, currentUser,
                       <FileText className="h-4 w-4" />
                     </Button>
 
-                    {canApprove(request) && onApprove && (
+                    {canApprove(request) && onQuickApprove && (
                       <Button 
                         size="sm" 
                         variant="default"
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          onView(request);
+                          onQuickApprove(request);
                         }}
-                        title="View request details"
+                        title="Quick Approve"
                       >
                         <Check className="h-4 w-4" />
                       </Button>
                     )}
 
-                    {canApprove(request) && onDeny && (
+                    {canApprove(request) && onQuickDeny && (
                       <Button 
                         size="sm" 
                         variant="destructive"
-                        onClick={() => onDeny(request)}
+                        onClick={() => onQuickDeny(request)}
+                        title="Quick Deny"
                       >
                         <X className="h-4 w-4" />
                       </Button>
