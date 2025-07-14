@@ -4,7 +4,8 @@ import { setupVite, serveStatic, log } from "./vite";
 import { getOrgConfig, type OrgConfig } from './config';
 import { storage } from "./storage";
 import { hashPassword } from "./auth";
-
+import * as dotenv from 'dotenv';
+dotenv.config();
 // Extend Express Request type
 declare global {
   namespace Express {
@@ -140,12 +141,13 @@ app.use((req, res, next) => {
   // ALWAYS serve the app on port 5000
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
-  const port = 5000;
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
-    log(`serving on port ${port}`);
-  });
+  const PORT = process.env.PORT || 5000;
+  const HOST = process.env.HOST || 'localhost';
+app.listen(PORT, HOST, () => {
+  console.log(`🚀 App is running at http://${HOST}:${PORT}`);
+});
+
+
+
+  
 })();

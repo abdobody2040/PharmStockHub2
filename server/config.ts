@@ -1,4 +1,7 @@
 
+import * as dotenv from 'dotenv';
+dotenv.config();
+
 export type OrgConfig = {
   name: string;
   dbUrl: string;
