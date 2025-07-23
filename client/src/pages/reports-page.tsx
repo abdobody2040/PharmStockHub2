@@ -339,19 +339,26 @@ export default function ReportsPage() {
     switch(reportType) {
       case 'inventory':
         reportData = [
-          ["ID", "Name", "Category", "Quantity", "Unit Price ($)", "Total Value ($)", "Expiry Date", "Status"],
+          ["ID", "Name", "Category", "Total Quantity", "Available Quantity", "Unit Price ($)", "Total Value ($)", "Expiry Date", "Status"],
           ...stockItems.map(item => {
             const category = categories.find(c => c.id === item.categoryId)?.name || 'Unknown';
             const status = item.quantity < 10 ? 'Low Stock' : 'Active';
             const expiryDate = item.expiry ? new Date(item.expiry).toISOString().split('T')[0] : 'N/A';
             const unitPrice = item.price ? (item.price / 100).toFixed(2) : '0.00';
             const totalValue = item.price ? ((item.price * item.quantity) / 100).toFixed(2) : '0.00';
+            
+            // Calculate available quantity (total - allocated)
+            const allocatedQuantity = movements
+              .filter(movement => movement.stockItemId === item.id && movement.toUserId)
+              .reduce((sum, movement) => sum + movement.quantity, 0);
+            const availableQuantity = Math.max(0, item.quantity - allocatedQuantity);
 
             return [
               item.id.toString(),
               item.name,
               category,
               item.quantity.toString(),
+              availableQuantity.toString(),
               unitPrice,
               totalValue,
               expiryDate,
@@ -370,7 +377,7 @@ export default function ReportsPage() {
         });
         
         reportData = [
-          ["ID", "Item", "From User", "To User", "Quantity", "Unit Price ($)", "Total Value ($)", "Date", "Status"],
+          ["ID", "Item", "From User", "To User", "Moved Quantity", "Total Quantity", "Available Quantity", "Unit Price ($)", "Total Value ($)", "Date", "Status"],
           ...filteredMovements.map(movement => {
             const stockItem = stockItems.find(i => i.id === movement.stockItemId);
             const item = stockItem?.name || 'Unknown';
@@ -381,6 +388,13 @@ export default function ReportsPage() {
             const unitPrice = stockItem?.price ? (stockItem.price / 100).toFixed(2) : '0.00';
             const totalValue = stockItem?.price ? ((stockItem.price * movement.quantity) / 100).toFixed(2) : '0.00';
             const moveDate = movement.movedAt ? new Date(movement.movedAt).toISOString().split('T')[0] : 'N/A';
+            
+            // Calculate available quantity for the item
+            const totalQuantity = stockItem?.quantity || 0;
+            const allocatedQuantity = movements
+              .filter(m => m.stockItemId === movement.stockItemId && m.toUserId)
+              .reduce((sum, m) => sum + m.quantity, 0);
+            const availableQuantity = Math.max(0, totalQuantity - allocatedQuantity);
 
             // Calculate status based on time since movement
             let status = 'Completed';
@@ -398,6 +412,8 @@ export default function ReportsPage() {
               fromUser,
               toUser,
               movement.quantity.toString(),
+              totalQuantity.toString(),
+              availableQuantity.toString(),
               unitPrice,
               totalValue,
               moveDate,
@@ -409,7 +425,7 @@ export default function ReportsPage() {
 
       case 'expiry':
         reportData = [
-          ["ID", "Name", "Category", "Quantity", "Unit Price ($)", "Total Value ($)", "Expiry Date", "Days Remaining", "Risk Level"],
+          ["ID", "Name", "Category", "Total Quantity", "Available Quantity", "Unit Price ($)", "Total Value ($)", "Expiry Date", "Days Remaining", "Risk Level"],
           ...expiringItems.map(item => {
             const category = categories.find(c => c.id === item.categoryId)?.name || 'Unknown';
             const expiryDate = item.expiry ? new Date(item.expiry).toISOString().split('T')[0] : 'N/A';
@@ -417,6 +433,12 @@ export default function ReportsPage() {
               Math.ceil((new Date(item.expiry).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : 'N/A';
             const unitPrice = item.price ? (item.price / 100).toFixed(2) : '0.00';
             const totalValue = item.price ? ((item.price * item.quantity) / 100).toFixed(2) : '0.00';
+            
+            // Calculate available quantity
+            const allocatedQuantity = movements
+              .filter(movement => movement.stockItemId === item.id && movement.toUserId)
+              .reduce((sum, movement) => sum + movement.quantity, 0);
+            const availableQuantity = Math.max(0, item.quantity - allocatedQuantity);
 
             // Determine risk level
             let riskLevel = 'Low';
@@ -432,6 +454,7 @@ export default function ReportsPage() {
               item.name,
               category,
               item.quantity.toString(),
+              availableQuantity.toString(),
               unitPrice,
               totalValue,
               expiryDate,
