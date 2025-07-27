@@ -34,7 +34,9 @@ export const ROLE_PERMISSIONS = {
     canManageUsers: false,
     canViewReports: true,
     canAccessSettings: false,
-    canManageSpecialties: false
+    canManageSpecialties: false,
+    canViewAllocatedInventory: true,
+    canExportData: true
   },
   salesManager: {
     canViewAll: false,
