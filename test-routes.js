@@ -1,5 +1,5 @@
 
-const axios = require('axios');
+import axios from 'axios';
 
 const BASE_URL = 'http://localhost:5000';
 
@@ -276,8 +276,8 @@ async function main() {
 }
 
 // Export for use as module or run directly
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   main();
 }
 
-module.exports = { APITester, testData };
+export { APITester, testData };

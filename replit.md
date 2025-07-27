@@ -32,7 +32,21 @@ A comprehensive pharmaceutical promotional materials management platform designe
 
 ## Recent Changes
 
-### July 13, 2025 - Request Management UI/UX Improvements
+### July 27, 2025 - ES Module Compatibility and Analytics Dashboard Enhancements
+- **Fixed ES Module Errors**: Converted CommonJS files to ES modules to resolve require() errors
+  - Updated scan-routes.js to use ES module imports instead of require()
+  - Updated test-routes.js to use ES module imports instead of require()
+  - Added proper ES module detection for direct script execution
+- **Enhanced Analytics Dashboard**: Fixed zero stock and low stock items display
+  - Added dedicated Zero Stock Items card showing items completely out of stock
+  - Added Low Stock Items card showing items with less than 10 units
+  - Enhanced visual indicators with color-coded backgrounds and status labels
+  - Added category information and item numbers for better identification
+  - Created test data with zero and low stock items for demonstration
+  - Fixed TypeScript errors related to item properties
+- **Improved Route Testing**: Both route scanner and API tester now working correctly with ES modules
+
+### July 13, 2025 - Request Management UI/UX Improvements (Previous)
 - **Request Details Button**: Changed approve button (Check icon) to show request details instead of direct approval
 - **Enhanced Request Details Modal**: Added comprehensive request details including requested items table with quantities and notes
 - **Stock Item Integration**: Request details now show both stock items (from inventory) and custom items with proper item name resolution
