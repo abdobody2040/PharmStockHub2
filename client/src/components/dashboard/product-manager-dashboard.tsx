@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -14,7 +14,10 @@ import {
   AlertTriangle,
   Plus,
   ArrowLeftRight,
-  TrendingUp
+  TrendingUp,
+  Users,
+  BarChart3,
+  Search
 } from "lucide-react";
 import { StockItem, InventoryRequest, StockMovement, StockAllocation } from "@shared/schema";
 import { Link } from "wouter";
@@ -46,6 +49,21 @@ export function ProductManagerDashboard() {
     queryKey: ["/api/requests"],
   });
 
+  // Fetch categories for proper naming
+  const { data: categories = [] } = useQuery({
+    queryKey: ["/api/categories"],
+  });
+
+  // Fetch users for transfers display
+  const { data: users = [] } = useQuery({
+    queryKey: ["/api/users"],
+  });
+
+  // Fetch stock items for transfer details
+  const { data: stockItems = [] } = useQuery<StockItem[]>({
+    queryKey: ["/api/stock-items"],
+  });
+
   // Filter movements received by this user
   const receivedMovements = allMovements.filter(movement => 
     movement.toUserId === user?.id
@@ -55,6 +73,12 @@ export function ProductManagerDashboard() {
   const userAllocations = allocations.filter(allocation => 
     allocation.userId === user?.id
   );
+
+  // Helper function to get category name
+  const getCategoryName = (categoryId: number) => {
+    const category = (categories as any[]).find((c: any) => c.id === categoryId);
+    return category?.name || 'N/A';
+  };
 
   // Calculate stats
   const stats = {
@@ -79,7 +103,7 @@ export function ProductManagerDashboard() {
         // Group items by category for the chart
         const categoryData: { [key: string]: number } = {};
         allocatedItems.forEach(item => {
-          const categoryName = item.categoryId ? `Category ${item.categoryId}` : 'Uncategorized';
+          const categoryName = getCategoryName(item.categoryId);
           categoryData[categoryName] = (categoryData[categoryName] || 0) + item.quantity;
         });
 
@@ -114,7 +138,53 @@ export function ProductManagerDashboard() {
         allocationChart.current.destroy();
       }
     };
-  }, [allocatedItems]);
+  }, [allocatedItems, categories]);
+
+  // CSV Export function
+  const exportAllocatedInventoryToCSV = () => {
+    const headers = ['Item Name', 'Category', 'Allocated Quantity', 'Unit Value', 'Total Value', 'Item Number', 'Notes'];
+    const csvData = allocatedItems.map(item => {
+      const allocatedQty = item.quantity || 0;
+      const unitPrice = (item.price || 0) / 100;
+      const totalValue = allocatedQty * unitPrice;
+      
+      return [
+        item.name,
+        getCategoryName(item.categoryId),
+        allocatedQty.toString(),
+        `$${unitPrice.toFixed(2)}`,
+        `$${totalValue.toFixed(2)}`,
+        item.uniqueNumber || 'N/A',
+        item.notes || 'No notes'
+      ];
+    });
+
+    // Add totals row
+    const totalQty = allocatedItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
+    const totalValue = allocatedItems.reduce((sum, item) => {
+      const allocatedQty = item.quantity || 0;
+      const unitPrice = (item.price || 0) / 100;
+      return sum + (allocatedQty * unitPrice);
+    }, 0);
+    
+    csvData.push(['TOTAL', '', totalQty.toString(), '', `$${totalValue.toFixed(2)}`, '', '']);
+
+    const csvContent = [headers, ...csvData]
+      .map(row => row.map(field => `"${field}"`).join(','))
+      .join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `my-allocated-inventory-${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -200,12 +270,23 @@ export function ProductManagerDashboard() {
       {/* Main Content Grid */}
       <div className="grid gap-6 md:grid-cols-2">
         {/* Allocated Items List */}
-        <Card>
+        <Card className="md:col-span-2">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Package className="h-5 w-5" />
-              My Allocated Items
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Package className="h-5 w-5" />
+                My Allocated Inventory
+              </CardTitle>
+              {allocatedItems.length > 0 && (
+                <Button onClick={exportAllocatedInventoryToCSV} variant="outline" size="sm">
+                  <FileText className="h-4 w-4 mr-2" />
+                  Export CSV
+                </Button>
+              )}
+            </div>
+            <CardDescription>
+              These promotional materials have been specifically allocated to you for distribution
+            </CardDescription>
           </CardHeader>
           <CardContent>
             {allocatedItems.length === 0 ? (
@@ -215,28 +296,72 @@ export function ProductManagerDashboard() {
                 <p className="text-sm">Contact your supervisor for inventory allocation</p>
               </div>
             ) : (
-              <div className="space-y-3">
-                {allocatedItems.slice(0, 6).map((item) => (
-                  <div key={item.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                    <div className="flex-1">
-                      <div className="font-medium">{item.name}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {item.uniqueNumber ? `#${item.uniqueNumber}` : `ID: ${item.id}`}
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-bold text-blue-600">{item.quantity}</div>
-                      <div className="text-xs text-muted-foreground">units</div>
-                    </div>
-                  </div>
-                ))}
-                {allocatedItems.length > 6 && (
-                  <Link href="/inventory">
-                    <Button variant="ghost" className="w-full">
-                      View All {allocatedItems.length} Items
-                    </Button>
-                  </Link>
-                )}
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left p-4">Item Name</th>
+                      <th className="text-left p-4">Category</th>
+                      <th className="text-left p-4">Allocated Qty</th>
+                      <th className="text-left p-4">Unit Value</th>
+                      <th className="text-left p-4">Total Value</th>
+                      <th className="text-left p-4">Item Number</th>
+                      <th className="text-left p-4">Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {allocatedItems.map((item) => {
+                      const allocatedQty = item.quantity || 0;
+                      const unitPrice = (item.price || 0) / 100;
+                      const totalValue = allocatedQty * unitPrice;
+
+                      return (
+                        <tr key={item.id} className="border-b hover:bg-gray-50">
+                          <td className="p-4 font-medium">{item.name}</td>
+                          <td className="p-4">
+                            <Badge variant="secondary">
+                              {getCategoryName(item.categoryId)}
+                            </Badge>
+                          </td>
+                          <td className="p-4">
+                            <Badge variant="default">
+                              {allocatedQty.toLocaleString()}
+                            </Badge>
+                          </td>
+                          <td className="p-4 text-sm text-gray-600">
+                            ${unitPrice.toFixed(2)}
+                          </td>
+                          <td className="p-4 text-sm text-gray-600">
+                            ${totalValue.toFixed(2)}
+                          </td>
+                          <td className="p-4 text-sm text-gray-600">{item.uniqueNumber || 'N/A'}</td>
+                          <td className="p-4 text-sm text-gray-600">{item.notes || 'No notes'}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                  <tfoot>
+                    <tr className="border-t-2 bg-gray-50">
+                      <td className="p-4 font-bold">Total</td>
+                      <td className="p-4"></td>
+                      <td className="p-4">
+                        <Badge variant="default">
+                          {allocatedItems.reduce((sum, item) => sum + (item.quantity || 0), 0).toLocaleString()}
+                        </Badge>
+                      </td>
+                      <td className="p-4"></td>
+                      <td className="p-4 font-bold">
+                        ${allocatedItems.reduce((sum, item) => {
+                          const allocatedQty = item.quantity || 0;
+                          const unitPrice = (item.price || 0) / 100;
+                          return sum + (allocatedQty * unitPrice);
+                        }, 0).toFixed(2)}
+                      </td>
+                      <td className="p-4"></td>
+                      <td className="p-4"></td>
+                    </tr>
+                  </tfoot>
+                </table>
               </div>
             )}
           </CardContent>
@@ -265,64 +390,65 @@ export function ProductManagerDashboard() {
         </Card>
       </div>
 
-      {/* Recent Transfers */}
+      {/* Recent Transfers to Me */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <ArrowLeftRight className="h-5 w-5" />
             Recent Transfers to Me
           </CardTitle>
+          <CardDescription>Latest inventory movements allocated to you</CardDescription>
         </CardHeader>
         <CardContent>
-          {receivedMovements.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <ArrowLeftRight className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No recent transfers</p>
+          {receivedMovements.filter(m => m.toUserId === user?.id).length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left p-4">Item</th>
+                    <th className="text-left p-4">Quantity</th>
+                    <th className="text-left p-4">From</th>
+                    <th className="text-left p-4">Date</th>
+                    <th className="text-left p-4">Notes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {receivedMovements
+                    .filter(m => m.toUserId === user?.id)
+                    .slice(0, 5)
+                    .map((movement) => {
+                      const stockItem = stockItems.find(item => item.id === movement.stockItemId);
+                      const fromUser = users.find(u => u.id === movement.fromUserId);
+                      
+                      return (
+                        <tr key={movement.id} className="border-b hover:bg-gray-50">
+                          <td className="p-4 font-medium">{stockItem?.name || 'Unknown Item'}</td>
+                          <td className="p-4">
+                            <Badge variant="default">
+                              {movement.quantity?.toLocaleString() || '0'}
+                            </Badge>
+                          </td>
+                          <td className="p-4 text-sm text-gray-600">
+                            {fromUser?.name || 'Central Warehouse'}
+                          </td>
+                          <td className="p-4 text-sm text-gray-600">
+                            {movement.movedAt ? new Date(movement.movedAt).toLocaleDateString() : 'N/A'}
+                          </td>
+                          <td className="p-4 text-sm text-gray-600">
+                            {movement.notes || 'No notes'}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                </tbody>
+              </table>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Item</TableHead>
-                  <TableHead>Quantity</TableHead>
-                  <TableHead>From</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Notes</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {stats.recentTransfers.map((movement) => (
-                  <TableRow key={movement.id}>
-                    <TableCell>
-                      <div className="font-medium">Stock Item #{movement.stockItemId}</div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">{movement.quantity}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Avatar className="h-6 w-6">
-                          <AvatarFallback className="text-xs">
-                            {movement.fromUserId ? `U${movement.fromUserId}` : 'SYS'}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="text-sm">
-                          {movement.fromUserId ? `User ${movement.fromUserId}` : 'System'}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm">{formatDate(movement.movedAt)}</div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm text-muted-foreground max-w-32 truncate">
-                        {movement.notes || 'No notes'}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <div className="text-center py-8">
+              <Clock className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No Recent Transfers</h3>
+              <p className="text-gray-500">You haven't received any inventory transfers recently.</p>
+            </div>
           )}
         </CardContent>
       </Card>

@@ -891,6 +891,7 @@ export function RoleBasedDashboard() {
   return (
     <div className="p-6">
       <PersonalizedOnboarding />
+
       {user.role === 'productManager' && renderProductManagerDashboard()}
       {user.role === 'stockKeeper' && renderStockKeeperDashboard()}
       {user.role === 'marketer' && renderMarketerDashboard()}
