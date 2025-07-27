@@ -163,9 +163,16 @@ export function StockMovementForm({ onSubmit, isLoading = false }: StockMovement
 
     for (const recipient of selectedRecipients) {
       for (const selectedItem of selectedStockItems) {
+        // Determine if movement should come from central inventory or user allocation
+        // Admins, CEOs, and Stock Keepers move from central inventory (fromUserId = null)
+        // Other users move from their allocated stock (fromUserId = user.id)
+        const isFromCentralInventory = user?.role === 'admin' || 
+                                      user?.role === 'ceo' || 
+                                      user?.role === 'stockKeeper';
+        
         movements.push({
           stockItemId: selectedItem.stockItem.id,
-          fromUserId: user?.id || null,
+          fromUserId: isFromCentralInventory ? null : user?.id || null,
           toUserId: recipient.id,
           quantity: selectedItem.quantity,
           notes: data.notes || "",
