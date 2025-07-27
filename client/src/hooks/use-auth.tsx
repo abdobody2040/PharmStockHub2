@@ -37,12 +37,12 @@ const ROLE_PERMISSIONS = {
   },
   marketer: {
     canViewAll: false,
-    canAddItems: true,
-    canEditItems: true,
-    canRemoveItems: true,
-    canMoveStock: true,
+    canAddItems: false,
+    canEditItems: false,
+    canRemoveItems: false,
+    canMoveStock: false,
     canManageUsers: false,
-    canViewReports: false,
+    canViewReports: true,
     canAccessSettings: false,
     canCreateRequests: false
   },

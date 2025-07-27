@@ -319,6 +319,101 @@ export function RoleBasedDashboard() {
     </div>
   );
 
+  const renderMarketerDashboard = () => (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold mb-2">Marketer Dashboard</h1>
+        <p className="text-muted-foreground">Monitor your allocated promotional materials and inventory status.</p>
+      </div>
+
+      {/* Allocated Inventory Summary */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">My Allocated Items</CardTitle>
+            <Package className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{allocatedInventory.length}</div>
+            <p className="text-xs text-muted-foreground">Unique items allocated to you</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Quantity</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {allocatedInventory.reduce((sum, item) => sum + (item.allocated || 0), 0)}
+            </div>
+            <p className="text-xs text-muted-foreground">Total promotional materials</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Specialty Focus</CardTitle>
+            <BarChart className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{user?.specialtyId ? 'Specialized' : 'General'}</div>
+            <p className="text-xs text-muted-foreground">Your area of expertise</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Allocated Items Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>My Allocated Inventory</CardTitle>
+          <CardDescription>Promotional materials and samples allocated to you</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {allocatedInventory.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left p-4">Item Name</th>
+                    <th className="text-left p-4">Category</th>
+                    <th className="text-left p-4">Allocated Quantity</th>
+                    <th className="text-left p-4">Item Number</th>
+                    <th className="text-left p-4">Notes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {allocatedInventory.map((item) => (
+                    <tr key={item.id} className="border-b hover:bg-gray-50">
+                      <td className="p-4 font-medium">{item.name}</td>
+                      <td className="p-4">
+                        <Badge variant="secondary">{item.categoryName || 'N/A'}</Badge>
+                      </td>
+                      <td className="p-4">
+                        <Badge variant={item.allocated > 0 ? "default" : "destructive"}>
+                          {item.allocated || 0}
+                        </Badge>
+                      </td>
+                      <td className="p-4 text-sm text-gray-600">{item.uniqueNumber || 'N/A'}</td>
+                      <td className="p-4 text-sm text-gray-600">{item.notes || 'No notes'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <Package className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No Allocated Items</h3>
+              <p className="text-gray-500">You don't have any promotional materials allocated to you yet.</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+
   if (!user) {
     return <div>Loading...</div>;
   }
@@ -328,8 +423,9 @@ export function RoleBasedDashboard() {
       <PersonalizedOnboarding />
       {user.role === 'productManager' && renderProductManagerDashboard()}
       {user.role === 'stockKeeper' && renderStockKeeperDashboard()}
+      {user.role === 'marketer' && renderMarketerDashboard()}
       {(user.role === 'admin' || user.role === 'ceo') && renderAdminDashboard()}
-      {!['productManager', 'stockKeeper', 'admin', 'ceo'].includes(user.role) && (
+      {!['productManager', 'stockKeeper', 'admin', 'ceo', 'marketer'].includes(user.role) && (
         <div className="text-center py-12">
           <h2 className="text-2xl font-bold mb-4">Welcome to the Inventory System</h2>
           <p className="text-muted-foreground">

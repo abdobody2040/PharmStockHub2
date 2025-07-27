@@ -79,6 +79,7 @@ import { BarcodeActions } from "@/components/barcode/barcode-actions";
 
 export default function InventoryPage() {
   const { user, hasPermission } = useAuth();
+  const isMarketer = user?.role === 'marketer';
   const { toast } = useToast();
   const [view, setView] = useState<"grid" | "list">("grid");
   const [searchQuery, setSearchQuery] = useState("");
@@ -89,9 +90,10 @@ export default function InventoryPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [currentItem, setCurrentItem] = useState<StockItem | null>(null);
 
-  // Fetch data - use specialty-based inventory for inventory management
+  // Fetch data based on user role
+  const endpoint = isMarketer ? "/api/my-allocated-inventory" : "/api/my-specialty-inventory";
   const { data: stockItems = [], isLoading: isLoadingItems } = useQuery<StockItem[]>({
-    queryKey: ["/api/my-specialty-inventory"],
+    queryKey: [endpoint],
   });
 
   const { data: categories = [] } = useQuery<Category[]>({
@@ -119,6 +121,7 @@ export default function InventoryPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/stock-items"] });
       queryClient.invalidateQueries({ queryKey: ["/api/my-specialty-inventory"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/my-allocated-inventory"] });
       queryClient.invalidateQueries({ queryKey: ["/api/allocations"] });
       setShowAddItemModal(false);
       toast({
@@ -143,6 +146,7 @@ export default function InventoryPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/stock-items"] });
       queryClient.invalidateQueries({ queryKey: ["/api/my-specialty-inventory"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/my-allocated-inventory"] });
       queryClient.invalidateQueries({ queryKey: ["/api/allocations"] });
       setShowEditItemModal(false);
       toast({
@@ -285,7 +289,17 @@ export default function InventoryPage() {
   return (
     <MainLayout onSearch={setSearchQuery}>
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-800">Inventory Management</h2>
+        <div>
+          <h2 className="text-2xl font-bold text-gray-800">
+            {isMarketer ? "My Allocated Inventory" : "Inventory Management"}
+          </h2>
+          <p className="text-muted-foreground">
+            {isMarketer 
+              ? "View your allocated promotional materials and marketing samples"
+              : "Manage stock items, track quantities, and handle inventory operations"
+            }
+          </p>
+        </div>
         
         <div className="flex space-x-2">
           <Button
