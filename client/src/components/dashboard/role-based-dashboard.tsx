@@ -53,8 +53,12 @@ export function RoleBasedDashboard() {
     queryKey: ["/api/stock-items/expiring"],
   });
 
-  const { data: movements = [] } = useQuery({
+  const { data: movements = [] } = useQuery<any[]>({
     queryKey: ["/api/movements"],
+  });
+
+  const { data: categories = [] } = useQuery({
+    queryKey: ["/api/categories"],
   });
 
   const stats: DashboardStats = {
@@ -327,17 +331,23 @@ export function RoleBasedDashboard() {
     </div>
   );
 
+  // Helper function to get category name
+  const getCategoryName = (categoryId: number) => {
+    const category = (categories as any[]).find((c: any) => c.id === categoryId);
+    return category?.name || 'N/A';
+  };
+
   // CSV Export function for marketer
   const exportAllocatedInventoryToCSV = () => {
     const headers = ['Item Name', 'Category', 'Allocated Quantity', 'Unit Value', 'Total Value', 'Item Number', 'Notes'];
     const csvData = allocatedInventory.map(item => {
-      const allocatedQty = item.allocated || 0;
+      const allocatedQty = item.quantity || 0; // quantity field contains allocated amount
       const unitPrice = (item.price || 0) / 100;
       const totalValue = allocatedQty * unitPrice;
       
       return [
         item.name,
-        item.categoryName || 'N/A',
+        getCategoryName(item.categoryId),
         allocatedQty.toString(),
         `$${unitPrice.toFixed(2)}`,
         `$${totalValue.toFixed(2)}`,
@@ -347,9 +357,9 @@ export function RoleBasedDashboard() {
     });
 
     // Add totals row
-    const totalQty = allocatedInventory.reduce((sum, item) => sum + (item.allocated || 0), 0);
+    const totalQty = allocatedInventory.reduce((sum, item) => sum + (item.quantity || 0), 0);
     const totalValue = allocatedInventory.reduce((sum, item) => {
-      const allocatedQty = item.allocated || 0;
+      const allocatedQty = item.quantity || 0;
       const unitPrice = (item.price || 0) / 100;
       return sum + (allocatedQty * unitPrice);
     }, 0);
@@ -400,7 +410,7 @@ export function RoleBasedDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {allocatedInventory.reduce((sum, item) => sum + (item.allocated || 0), 0).toLocaleString()}
+              {allocatedInventory.reduce((sum, item) => sum + (item.quantity || 0), 0).toLocaleString()}
             </div>
             <p className="text-xs text-muted-foreground">Total promotional materials</p>
           </CardContent>
@@ -414,7 +424,7 @@ export function RoleBasedDashboard() {
           <CardContent>
             <div className="text-2xl font-bold">
               ${allocatedInventory.reduce((sum, item) => {
-                const allocatedQty = item.allocated || 0;
+                const allocatedQty = item.quantity || 0;
                 const unitPrice = (item.price || 0) / 100;
                 return sum + (allocatedQty * unitPrice);
               }, 0).toFixed(2)}
@@ -431,19 +441,18 @@ export function RoleBasedDashboard() {
             <CardTitle>My Allocated Inventory</CardTitle>
             <CardDescription>Promotional materials and samples allocated to you</CardDescription>
           </div>
-          {allocatedInventory.length > 0 && (
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => exportAllocatedInventoryToCSV()}
-              className="flex items-center gap-2"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              Export CSV
-            </Button>
-          )}
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => exportAllocatedInventoryToCSV()}
+            className="flex items-center gap-2"
+            disabled={allocatedInventory.length === 0}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Export CSV ({allocatedInventory.length} items)
+          </Button>
         </CardHeader>
         <CardContent>
           {allocatedInventory.length > 0 ? (
@@ -462,7 +471,7 @@ export function RoleBasedDashboard() {
                 </thead>
                 <tbody>
                   {allocatedInventory.map((item) => {
-                    const allocatedQty = item.allocated || 0;
+                    const allocatedQty = item.quantity || 0; // quantity field contains allocated amount
                     const unitPrice = (item.price || 0) / 100; // Convert from cents
                     const totalValue = allocatedQty * unitPrice;
                     
@@ -470,7 +479,7 @@ export function RoleBasedDashboard() {
                       <tr key={item.id} className="border-b hover:bg-gray-50">
                         <td className="p-4 font-medium">{item.name}</td>
                         <td className="p-4">
-                          <Badge variant="secondary">{item.categoryName || 'N/A'}</Badge>
+                          <Badge variant="secondary">{getCategoryName(item.categoryId)}</Badge>
                         </td>
                         <td className="p-4">
                           <Badge variant={allocatedQty > 0 ? "default" : "destructive"}>
@@ -495,13 +504,13 @@ export function RoleBasedDashboard() {
                     <td className="p-4"></td>
                     <td className="p-4">
                       <Badge variant="default">
-                        {allocatedInventory.reduce((sum, item) => sum + (item.allocated || 0), 0).toLocaleString()}
+                        {allocatedInventory.reduce((sum, item) => sum + (item.quantity || 0), 0).toLocaleString()}
                       </Badge>
                     </td>
                     <td className="p-4"></td>
                     <td className="p-4 font-bold">
                       ${allocatedInventory.reduce((sum, item) => {
-                        const allocatedQty = item.allocated || 0;
+                        const allocatedQty = item.quantity || 0;
                         const unitPrice = (item.price || 0) / 100;
                         return sum + (allocatedQty * unitPrice);
                       }, 0).toFixed(2)}
