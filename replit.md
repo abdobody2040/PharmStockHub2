@@ -32,30 +32,40 @@ A comprehensive pharmaceutical promotional materials management platform designe
 
 ## Recent Changes
 
-### July 27, 2025 - Marketer Role Implementation and Data Presentation Enhancements
-- **Implemented Complete Marketer Role**: Added dedicated marketer functionality with specialized dashboard
+### July 27, 2025 - Complete Role Enhancement: Marketer and Product Manager Dashboard Upgrades
+- **Implemented Enhanced Marketer Role**: Added dedicated marketer functionality with specialized dashboard
   - Created marketer-specific dashboard showing allocated inventory statistics
   - Added proper role-based navigation and permissions for marketers
   - Implemented marketer permissions: canViewAllocatedInventory and canViewReports
   - Modified inventory page to show "My Allocated Inventory" for marketers with descriptive text
-- **Enhanced Data Presentation**: Improved number formatting and data visualization
+- **Cloned All Enhancements to Product Manager Role**: Extended all marketer improvements to product managers
+  - Product managers now have the same enhanced dashboard with allocated inventory focus
+  - Added CSV export functionality for product manager allocated inventory
+  - Implemented "Recent Transfers to Me" section for product manager dashboard
+  - Enhanced data presentation with proper number formatting and currency display
+  - Added comprehensive allocated inventory table with unit values and total values
+- **Enhanced Data Presentation**: Improved number formatting and data visualization across both roles
   - Added proper number localization using toLocaleString() for all quantity displays
-  - Enhanced marketer dashboard with unit values, total values, and comprehensive pricing information
-  - Added totals row in allocated inventory table showing aggregated quantities and values
+  - Enhanced dashboards with unit values, total values, and comprehensive pricing information
+  - Added totals row in allocated inventory tables showing aggregated quantities and values
   - Improved visual formatting with proper currency formatting and badge indicators
-- **CSV Export Functionality**: Added comprehensive CSV export for marketer allocated inventory
-  - Export button integrated into marketer dashboard allocated inventory table
+- **CSV Export Functionality**: Added comprehensive CSV export for both marketer and product manager roles
+  - Export button integrated into allocated inventory tables for both roles
   - CSV includes item name, category, allocated quantity, unit value, total value, item number, and notes
   - Automatic totals calculation and inclusion in exported CSV files
   - Date-stamped filename format for organized file management
-- **Recent Transfers Section**: Added "Recent Transfers to Me" section for marketer dashboard
-  - Shows latest 5 inventory movements allocated to the logged-in marketer
+- **Recent Transfers Section**: Added "Recent Transfers to Me" section for both roles
+  - Shows latest 5 inventory movements allocated to the logged-in user
   - Displays item name, quantity, sender, date, and transfer notes
   - Proper empty state when no recent transfers exist
-- **Fixed Stock Movement Logic**: Updated stock movement system for admin/CEO users
-  - Fixed fromUserId = null handling for transfers from central inventory
+- **Fixed Data Structure Issues**: Corrected TypeScript errors and API data alignment
+  - Fixed dashboard to properly use item.quantity field from /api/my-allocated-inventory endpoint
+  - Added helper function to resolve category names from categoryId
   - Maintained 100% API test success rate (26/26 tests) throughout all changes
-- **Page Title Updates**: Dynamic page titles based on user role (marketer vs admin/stock keeper)
+- **Role Consistency**: Both marketer and product manager roles now have identical enhanced functionality
+  - Consistent dashboard layouts with role-appropriate titles and descriptions
+  - Same level of data presentation, export capabilities, and user experience
+  - Unified approach to allocated inventory management across user roles
 
 ### July 27, 2025 - ES Module Compatibility and Analytics Dashboard Enhancements (Previous)
 - **Fixed ES Module Errors**: Converted CommonJS files to ES modules to resolve require() errors

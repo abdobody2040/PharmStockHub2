@@ -15,7 +15,8 @@ import {
   Clock,
   Plus,
   Search,
-  Filter
+  Filter,
+  ArrowRight
 } from "lucide-react";
 import { StockItem, InventoryRequest, User } from "@shared/schema";
 import { Link } from "wouter";
@@ -73,7 +74,10 @@ export function RoleBasedDashboard() {
   const renderProductManagerDashboard = () => (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Product Manager Dashboard</h2>
+        <div>
+          <h2 className="text-2xl font-bold">Product Manager Dashboard</h2>
+          <p className="text-muted-foreground">Monitor your allocated promotional materials and inventory requests.</p>
+        </div>
         <div className="flex gap-2">
           <Link href="/requests">
             <Button>
@@ -84,8 +88,49 @@ export function RoleBasedDashboard() {
         </div>
       </div>
 
-      {/* Quick Stats for Product Managers */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {/* Allocated Inventory Summary */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">My Allocated Items</CardTitle>
+            <Package className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{allocatedInventory.length}</div>
+            <p className="text-xs text-muted-foreground">Unique items allocated to you</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Quantity</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {allocatedInventory.reduce((sum, item) => sum + (item.quantity || 0), 0).toLocaleString()}
+            </div>
+            <p className="text-xs text-muted-foreground">Total promotional materials</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Value</CardTitle>
+            <BarChart3 className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              ${allocatedInventory.reduce((sum, item) => {
+                const allocatedQty = item.quantity || 0;
+                const unitPrice = (item.price || 0) / 100;
+                return sum + (allocatedQty * unitPrice);
+              }, 0).toFixed(2)}
+            </div>
+            <p className="text-xs text-muted-foreground">Total allocated value</p>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">My Requests</CardTitle>
@@ -95,75 +140,243 @@ export function RoleBasedDashboard() {
             <div className="text-2xl font-bold">
               {requests.filter(req => req.requestedBy === user?.id).length}
             </div>
-            <p className="text-xs text-muted-foreground">Total requests submitted</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending</CardTitle>
-            <Clock className="h-4 w-4 text-yellow-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">
-              {requests.filter(req => req.requestedBy === user?.id && req.status === 'pending').length}
-            </div>
-            <p className="text-xs text-muted-foreground">Awaiting approval</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Approved</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {requests.filter(req => req.requestedBy === user?.id && req.status === 'approved').length}
-            </div>
-            <p className="text-xs text-muted-foreground">Completed requests</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Available Items</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stockItems.length}</div>
-            <p className="text-xs text-muted-foreground">Items you can request</p>
+            <p className="text-xs text-muted-foreground">Total requests made</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Recent Requests */}
+      {/* Allocated Items Table */}
       <Card>
-        <CardHeader>
-          <CardTitle>Recent Requests</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>My Allocated Inventory</CardTitle>
+            <CardDescription>Promotional materials and samples allocated to you</CardDescription>
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => exportAllocatedInventoryToCSV()}
+            className="flex items-center gap-2"
+            disabled={allocatedInventory.length === 0}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Export CSV ({allocatedInventory.length} items)
+          </Button>
         </CardHeader>
         <CardContent>
-          <div className="space-y-2">
-            {requests
-              .filter(req => req.requestedBy === user?.id)
-              .slice(0, 5)
-              .map(request => (
-                <div key={request.id} className="flex items-center justify-between py-2 border-b last:border-0">
-                  <div>
-                    <p className="font-medium">{request.title}</p>
-                    <p className="text-sm text-muted-foreground">{request.type}</p>
-                  </div>
-                  <Badge variant={
-                    request.status === 'approved' ? 'default' :
-                    request.status === 'pending' ? 'secondary' : 'destructive'
-                  }>
-                    {request.status}
-                  </Badge>
-                </div>
-              ))}
-          </div>
+          {allocatedInventory.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left p-4">Item Name</th>
+                    <th className="text-left p-4">Category</th>
+                    <th className="text-left p-4">Allocated Quantity</th>
+                    <th className="text-left p-4">Unit Value</th>
+                    <th className="text-left p-4">Total Value</th>
+                    <th className="text-left p-4">Item Number</th>
+                    <th className="text-left p-4">Notes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {allocatedInventory.map((item) => {
+                    const allocatedQty = item.quantity || 0; // quantity field contains allocated amount
+                    const unitPrice = (item.price || 0) / 100; // Convert from cents
+                    const totalValue = allocatedQty * unitPrice;
+                    
+                    return (
+                      <tr key={item.id} className="border-b hover:bg-gray-50">
+                        <td className="p-4 font-medium">{item.name}</td>
+                        <td className="p-4">
+                          <Badge variant="secondary">{getCategoryName(item.categoryId)}</Badge>
+                        </td>
+                        <td className="p-4">
+                          <Badge variant={allocatedQty > 0 ? "default" : "destructive"}>
+                            {allocatedQty.toLocaleString()}
+                          </Badge>
+                        </td>
+                        <td className="p-4 text-sm text-gray-600">
+                          ${unitPrice.toFixed(2)}
+                        </td>
+                        <td className="p-4 text-sm font-medium">
+                          ${totalValue.toFixed(2)}
+                        </td>
+                        <td className="p-4 text-sm text-gray-600">{item.uniqueNumber || 'N/A'}</td>
+                        <td className="p-4 text-sm text-gray-600">{item.notes || 'No notes'}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+                <tfoot>
+                  <tr className="border-t-2 bg-gray-50">
+                    <td className="p-4 font-bold">Total</td>
+                    <td className="p-4"></td>
+                    <td className="p-4">
+                      <Badge variant="default">
+                        {allocatedInventory.reduce((sum, item) => sum + (item.quantity || 0), 0).toLocaleString()}
+                      </Badge>
+                    </td>
+                    <td className="p-4"></td>
+                    <td className="p-4 font-bold">
+                      ${allocatedInventory.reduce((sum, item) => {
+                        const allocatedQty = item.quantity || 0;
+                        const unitPrice = (item.price || 0) / 100;
+                        return sum + (allocatedQty * unitPrice);
+                      }, 0).toFixed(2)}
+                    </td>
+                    <td className="p-4"></td>
+                    <td className="p-4"></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <Package className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No Allocated Items</h3>
+              <p className="text-gray-500">You don't have any items allocated to you yet. Contact your supervisor for inventory allocation.</p>
+            </div>
+          )}
         </CardContent>
       </Card>
+
+      {/* Recent Transfers to Me */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ArrowRight className="h-5 w-5" />
+            Recent Transfers to Me
+          </CardTitle>
+          <CardDescription>Latest inventory movements allocated to you</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {movements && (movements as any[]).filter((m: any) => m.toUserId === user?.id).length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left p-4">Item</th>
+                    <th className="text-left p-4">Quantity</th>
+                    <th className="text-left p-4">From</th>
+                    <th className="text-left p-4">Date</th>
+                    <th className="text-left p-4">Notes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(movements as any[])
+                    .filter((m: any) => m.toUserId === user?.id)
+                    .slice(0, 5)
+                    .map((movement: any) => {
+                      const stockItem = stockItems.find(item => item.id === movement.stockItemId);
+                      const fromUser = users.find(u => u.id === movement.fromUserId);
+                      
+                      return (
+                        <tr key={movement.id} className="border-b hover:bg-gray-50">
+                          <td className="p-4 font-medium">
+                            {stockItem?.name || `Stock Item #${movement.stockItemId}`}
+                          </td>
+                          <td className="p-4">
+                            <Badge variant="default">
+                              {movement.quantity?.toLocaleString() || '0'}
+                            </Badge>
+                          </td>
+                          <td className="p-4 text-sm text-gray-600">
+                            {fromUser?.name || 'Central Warehouse'}
+                          </td>
+                          <td className="p-4 text-sm text-gray-600">
+                            {movement.movedAt ? new Date(movement.movedAt).toLocaleDateString() : 'N/A'}
+                          </td>
+                          <td className="p-4 text-sm text-gray-600">
+                            {movement.notes || 'No notes'}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <Clock className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No Recent Transfers</h3>
+              <p className="text-gray-500">You haven't received any inventory transfers recently.</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Request Management Section */}
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Requests</CardTitle>
+            <CardDescription>Your latest inventory requests</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {requests.filter(req => req.requestedBy === user?.id).length === 0 ? (
+              <div className="text-center py-8">
+                <FileText className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No Requests Yet</h3>
+                <p className="text-gray-500 mb-4">You haven't made any inventory requests.</p>
+                <Link href="/requests">
+                  <Button>Create Your First Request</Button>
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {requests
+                  .filter(req => req.requestedBy === user?.id)
+                  .slice(0, 5)
+                  .map((request) => (
+                    <div key={request.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div>
+                        <p className="font-medium">{request.type.replace('_', ' ').toUpperCase()}</p>
+                        <p className="text-sm text-gray-500">
+                          {request.createdAt ? new Date(request.createdAt).toLocaleDateString() : 'N/A'}
+                        </p>
+                      </div>
+                      <Badge variant={
+                        request.status === 'approved' ? 'default' :
+                        request.status === 'pending' ? 'secondary' : 'destructive'
+                      }>
+                        {request.status}
+                      </Badge>
+                    </div>
+                  ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Quick Actions</CardTitle>
+            <CardDescription>Common tasks and shortcuts</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Link href="/requests" className="block">
+              <Button className="w-full justify-start">
+                <Plus className="h-4 w-4 mr-2" />
+                New Inventory Request
+              </Button>
+            </Link>
+            <Link href="/inventory" className="block">
+              <Button variant="outline" className="w-full justify-start">
+                <Search className="h-4 w-4 mr-2" />
+                Browse Inventory
+              </Button>
+            </Link>
+            <Link href="/reports" className="block">
+              <Button variant="outline" className="w-full justify-start">
+                <FileText className="h-4 w-4 mr-2" />
+                View Reports
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 
