@@ -1,0 +1,51 @@
+...
+[2025-07-27T03:59:55.229Z] [INFO] Response: {"message":"Unauthorized"}
+[2025-07-27T03:59:55.229Z] [INFO] 
+=== REQUEST TESTS ===
+[2025-07-27T03:59:55.229Z] [INFO] Testing: GET /api/requests - Get requests
+[2025-07-27T03:59:55.232Z] [FAIL] ❌ FAIL: GET /api/requests - Get requests (Expected: 200, Got: 401)
+[2025-07-27T03:59:55.232Z] [INFO] Response: {"message":"Unauthorized"}
+[2025-07-27T03:59:55.232Z] [INFO] Testing: POST /api/requests - Create request
+[2025-07-27T03:59:55.236Z] [FAIL] ❌ FAIL: POST /api/requests - Create request (Expected: 200, Got: 401)
+[2025-07-27T03:59:55.236Z] [INFO] Response: {"message":"Unauthorized"}
+[2025-07-27T03:59:55.236Z] [INFO] 
+=== ROLE MANAGEMENT TESTS ===
+[2025-07-27T03:59:55.236Z] [INFO] Testing: GET /api/active-roles - Get active roles
+[2025-07-27T03:59:55.240Z] [FAIL] ❌ FAIL: GET /api/active-roles - Get active roles (Expected: 200, Got: 401)
+[2025-07-27T03:59:55.240Z] [INFO] Response: {"message":"Unauthorized"}
+[2025-07-27T03:59:55.240Z] [INFO] 
+=== SYNC TESTS ===
+[2025-07-27T03:59:55.241Z] [INFO] Testing: POST /api/sync-quantities - Sync quantities
+[2025-07-27T03:59:55.243Z] [FAIL] ❌ FAIL: POST /api/sync-quantities - Sync quantities (Expected: 200, Got: 401)
+[2025-07-27T03:59:55.243Z] [INFO] Response: {"message":"Unauthorized"}
+[2025-07-27T03:59:55.243Z] [INFO] 
+=== LOGOUT TEST ===
+[2025-07-27T03:59:55.243Z] [INFO] Testing: POST /api/auth/logout - User logout
+[2025-07-27T03:59:55.250Z] [PASS] ✅ PASS: POST /api/auth/logout - User logout (200)
+[2025-07-27T03:59:55.250Z] [SUMMARY] 
+=== TEST SUMMARY ===
+[2025-07-27T03:59:55.250Z] [SUMMARY] Total Tests: 23
+[2025-07-27T03:59:55.250Z] [SUMMARY] Passed: 6
+[2025-07-27T03:59:55.250Z] [SUMMARY] Failed: 17
+[2025-07-27T03:59:55.251Z] [SUMMARY] Success Rate: 26.09%
+[2025-07-27T03:59:55.251Z] [SUMMARY] 
+Failed Tests:
+[2025-07-27T03:59:55.251Z] [SUMMARY] - ❌ FAIL: GET /api/auth/user - Get user without auth (Expected: 401, Got: 200)
+[2025-07-27T03:59:55.251Z] [SUMMARY] - ❌ FAIL: POST /api/auth/login - Invalid login (Expected: 401, Got: 200)
+[2025-07-27T03:59:55.251Z] [SUMMARY] - ❌ FAIL: POST /api/categories - Create category (Expected: 200, Got: 401)
+[2025-07-27T03:59:55.251Z] [SUMMARY] - ❌ FAIL: GET /api/specialties - Get specialties (Expected: 200, Got: 401)
+[2025-07-27T03:59:55.251Z] [SUMMARY] - ❌ FAIL: POST /api/specialties - Create specialty (Expected: 200, Got: 401)
+[2025-07-27T03:59:55.251Z] [SUMMARY] - ❌ FAIL: GET /api/users - Get users (Expected: 200, Got: 401)
+[2025-07-27T03:59:55.251Z] [SUMMARY] - ❌ FAIL: GET /api/stock-items - Get stock items (Expected: 200, Got: 401)
+[2025-07-27T03:59:55.251Z] [SUMMARY] - ❌ FAIL: GET /api/stock-items/expiring - Get expiring items (Expected: 200, Got: 401)
+[2025-07-27T03:59:55.251Z] [SUMMARY] - ❌ FAIL: POST /api/stock-items - Create stock item (Expected: 200, Got: 401)
+[2025-07-27T03:59:55.251Z] [SUMMARY] - ❌ FAIL: GET /api/allocations - Get allocations (Expected: 200, Got: 401)
+[2025-07-27T03:59:55.251Z] [SUMMARY] - ❌ FAIL: GET /api/my-allocated-inventory - Get my allocated inventory (Expected: 200, Got: 401)
+[2025-07-27T03:59:55.251Z] [SUMMARY] - ❌ FAIL: GET /api/my-specialty-inventory - Get my specialty inventory (Expected: 200, Got: 401)
+[2025-07-27T03:59:55.251Z] [SUMMARY] - ❌ FAIL: GET /api/movements - Get movements (Expected: 200, Got: 401)
+[2025-07-27T03:59:55.251Z] [SUMMARY] - ❌ FAIL: GET /api/requests - Get requests (Expected: 200, Got: 401)
+[2025-07-27T03:59:55.251Z] [SUMMARY] - ❌ FAIL: POST /api/requests - Create request (Expected: 200, Got: 401)
+[2025-07-27T03:59:55.252Z] [SUMMARY] - ❌ FAIL: GET /api/active-roles - Get active roles (Expected: 200, Got: 401)
+[2025-07-27T03:59:55.252Z] [SUMMARY] - ❌ FAIL: POST /api/sync-quantities - Sync quantities (Expected: 200, Got: 401)
+[2025-07-27T03:59:55.252Z] [SUMMARY] 
+Test completed!

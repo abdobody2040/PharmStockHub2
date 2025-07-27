@@ -6,7 +6,7 @@ const BASE_URL = 'http://localhost:5000';
 // Test data for creating records
 const testData = {
   user: {
-    username: 'testuser',
+    username: `testuser${Date.now()}`,
     password: 'testpass123',
     name: 'Test User',
     role: 'admin',
@@ -14,15 +14,16 @@ const testData = {
     avatar: ''
   },
   category: {
-    name: 'Test Category',
-    description: 'Test category for API testing'
+    name: `Test Category ${Date.now()}`,
+    description: 'Test category for API testing',
+    color: 'bg-blue-500'
   },
   specialty: {
-    name: 'Test Specialty',
+    name: `Test Specialty ${Date.now()}`,
     description: 'Test specialty for API testing'
   },
   stockItem: {
-    name: 'Test Item',
+    name: `Test Item ${Date.now()}`,
     categoryId: 1,
     specialtyId: 1,
     quantity: 100,
@@ -52,6 +53,7 @@ class APITester {
       baseURL: BASE_URL,
       timeout: 30000, // Increased timeout
       validateStatus: () => true, // Don't throw on HTTP errors
+      withCredentials: true, // Important for session cookies
       headers: {
         'User-Agent': 'API-Tester/1.0'
       }
@@ -75,9 +77,11 @@ class APITester {
         headers: {
           'Content-Type': 'application/json',
           ...headers
-        }
+        },
+        withCredentials: true
       };
 
+      // Handle session cookies more robustly
       if (this.sessionCookie) {
         config.headers.Cookie = this.sessionCookie;
       }
@@ -88,9 +92,10 @@ class APITester {
 
       const response = await this.axios(config);
       
-      // Store session cookie if received
+      // Store all session cookies if received
       if (response.headers['set-cookie']) {
-        this.sessionCookie = response.headers['set-cookie'][0];
+        // Join multiple cookies if present
+        this.sessionCookie = response.headers['set-cookie'].join('; ');
       }
 
       return response;
@@ -136,25 +141,25 @@ class APITester {
     this.log('\n=== AUTHENTICATION TESTS ===');
     
     // Test current user without authentication (should fail)
-    await this.testRoute('GET', '/api/auth/user', null, 401, 'Get user without auth');
+    await this.testRoute('GET', '/api/user', null, 401, 'Get user without auth');
 
     // Test registration (should work or fail if user exists)
-    const registerResult = await this.testRoute('POST', '/api/auth/register', testData.user, [200, 409], 'User registration');
+    const registerResult = await this.testRoute('POST', '/api/register', testData.user, [201, 400], 'User registration');
 
     // Test login with created user
-    const loginResult = await this.testRoute('POST', '/api/auth/login', 
+    const loginResult = await this.testRoute('POST', '/api/login', 
       { username: testData.user.username, password: testData.user.password }, 200, 'User login');
     
     if (loginResult.success) {
       // Test authenticated user endpoint
-      await this.testRoute('GET', '/api/auth/user', null, 200, 'Get authenticated user');
+      await this.testRoute('GET', '/api/user', null, 200, 'Get authenticated user');
       this.log('✅ Authentication successful - proceeding with authenticated tests', 'SUCCESS');
     } else {
       this.log('❌ Authentication failed - some tests may not work', 'ERROR');
     }
 
     // Test login with invalid credentials (should fail)
-    await this.testRoute('POST', '/api/auth/login', 
+    await this.testRoute('POST', '/api/login', 
       { username: 'invalid', password: 'invalid' }, 401, 'Invalid login');
 
     // Test categories (public endpoint)
@@ -235,7 +240,7 @@ class APITester {
 
     // Test logout
     this.log('\n=== LOGOUT TEST ===');
-    await this.testRoute('POST', '/api/auth/logout', null, 200, 'User logout');
+    await this.testRoute('POST', '/api/logout', null, 200, 'User logout');
 
     // Generate summary
     this.generateSummary();
