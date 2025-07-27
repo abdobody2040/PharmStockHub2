@@ -16,8 +16,11 @@ import {
   Plus,
   Search,
   Filter,
-  ArrowRight
+  ArrowRight,
+  TrendingUp
 } from "lucide-react";
+import Chart from 'chart.js/auto';
+import { useRef, useEffect } from 'react';
 import { StockItem, InventoryRequest, User } from "@shared/schema";
 import { Link } from "wouter";
 
@@ -32,6 +35,8 @@ interface DashboardStats {
 
 export function RoleBasedDashboard() {
   const { user } = useAuth();
+  const allocationChartRef = useRef<HTMLCanvasElement>(null);
+  const allocationChart = useRef<Chart | null>(null);
 
   // Use allocated inventory for role-based filtering
   const { data: allocatedInventory = [] } = useQuery<StockItem[]>({
@@ -307,8 +312,8 @@ export function RoleBasedDashboard() {
         </CardContent>
       </Card>
 
-      {/* Request Management Section */}
-      <div className="grid gap-6 md:grid-cols-2">
+      {/* Request Management and Chart Section */}
+      <div className="grid gap-6 md:grid-cols-3">
         <Card>
           <CardHeader>
             <CardTitle>Recent Requests</CardTitle>
@@ -374,6 +379,29 @@ export function RoleBasedDashboard() {
                 View Reports
               </Button>
             </Link>
+          </CardContent>
+        </Card>
+
+        {/* Allocation Distribution Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Allocation Distribution
+            </CardTitle>
+            <CardDescription>Distribution by category type</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {allocatedInventory.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <TrendingUp className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>No allocation data to display</p>
+              </div>
+            ) : (
+              <div style={{ height: '200px', position: 'relative' }}>
+                <canvas ref={allocationChartRef}></canvas>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -548,7 +576,57 @@ export function RoleBasedDashboard() {
   const getCategoryName = (categoryId: number) => {
     const category = (categories as any[]).find((c: any) => c.id === categoryId);
     return category?.name || 'N/A';
-  };
+  }
+
+  // Create allocation distribution chart for Product Manager
+  useEffect(() => {
+    if (allocationChartRef.current && allocatedInventory.length > 0 && user?.role === 'productManager') {
+      const ctx = allocationChartRef.current.getContext('2d');
+      if (ctx) {
+        // Destroy existing chart
+        if (allocationChart.current) {
+          allocationChart.current.destroy();
+        }
+
+        // Group items by category for the chart
+        const categoryData: { [key: string]: number } = {};
+        allocatedInventory.forEach(item => {
+          const categoryName = getCategoryName(item.categoryId);
+          categoryData[categoryName] = (categoryData[categoryName] || 0) + (item.quantity || 0);
+        });
+
+        allocationChart.current = new Chart(ctx, {
+          type: 'doughnut',
+          data: {
+            labels: Object.keys(categoryData),
+            datasets: [{
+              data: Object.values(categoryData),
+              backgroundColor: [
+                '#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#06b6d4'
+              ],
+              borderWidth: 2,
+              borderColor: '#ffffff'
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'bottom'
+              }
+            }
+          }
+        });
+      }
+    }
+
+    return () => {
+      if (allocationChart.current) {
+        allocationChart.current.destroy();
+      }
+    };
+  }, [allocatedInventory, categories, user?.role]);
 
   // CSV Export function for marketer
   const exportAllocatedInventoryToCSV = () => {
