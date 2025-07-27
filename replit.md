@@ -32,22 +32,36 @@ A comprehensive pharmaceutical promotional materials management platform designe
 
 ## Recent Changes
 
-### July 27, 2025 - ES Module Compatibility and Analytics Dashboard Enhancements
+### July 27, 2025 - Marketer Role Implementation and Data Presentation Enhancements
+- **Implemented Complete Marketer Role**: Added dedicated marketer functionality with specialized dashboard
+  - Created marketer-specific dashboard showing allocated inventory statistics
+  - Added proper role-based navigation and permissions for marketers
+  - Implemented marketer permissions: canViewAllocatedInventory and canViewReports
+  - Modified inventory page to show "My Allocated Inventory" for marketers with descriptive text
+- **Enhanced Data Presentation**: Improved number formatting and data visualization
+  - Added proper number localization using toLocaleString() for all quantity displays
+  - Enhanced marketer dashboard with unit values, total values, and comprehensive pricing information
+  - Added totals row in allocated inventory table showing aggregated quantities and values
+  - Improved visual formatting with proper currency formatting and badge indicators
+- **CSV Export Functionality**: Added comprehensive CSV export for marketer allocated inventory
+  - Export button integrated into marketer dashboard allocated inventory table
+  - CSV includes item name, category, allocated quantity, unit value, total value, item number, and notes
+  - Automatic totals calculation and inclusion in exported CSV files
+  - Date-stamped filename format for organized file management
+- **Recent Transfers Section**: Added "Recent Transfers to Me" section for marketer dashboard
+  - Shows latest 5 inventory movements allocated to the logged-in marketer
+  - Displays item name, quantity, sender, date, and transfer notes
+  - Proper empty state when no recent transfers exist
+- **Fixed Stock Movement Logic**: Updated stock movement system for admin/CEO users
+  - Fixed fromUserId = null handling for transfers from central inventory
+  - Maintained 100% API test success rate (26/26 tests) throughout all changes
+- **Page Title Updates**: Dynamic page titles based on user role (marketer vs admin/stock keeper)
+
+### July 27, 2025 - ES Module Compatibility and Analytics Dashboard Enhancements (Previous)
 - **Fixed ES Module Errors**: Converted CommonJS files to ES modules to resolve require() errors
-  - Updated scan-routes.js to use ES module imports instead of require()
-  - Updated test-routes.js to use ES module imports instead of require()
-  - Added proper ES module detection for direct script execution
 - **Enhanced Analytics Dashboard**: Fixed zero stock and low stock items display
-  - Added dedicated Zero Stock Items card showing items completely out of stock
-  - Added Low Stock Items card showing items with less than 10 units
-  - Enhanced visual indicators with color-coded backgrounds and status labels
-  - Added category information and item numbers for better identification
-  - Created test data with zero and low stock items for demonstration
-  - Fixed TypeScript errors related to item properties
 - **Improved Route Testing**: Both route scanner and API tester now working correctly with ES modules
-- **Fixed Authentication Issues**: Resolved session cookie handling and authentication flow in API tests
-- **Achieved 100% Test Success**: All 26 API endpoint tests now pass successfully with proper authentication and session management
-- **Enhanced Test Data**: Added unique timestamps to test data to prevent duplicate key violations
+- **Achieved 100% Test Success**: All 26 API endpoint tests now pass successfully
 
 ### July 13, 2025 - Request Management UI/UX Improvements (Previous)
 - **Request Details Button**: Changed approve button (Check icon) to show request details instead of direct approval

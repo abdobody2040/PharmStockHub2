@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { InventoryHealthWidget } from "./inventory-health-widget";
@@ -33,8 +33,12 @@ export function RoleBasedDashboard() {
   const { user } = useAuth();
 
   // Use allocated inventory for role-based filtering
-  const { data: stockItems = [] } = useQuery<StockItem[]>({
+  const { data: allocatedInventory = [] } = useQuery<StockItem[]>({
     queryKey: ["/api/my-allocated-inventory"],
+  });
+  
+  const { data: stockItems = [] } = useQuery<StockItem[]>({
+    queryKey: ["/api/stock-items"],
   });
 
   const { data: requests = [] } = useQuery<InventoryRequest[]>({
@@ -47,6 +51,10 @@ export function RoleBasedDashboard() {
 
   const { data: expiringItems = [] } = useQuery<StockItem[]>({
     queryKey: ["/api/stock-items/expiring"],
+  });
+
+  const { data: movements = [] } = useQuery({
+    queryKey: ["/api/movements"],
   });
 
   const stats: DashboardStats = {
@@ -319,6 +327,52 @@ export function RoleBasedDashboard() {
     </div>
   );
 
+  // CSV Export function for marketer
+  const exportAllocatedInventoryToCSV = () => {
+    const headers = ['Item Name', 'Category', 'Allocated Quantity', 'Unit Value', 'Total Value', 'Item Number', 'Notes'];
+    const csvData = allocatedInventory.map(item => {
+      const allocatedQty = item.allocated || 0;
+      const unitPrice = (item.price || 0) / 100;
+      const totalValue = allocatedQty * unitPrice;
+      
+      return [
+        item.name,
+        item.categoryName || 'N/A',
+        allocatedQty.toString(),
+        `$${unitPrice.toFixed(2)}`,
+        `$${totalValue.toFixed(2)}`,
+        item.uniqueNumber || 'N/A',
+        item.notes || 'No notes'
+      ];
+    });
+
+    // Add totals row
+    const totalQty = allocatedInventory.reduce((sum, item) => sum + (item.allocated || 0), 0);
+    const totalValue = allocatedInventory.reduce((sum, item) => {
+      const allocatedQty = item.allocated || 0;
+      const unitPrice = (item.price || 0) / 100;
+      return sum + (allocatedQty * unitPrice);
+    }, 0);
+    
+    csvData.push(['TOTAL', '', totalQty.toString(), '', `$${totalValue.toFixed(2)}`, '', '']);
+
+    const csvContent = [headers, ...csvData]
+      .map(row => row.map(field => `"${field}"`).join(','))
+      .join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `my-allocated-inventory-${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
+
   const renderMarketerDashboard = () => (
     <div className="space-y-6">
       <div>
@@ -346,7 +400,7 @@ export function RoleBasedDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {allocatedInventory.reduce((sum, item) => sum + (item.allocated || 0), 0)}
+              {allocatedInventory.reduce((sum, item) => sum + (item.allocated || 0), 0).toLocaleString()}
             </div>
             <p className="text-xs text-muted-foreground">Total promotional materials</p>
           </CardContent>
@@ -354,21 +408,42 @@ export function RoleBasedDashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Specialty Focus</CardTitle>
-            <BarChart className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Total Value</CardTitle>
+            <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{user?.specialtyId ? 'Specialized' : 'General'}</div>
-            <p className="text-xs text-muted-foreground">Your area of expertise</p>
+            <div className="text-2xl font-bold">
+              ${allocatedInventory.reduce((sum, item) => {
+                const allocatedQty = item.allocated || 0;
+                const unitPrice = (item.price || 0) / 100;
+                return sum + (allocatedQty * unitPrice);
+              }, 0).toFixed(2)}
+            </div>
+            <p className="text-xs text-muted-foreground">Total allocated value</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Allocated Items Table */}
       <Card>
-        <CardHeader>
-          <CardTitle>My Allocated Inventory</CardTitle>
-          <CardDescription>Promotional materials and samples allocated to you</CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>My Allocated Inventory</CardTitle>
+            <CardDescription>Promotional materials and samples allocated to you</CardDescription>
+          </div>
+          {allocatedInventory.length > 0 && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => exportAllocatedInventoryToCSV()}
+              className="flex items-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Export CSV
+            </Button>
+          )}
         </CardHeader>
         <CardContent>
           {allocatedInventory.length > 0 ? (
@@ -379,27 +454,62 @@ export function RoleBasedDashboard() {
                     <th className="text-left p-4">Item Name</th>
                     <th className="text-left p-4">Category</th>
                     <th className="text-left p-4">Allocated Quantity</th>
+                    <th className="text-left p-4">Unit Value</th>
+                    <th className="text-left p-4">Total Value</th>
                     <th className="text-left p-4">Item Number</th>
                     <th className="text-left p-4">Notes</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {allocatedInventory.map((item) => (
-                    <tr key={item.id} className="border-b hover:bg-gray-50">
-                      <td className="p-4 font-medium">{item.name}</td>
-                      <td className="p-4">
-                        <Badge variant="secondary">{item.categoryName || 'N/A'}</Badge>
-                      </td>
-                      <td className="p-4">
-                        <Badge variant={item.allocated > 0 ? "default" : "destructive"}>
-                          {item.allocated || 0}
-                        </Badge>
-                      </td>
-                      <td className="p-4 text-sm text-gray-600">{item.uniqueNumber || 'N/A'}</td>
-                      <td className="p-4 text-sm text-gray-600">{item.notes || 'No notes'}</td>
-                    </tr>
-                  ))}
+                  {allocatedInventory.map((item) => {
+                    const allocatedQty = item.allocated || 0;
+                    const unitPrice = (item.price || 0) / 100; // Convert from cents
+                    const totalValue = allocatedQty * unitPrice;
+                    
+                    return (
+                      <tr key={item.id} className="border-b hover:bg-gray-50">
+                        <td className="p-4 font-medium">{item.name}</td>
+                        <td className="p-4">
+                          <Badge variant="secondary">{item.categoryName || 'N/A'}</Badge>
+                        </td>
+                        <td className="p-4">
+                          <Badge variant={allocatedQty > 0 ? "default" : "destructive"}>
+                            {allocatedQty.toLocaleString()}
+                          </Badge>
+                        </td>
+                        <td className="p-4 text-sm text-gray-600">
+                          ${unitPrice.toFixed(2)}
+                        </td>
+                        <td className="p-4 text-sm font-medium">
+                          ${totalValue.toFixed(2)}
+                        </td>
+                        <td className="p-4 text-sm text-gray-600">{item.uniqueNumber || 'N/A'}</td>
+                        <td className="p-4 text-sm text-gray-600">{item.notes || 'No notes'}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
+                <tfoot>
+                  <tr className="border-t-2 bg-gray-50">
+                    <td className="p-4 font-bold">Total</td>
+                    <td className="p-4"></td>
+                    <td className="p-4">
+                      <Badge variant="default">
+                        {allocatedInventory.reduce((sum, item) => sum + (item.allocated || 0), 0).toLocaleString()}
+                      </Badge>
+                    </td>
+                    <td className="p-4"></td>
+                    <td className="p-4 font-bold">
+                      ${allocatedInventory.reduce((sum, item) => {
+                        const allocatedQty = item.allocated || 0;
+                        const unitPrice = (item.price || 0) / 100;
+                        return sum + (allocatedQty * unitPrice);
+                      }, 0).toFixed(2)}
+                    </td>
+                    <td className="p-4"></td>
+                    <td className="p-4"></td>
+                  </tr>
+                </tfoot>
               </table>
             </div>
           ) : (
@@ -407,6 +517,66 @@ export function RoleBasedDashboard() {
               <Package className="mx-auto h-12 w-12 text-gray-400 mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">No Allocated Items</h3>
               <p className="text-gray-500">You don't have any promotional materials allocated to you yet.</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Recent Transfers to Me */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Transfers to Me</CardTitle>
+          <CardDescription>Latest inventory movements allocated to you</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {movements.filter(m => m.toUserId === user?.id).length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left p-4">Item</th>
+                    <th className="text-left p-4">Quantity</th>
+                    <th className="text-left p-4">From</th>
+                    <th className="text-left p-4">Date</th>
+                    <th className="text-left p-4">Notes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {movements
+                    .filter(m => m.toUserId === user?.id)
+                    .slice(0, 5)
+                    .map((movement) => {
+                      const stockItem = stockItems.find(item => item.id === movement.stockItemId);
+                      const fromUser = users.find(u => u.id === movement.fromUserId);
+                      
+                      return (
+                        <tr key={movement.id} className="border-b hover:bg-gray-50">
+                          <td className="p-4 font-medium">{stockItem?.name || 'Unknown Item'}</td>
+                          <td className="p-4">
+                            <Badge variant="default">
+                              {movement.quantity?.toLocaleString() || '0'}
+                            </Badge>
+                          </td>
+                          <td className="p-4 text-sm text-gray-600">
+                            {fromUser?.name || 'Central Warehouse'}
+                          </td>
+                          <td className="p-4 text-sm text-gray-600">
+                            {movement.movedAt ? new Date(movement.movedAt).toLocaleDateString() : 'N/A'}
+                          </td>
+                          <td className="p-4 text-sm text-gray-600">
+                            {movement.notes || 'No notes'}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <Clock className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No Recent Transfers</h3>
+              <p className="text-gray-500">You haven't received any inventory transfers recently.</p>
             </div>
           )}
         </CardContent>
