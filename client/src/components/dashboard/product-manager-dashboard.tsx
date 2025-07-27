@@ -187,66 +187,66 @@ export function ProductManagerDashboard() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold">My Inventory Dashboard</h2>
-          <p className="text-muted-foreground">Track your allocated items and transfers</p>
+          <h2 className="text-xl md:text-2xl font-bold text-gray-900">Product Manager Dashboard</h2>
+          <p className="text-sm text-muted-foreground mt-1">Monitor your allocated promotional materials and inventory requests</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <Link href="/requests">
-            <Button>
+            <Button className="w-full sm:w-auto">
               <Plus className="h-4 w-4 mr-2" />
               New Request
             </Button>
           </Link>
           <Link href="/inventory">
-            <Button variant="outline">
+            <Button variant="outline" className="w-full sm:w-auto">
               <Package className="h-4 w-4 mr-2" />
-              View All Inventory
+              View Inventory
             </Button>
           </Link>
         </div>
       </div>
 
       {/* Quick Stats */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Allocated Items</CardTitle>
-            <Package className="h-4 w-4 text-blue-600" />
+            <CardTitle className="text-xs sm:text-sm font-medium">Allocated Items</CardTitle>
+            <Package className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">
+          <CardContent className="pt-2">
+            <div className="text-lg sm:text-2xl font-bold text-blue-600">
               {stats.totalAllocatedItems}
             </div>
             <p className="text-xs text-muted-foreground">
-              {stats.totalAllocatedQuantity} total units
+              {stats.totalAllocatedQuantity.toLocaleString()} total units
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Low Stock</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-yellow-600" />
+            <CardTitle className="text-xs sm:text-sm font-medium">Low Stock</CardTitle>
+            <AlertTriangle className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-600" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">
+          <CardContent className="pt-2">
+            <div className="text-lg sm:text-2xl font-bold text-yellow-600">
               {stats.lowStockAllocations}
             </div>
-            <p className="text-xs text-muted-foreground">Items need restocking</p>
+            <p className="text-xs text-muted-foreground">Need restocking</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Requests</CardTitle>
-            <Clock className="h-4 w-4 text-orange-600" />
+            <CardTitle className="text-xs sm:text-sm font-medium">Pending</CardTitle>
+            <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-orange-600" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-orange-600">
+          <CardContent className="pt-2">
+            <div className="text-lg sm:text-2xl font-bold text-orange-600">
               {stats.pendingRequests}
             </div>
             <p className="text-xs text-muted-foreground">Awaiting approval</p>
@@ -255,11 +255,11 @@ export function ProductManagerDashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Approved Requests</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-600" />
+            <CardTitle className="text-xs sm:text-sm font-medium">Approved</CardTitle>
+            <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-green-600" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
+          <CardContent className="pt-2">
+            <div className="text-lg sm:text-2xl font-bold text-green-600">
               {stats.approvedRequests}
             </div>
             <p className="text-xs text-muted-foreground">Ready for pickup</p>
@@ -268,25 +268,27 @@ export function ProductManagerDashboard() {
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-4 md:gap-6 lg:grid-cols-3">
         {/* Allocated Items List */}
-        <Card className="md:col-span-2">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <Package className="h-5 w-5" />
-                My Allocated Inventory
-              </CardTitle>
+        <Card className="lg:col-span-2">
+          <CardHeader className="pb-3">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Package className="h-5 w-5" />
+                  My Allocated Inventory
+                </CardTitle>
+                <CardDescription className="mt-1">
+                  Promotional materials allocated to you for distribution
+                </CardDescription>
+              </div>
               {allocatedItems.length > 0 && (
-                <Button onClick={exportAllocatedInventoryToCSV} variant="outline" size="sm">
+                <Button onClick={exportAllocatedInventoryToCSV} variant="outline" size="sm" className="w-full sm:w-auto">
                   <FileText className="h-4 w-4 mr-2" />
                   Export CSV
                 </Button>
               )}
             </div>
-            <CardDescription>
-              These promotional materials have been specifically allocated to you for distribution
-            </CardDescription>
           </CardHeader>
           <CardContent>
             {allocatedItems.length === 0 ? (
@@ -296,17 +298,17 @@ export function ProductManagerDashboard() {
                 <p className="text-sm">Contact your supervisor for inventory allocation</p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse">
+              <div className="overflow-x-auto -mx-2 sm:mx-0">
+                <table className="w-full border-collapse min-w-[700px]">
                   <thead>
-                    <tr className="border-b">
-                      <th className="text-left p-4">Item Name</th>
-                      <th className="text-left p-4">Category</th>
-                      <th className="text-left p-4">Allocated Qty</th>
-                      <th className="text-left p-4">Unit Value</th>
-                      <th className="text-left p-4">Total Value</th>
-                      <th className="text-left p-4">Item Number</th>
-                      <th className="text-left p-4">Notes</th>
+                    <tr className="border-b border-gray-200">
+                      <th className="text-left p-2 sm:p-4 text-xs sm:text-sm font-medium text-gray-700">Item Name</th>
+                      <th className="text-left p-2 sm:p-4 text-xs sm:text-sm font-medium text-gray-700">Category</th>
+                      <th className="text-left p-2 sm:p-4 text-xs sm:text-sm font-medium text-gray-700">Qty</th>
+                      <th className="text-left p-2 sm:p-4 text-xs sm:text-sm font-medium text-gray-700">Unit Value</th>
+                      <th className="text-left p-2 sm:p-4 text-xs sm:text-sm font-medium text-gray-700">Total Value</th>
+                      <th className="text-left p-2 sm:p-4 text-xs sm:text-sm font-medium text-gray-700 hidden sm:table-cell">Item #</th>
+                      <th className="text-left p-2 sm:p-4 text-xs sm:text-sm font-medium text-gray-700 hidden md:table-cell">Notes</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -316,49 +318,52 @@ export function ProductManagerDashboard() {
                       const totalValue = allocatedQty * unitPrice;
 
                       return (
-                        <tr key={item.id} className="border-b hover:bg-gray-50">
-                          <td className="p-4 font-medium">{item.name}</td>
-                          <td className="p-4">
-                            <Badge variant="secondary">
+                        <tr key={item.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                          <td className="p-2 sm:p-4">
+                            <div className="font-medium text-gray-900 text-sm">{item.name}</div>
+                            <div className="text-xs text-gray-500 sm:hidden">{getCategoryName(item.categoryId)}</div>
+                          </td>
+                          <td className="p-2 sm:p-4 hidden sm:table-cell">
+                            <Badge variant="secondary" className="text-xs">
                               {getCategoryName(item.categoryId)}
                             </Badge>
                           </td>
-                          <td className="p-4">
-                            <Badge variant="default">
+                          <td className="p-2 sm:p-4">
+                            <Badge variant="default" className="text-xs">
                               {allocatedQty.toLocaleString()}
                             </Badge>
                           </td>
-                          <td className="p-4 text-sm text-gray-600">
+                          <td className="p-2 sm:p-4 text-xs sm:text-sm text-gray-600 font-medium">
                             ${unitPrice.toFixed(2)}
                           </td>
-                          <td className="p-4 text-sm text-gray-600">
+                          <td className="p-2 sm:p-4 text-xs sm:text-sm text-gray-900 font-semibold">
                             ${totalValue.toFixed(2)}
                           </td>
-                          <td className="p-4 text-sm text-gray-600">{item.uniqueNumber || 'N/A'}</td>
-                          <td className="p-4 text-sm text-gray-600">{item.notes || 'No notes'}</td>
+                          <td className="p-2 sm:p-4 text-xs text-gray-500 hidden sm:table-cell">{item.uniqueNumber || 'N/A'}</td>
+                          <td className="p-2 sm:p-4 text-xs text-gray-500 hidden md:table-cell max-w-32 truncate">{item.notes || 'No notes'}</td>
                         </tr>
                       );
                     })}
                   </tbody>
                   <tfoot>
                     <tr className="border-t-2 bg-gray-50">
-                      <td className="p-4 font-bold">Total</td>
-                      <td className="p-4"></td>
-                      <td className="p-4">
-                        <Badge variant="default">
+                      <td className="p-2 sm:p-4 font-bold text-sm">Total</td>
+                      <td className="p-2 sm:p-4 hidden sm:table-cell"></td>
+                      <td className="p-2 sm:p-4">
+                        <Badge variant="default" className="font-bold">
                           {allocatedItems.reduce((sum, item) => sum + (item.quantity || 0), 0).toLocaleString()}
                         </Badge>
                       </td>
-                      <td className="p-4"></td>
-                      <td className="p-4 font-bold">
+                      <td className="p-2 sm:p-4"></td>
+                      <td className="p-2 sm:p-4 font-bold text-sm text-gray-900">
                         ${allocatedItems.reduce((sum, item) => {
                           const allocatedQty = item.quantity || 0;
                           const unitPrice = (item.price || 0) / 100;
                           return sum + (allocatedQty * unitPrice);
                         }, 0).toFixed(2)}
                       </td>
-                      <td className="p-4"></td>
-                      <td className="p-4"></td>
+                      <td className="p-2 sm:p-4 hidden sm:table-cell"></td>
+                      <td className="p-2 sm:p-4 hidden md:table-cell"></td>
                     </tr>
                   </tfoot>
                 </table>
@@ -369,20 +374,23 @@ export function ProductManagerDashboard() {
 
         {/* Allocation Distribution Chart */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
-              Allocation Distribution
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <BarChart3 className="h-5 w-5" />
+              Distribution by Category
             </CardTitle>
+            <CardDescription>
+              Breakdown of your allocated inventory by category
+            </CardDescription>
           </CardHeader>
           <CardContent>
             {allocatedItems.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                <TrendingUp className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No data to display</p>
+                <BarChart3 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p className="text-sm">No data to display</p>
               </div>
             ) : (
-              <div style={{ height: '250px', position: 'relative' }}>
+              <div className="h-64 relative">
                 <canvas ref={allocationChartRef}></canvas>
               </div>
             )}
@@ -391,9 +399,9 @@ export function ProductManagerDashboard() {
       </div>
 
       {/* Recent Transfers to Me */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+      <Card className="lg:col-span-3">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-lg">
             <ArrowLeftRight className="h-5 w-5" />
             Recent Transfers to Me
           </CardTitle>
@@ -401,15 +409,15 @@ export function ProductManagerDashboard() {
         </CardHeader>
         <CardContent>
           {receivedMovements.filter(m => m.toUserId === user?.id).length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
+            <div className="overflow-x-auto -mx-2 sm:mx-0">
+              <table className="w-full border-collapse min-w-[500px]">
                 <thead>
-                  <tr className="border-b">
-                    <th className="text-left p-4">Item</th>
-                    <th className="text-left p-4">Quantity</th>
-                    <th className="text-left p-4">From</th>
-                    <th className="text-left p-4">Date</th>
-                    <th className="text-left p-4">Notes</th>
+                  <tr className="border-b border-gray-200">
+                    <th className="text-left p-2 sm:p-4 text-xs sm:text-sm font-medium text-gray-700">Item</th>
+                    <th className="text-left p-2 sm:p-4 text-xs sm:text-sm font-medium text-gray-700">Quantity</th>
+                    <th className="text-left p-2 sm:p-4 text-xs sm:text-sm font-medium text-gray-700">From</th>
+                    <th className="text-left p-2 sm:p-4 text-xs sm:text-sm font-medium text-gray-700">Date</th>
+                    <th className="text-left p-2 sm:p-4 text-xs sm:text-sm font-medium text-gray-700 hidden md:table-cell">Notes</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -421,20 +429,23 @@ export function ProductManagerDashboard() {
                       const fromUser = users.find(u => u.id === movement.fromUserId);
                       
                       return (
-                        <tr key={movement.id} className="border-b hover:bg-gray-50">
-                          <td className="p-4 font-medium">{stockItem?.name || 'Unknown Item'}</td>
-                          <td className="p-4">
-                            <Badge variant="default">
+                        <tr key={movement.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                          <td className="p-2 sm:p-4">
+                            <div className="font-medium text-gray-900 text-sm">{stockItem?.name || 'Unknown Item'}</div>
+                            <div className="text-xs text-gray-500 md:hidden">{movement.notes || 'No notes'}</div>
+                          </td>
+                          <td className="p-2 sm:p-4">
+                            <Badge variant="default" className="text-xs">
                               {movement.quantity?.toLocaleString() || '0'}
                             </Badge>
                           </td>
-                          <td className="p-4 text-sm text-gray-600">
+                          <td className="p-2 sm:p-4 text-xs sm:text-sm text-gray-600">
                             {fromUser?.name || 'Central Warehouse'}
                           </td>
-                          <td className="p-4 text-sm text-gray-600">
+                          <td className="p-2 sm:p-4 text-xs sm:text-sm text-gray-600">
                             {movement.movedAt ? new Date(movement.movedAt).toLocaleDateString() : 'N/A'}
                           </td>
-                          <td className="p-4 text-sm text-gray-600">
+                          <td className="p-2 sm:p-4 text-xs text-gray-500 hidden md:table-cell max-w-32 truncate">
                             {movement.notes || 'No notes'}
                           </td>
                         </tr>
@@ -446,8 +457,8 @@ export function ProductManagerDashboard() {
           ) : (
             <div className="text-center py-8">
               <Clock className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No Recent Transfers</h3>
-              <p className="text-gray-500">You haven't received any inventory transfers recently.</p>
+              <h3 className="text-base font-medium text-gray-900 mb-2">No Recent Transfers</h3>
+              <p className="text-sm text-gray-500">You haven't received any inventory transfers recently.</p>
             </div>
           )}
         </CardContent>
