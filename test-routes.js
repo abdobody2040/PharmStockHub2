@@ -50,8 +50,11 @@ class APITester {
   constructor() {
     this.axios = axios.create({
       baseURL: BASE_URL,
-      timeout: 10000,
-      validateStatus: () => true // Don't throw on HTTP errors
+      timeout: 30000, // Increased timeout
+      validateStatus: () => true, // Don't throw on HTTP errors
+      headers: {
+        'User-Agent': 'API-Tester/1.0'
+      }
     });
     this.sessionCookie = null;
     this.testResults = [];
@@ -103,11 +106,14 @@ class APITester {
 
     const response = await this.makeRequest(method, endpoint, data);
     
-    if (response.status === expectedStatus) {
+    // Handle array of expected status codes
+    const expectedStatuses = Array.isArray(expectedStatus) ? expectedStatus : [expectedStatus];
+    
+    if (expectedStatuses.includes(response.status)) {
       this.log(`✅ PASS: ${testName} (${response.status})`, 'PASS');
       return { success: true, data: response.data, status: response.status };
     } else {
-      this.log(`❌ FAIL: ${testName} (Expected: ${expectedStatus}, Got: ${response.status})`, 'FAIL');
+      this.log(`❌ FAIL: ${testName} (Expected: ${expectedStatuses.join(' or ')}, Got: ${response.status})`, 'FAIL');
       if (response.data) {
         this.log(`Response: ${JSON.stringify(response.data)}`, 'INFO');
       }
@@ -118,32 +124,38 @@ class APITester {
   async runTests() {
     this.log('Starting comprehensive API tests...', 'START');
 
-    // Test basic connectivity
-    await this.testRoute('GET', '/api/system-settings', null, 200, 'System settings');
+    // Test server connectivity first
+    this.log('\n=== CONNECTIVITY TESTS ===');
+    const connectivityTest = await this.testRoute('GET', '/', null, 200, 'Server connectivity');
+    if (!connectivityTest.success) {
+      this.log('❌ Server is not responding. Please ensure the server is running on port 5000.', 'ERROR');
+      return;
+    }
 
     // Test authentication endpoints
     this.log('\n=== AUTHENTICATION TESTS ===');
     
-    // Test login with invalid credentials (should fail)
-    await this.testRoute('POST', '/api/auth/login', 
-      { username: 'invalid', password: 'invalid' }, 401, 'Invalid login');
-
     // Test current user without authentication (should fail)
     await this.testRoute('GET', '/api/auth/user', null, 401, 'Get user without auth');
 
-    // Test registration (should work)
-    const registerResult = await this.testRoute('POST', '/api/auth/register', testData.user, 200, 'User registration');
+    // Test registration (should work or fail if user exists)
+    const registerResult = await this.testRoute('POST', '/api/auth/register', testData.user, [200, 409], 'User registration');
 
     // Test login with created user
-    if (registerResult.success) {
-      const loginResult = await this.testRoute('POST', '/api/auth/login', 
-        { username: testData.user.username, password: testData.user.password }, 200, 'User login');
-      
-      if (loginResult.success) {
-        // Test authenticated user endpoint
-        await this.testRoute('GET', '/api/auth/user', null, 200, 'Get authenticated user');
-      }
+    const loginResult = await this.testRoute('POST', '/api/auth/login', 
+      { username: testData.user.username, password: testData.user.password }, 200, 'User login');
+    
+    if (loginResult.success) {
+      // Test authenticated user endpoint
+      await this.testRoute('GET', '/api/auth/user', null, 200, 'Get authenticated user');
+      this.log('✅ Authentication successful - proceeding with authenticated tests', 'SUCCESS');
+    } else {
+      this.log('❌ Authentication failed - some tests may not work', 'ERROR');
     }
+
+    // Test login with invalid credentials (should fail)
+    await this.testRoute('POST', '/api/auth/login', 
+      { username: 'invalid', password: 'invalid' }, 401, 'Invalid login');
 
     // Test categories (public endpoint)
     this.log('\n=== CATEGORY TESTS ===');

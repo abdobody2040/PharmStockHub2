@@ -12,39 +12,58 @@ class RoutesScanner {
     try {
       const content = fs.readFileSync(filePath, 'utf8');
       
-      // Extract route definitions
+      // Extract route definitions - improved patterns
       const routePatterns = [
-        /app\.(get|post|put|delete|patch)\s*\(\s*["'`]([^"'`]+)["'`]/g,
-        /router\.(get|post|put|delete|patch)\s*\(\s*["'`]([^"'`]+)["'`]/g
+        /app\.(get|post|put|delete|patch)\s*\(\s*["'`]([^"'`]+)["'`]/gi,
+        /router\.(get|post|put|delete|patch)\s*\(\s*["'`]([^"'`]+)["'`]/gi,
+        // Express.js route patterns
+        /\.route\s*\(\s*["'`]([^"'`]+)["'`]\s*\)\s*\.(get|post|put|delete|patch)/gi,
+        // Direct route definitions
+        /["'`](\/api\/[^"'`]+)["'`]\s*,\s*async\s*\(/gi
       ];
 
       routePatterns.forEach(pattern => {
         let match;
+        pattern.lastIndex = 0; // Reset regex
         while ((match = pattern.exec(content)) !== null) {
-          this.routes.push({
-            method: match[1].toUpperCase(),
-            path: match[2],
-            file: path.basename(filePath)
-          });
+          if (match[1] && match[2]) {
+            this.routes.push({
+              method: match[1].toUpperCase(),
+              path: match[2],
+              file: path.basename(filePath)
+            });
+          } else if (match[1] && match[1].startsWith('/api/')) {
+            // Handle direct API route patterns
+            this.routes.push({
+              method: 'UNKNOWN',
+              path: match[1],
+              file: path.basename(filePath)
+            });
+          }
         }
       });
 
-      // Extract function definitions
+      // Extract function definitions - improved patterns
       const functionPatterns = [
-        /async\s+function\s+(\w+)/g,
-        /function\s+(\w+)/g,
-        /const\s+(\w+)\s*=\s*async\s*\(/g,
-        /const\s+(\w+)\s*=\s*\(/g,
-        /(\w+):\s*async\s*\(/g
+        /async\s+function\s+(\w+)/gi,
+        /function\s+(\w+)/gi,
+        /const\s+(\w+)\s*=\s*async\s*\(/gi,
+        /const\s+(\w+)\s*=\s*\(/gi,
+        /(\w+):\s*async\s*\(/gi,
+        /export\s+async\s+function\s+(\w+)/gi,
+        /export\s+function\s+(\w+)/gi
       ];
 
       functionPatterns.forEach(pattern => {
         let match;
+        pattern.lastIndex = 0; // Reset regex
         while ((match = pattern.exec(content)) !== null) {
-          this.functions.push({
-            name: match[1],
-            file: path.basename(filePath)
-          });
+          if (match[1] && !['if', 'for', 'while', 'switch', 'catch'].includes(match[1])) {
+            this.functions.push({
+              name: match[1],
+              file: path.basename(filePath)
+            });
+          }
         }
       });
 
