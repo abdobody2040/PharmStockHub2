@@ -682,43 +682,138 @@ export default function AnalyticsDashboard() {
         </div>
 
         {/* Inventory health */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Inventory Health</CardTitle>
-            <CardDescription>
-              Key metrics about your current inventory status
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-8">
-            {inventoryHealth && (
-              <>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <div>Low Stock Items ({inventoryHealth.lowStockPercentage}%)</div>
-                    <div className="text-muted-foreground">{inventoryHealth.lowStockPercentage}/100</div>
+        <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-3">
+          {/* Health Metrics Overview */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Inventory Health</CardTitle>
+              <CardDescription>
+                Key metrics about your current inventory status
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-8">
+              {inventoryHealth && (
+                <>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <div>Low Stock Items ({inventoryHealth.lowStockPercentage}%)</div>
+                      <div className="text-muted-foreground">{inventoryHealth.lowStockPercentage}/100</div>
+                    </div>
+                    <Progress value={inventoryHealth.lowStockPercentage} className="h-2" />
                   </div>
-                  <Progress value={inventoryHealth.lowStockPercentage} className="h-2" />
-                </div>
 
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <div>Expiring Items ({inventoryHealth.expiringPercentage}%)</div>
-                    <div className="text-muted-foreground">{inventoryHealth.expiringPercentage}/100</div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <div>Expiring Items ({inventoryHealth.expiringPercentage}%)</div>
+                      <div className="text-muted-foreground">{inventoryHealth.expiringPercentage}/100</div>
+                    </div>
+                    <Progress value={inventoryHealth.expiringPercentage} className="h-2" />
                   </div>
-                  <Progress value={inventoryHealth.expiringPercentage} className="h-2" />
-                </div>
 
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <div>Out of Stock ({inventoryHealth.outOfStockPercentage}%)</div>
-                    <div className="text-muted-foreground">{inventoryHealth.outOfStockPercentage}/100</div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <div>Out of Stock ({inventoryHealth.outOfStockPercentage}%)</div>
+                      <div className="text-muted-foreground">{inventoryHealth.outOfStockPercentage}/100</div>
+                    </div>
+                    <Progress value={inventoryHealth.outOfStockPercentage} className="h-2" />
                   </div>
-                  <Progress value={inventoryHealth.outOfStockPercentage} className="h-2" />
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
+                </>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Zero Stock Items */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <div>
+                <CardTitle className="text-lg font-medium text-red-600">Zero Stock Items</CardTitle>
+                <CardDescription>Items completely out of stock</CardDescription>
+              </div>
+              <AlertTriangle className="h-5 w-5 text-red-600" />
+            </CardHeader>
+            <CardContent>
+              {(() => {
+                const zeroStockItems = stockItems.filter(item => item.quantity === 0);
+                return zeroStockItems.length > 0 ? (
+                  <div className="space-y-3 max-h-64 overflow-y-auto">
+                    {zeroStockItems.map((item) => {
+                      const category = categories.find(c => c.id === item.categoryId);
+                      return (
+                        <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg bg-red-50 border-red-200">
+                          <div className="flex items-center space-x-3">
+                            <div className="h-2 w-2 rounded-full bg-red-500"></div>
+                            <div>
+                              <p className="font-medium text-sm text-red-800">{item.name}</p>
+                              <p className="text-xs text-red-600">
+                                {category?.name || 'Unknown Category'} • Item #{item.uniqueNumber || item.id}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-semibold text-red-600">0 units</p>
+                            <p className="text-xs text-red-500">Urgent restock needed</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Package className="mx-auto h-8 w-8 text-gray-400" />
+                    <p className="text-sm text-muted-foreground mt-2">No items out of stock</p>
+                  </div>
+                );
+              })()}
+            </CardContent>
+          </Card>
+
+          {/* Low Stock Items */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <div>
+                <CardTitle className="text-lg font-medium text-yellow-600">Low Stock Items</CardTitle>
+                <CardDescription>Items with less than 10 units</CardDescription>
+              </div>
+              <AlertTriangle className="h-5 w-5 text-yellow-600" />
+            </CardHeader>
+            <CardContent>
+              {(() => {
+                const lowStockItems = stockItems.filter(item => item.quantity > 0 && item.quantity < 10);
+                return lowStockItems.length > 0 ? (
+                  <div className="space-y-3 max-h-64 overflow-y-auto">
+                    {lowStockItems.map((item) => {
+                      const category = categories.find(c => c.id === item.categoryId);
+                      return (
+                        <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg bg-yellow-50 border-yellow-200">
+                          <div className="flex items-center space-x-3">
+                            <div className="h-2 w-2 rounded-full bg-yellow-500"></div>
+                            <div>
+                              <p className="font-medium text-sm text-yellow-800">{item.name}</p>
+                              <p className="text-xs text-yellow-600">
+                                {category?.name || 'Unknown Category'} • Item #{item.uniqueNumber || item.id}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-semibold text-yellow-600">{item.quantity} units</p>
+                            <p className="text-xs text-yellow-500">
+                              {item.quantity <= 3 ? 'Critical' : item.quantity <= 6 ? 'Low' : 'Monitor'}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Package className="mx-auto h-8 w-8 text-gray-400" />
+                    <p className="text-sm text-muted-foreground mt-2">No low stock items</p>
+                  </div>
+                );
+              })()}
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Charts section */}
         <Tabs defaultValue="inventory-trends">
