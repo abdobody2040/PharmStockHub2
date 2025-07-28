@@ -19,6 +19,7 @@ import {
   stockMovements
 } from "@shared/schema";
 import { db } from "./db";
+
 import { eq, and, desc } from "drizzle-orm";
 
 // Ensure uploads directory exists

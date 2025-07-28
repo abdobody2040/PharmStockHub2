@@ -5,6 +5,9 @@ import { getOrgConfig, type OrgConfig } from './config';
 import { storage } from "./storage";
 import { hashPassword } from "./auth";
 
+import * as dotenv from 'dotenv';
+dotenv.config();
+
 // Extend Express Request type
 declare global {
   namespace Express {
@@ -143,8 +146,8 @@ app.use((req, res, next) => {
   const port = 5000;
   server.listen({
     port,
-    host: "0.0.0.0",
-    reusePort: true,
+    host: "0.0.0.0", // force IPv4
+    // reusePort: true,
   }, () => {
     log(`serving on port ${port}`);
   });
