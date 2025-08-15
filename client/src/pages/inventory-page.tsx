@@ -112,6 +112,10 @@ export default function InventoryPage() {
     queryKey: ["/api/allocations"],
   });
 
+  const { data: specialties = [] } = useQuery<Specialty[]>({
+    queryKey: ["/api/specialties"],
+  });
+
   // Mutations
   const createItemMutation = useMutation({
     mutationFn: async (formData: FormData) => {
@@ -214,6 +218,12 @@ export default function InventoryPage() {
   // Get category by id
   const getCategoryById = (categoryId: number) => {
     return categories.find(cat => cat.id === categoryId) || { id: 0, name: "Unknown", color: "bg-gray-500" };
+  };
+
+  // Get specialty by id
+  const getSpecialtyById = (specialtyId: number | null) => {
+    if (!specialtyId) return null;
+    return specialties.find(spec => spec.id === specialtyId);
   };
 
   // Item actions
@@ -441,6 +451,7 @@ export default function InventoryPage() {
               <TableRow>
                 <TableHead>Item</TableHead>
                 <TableHead>Category</TableHead>
+                <TableHead>Specialty</TableHead>
                 <TableHead>Unique Number</TableHead>
                 <TableHead>Total Qty</TableHead>
                 <TableHead>Available Qty</TableHead>
@@ -478,6 +489,15 @@ export default function InventoryPage() {
                       <Badge variant="outline" className={cn("font-medium", getCategoryColorClass(category.name))}>
                         {category.name}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {item.specialtyId ? (
+                        <Badge variant="secondary" className="text-xs bg-purple-50 text-purple-700 border-purple-200">
+                          {getSpecialtyById(item.specialtyId)?.name || "Unknown"}
+                        </Badge>
+                      ) : (
+                        <span className="text-sm text-gray-400">—</span>
+                      )}
                     </TableCell>
                     <TableCell className="text-sm text-gray-500">
                       {item.uniqueNumber || "—"}

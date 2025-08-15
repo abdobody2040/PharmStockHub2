@@ -17,10 +17,11 @@ import {
   getExpiryStatusColor, 
   getCategoryColorClass 
 } from "@/lib/utils";
-import { StockItem, Category } from "@shared/schema";
+import { StockItem, Category, Specialty } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 import { Badge } from "@/components/ui/badge";
 import { BarcodeActions } from "@/components/barcode/barcode-actions";
+import { useQuery } from "@tanstack/react-query";
 
 interface StockItemCardProps {
   item: StockItem;
@@ -30,6 +31,23 @@ interface StockItemCardProps {
   onDelete?: (item: StockItem) => void;
   className?: string;
   availableQuantity?: number;
+}
+
+// Helper component to display specialty badge
+function SpecialtyBadge({ specialtyId }: { specialtyId: number }) {
+  const { data: specialties = [] } = useQuery<Specialty[]>({
+    queryKey: ["/api/specialties"],
+  });
+  
+  const specialty = specialties.find(s => s.id === specialtyId);
+  
+  if (!specialty) return null;
+  
+  return (
+    <Badge variant="secondary" className="text-xs bg-purple-50 text-purple-700 border-purple-200">
+      {specialty.name}
+    </Badge>
+  );
 }
 
 export function StockItemCard({ 
@@ -81,9 +99,12 @@ export function StockItemCard({
         </div>
         
         <div className="mt-2 flex justify-between items-center">
-          <Badge variant="outline" className={cn("font-medium", categoryColor)}>
-            {category.name}
-          </Badge>
+          <div className="flex flex-col space-y-1">
+            <Badge variant="outline" className={cn("font-medium", categoryColor)}>
+              {category.name}
+            </Badge>
+            {item.specialtyId && <SpecialtyBadge specialtyId={item.specialtyId} />}
+          </div>
           <div className="flex flex-col items-end">
             <span className="text-sm font-medium text-gray-900">Total: {item.quantity}</span>
             <span className={cn(
