@@ -4,6 +4,7 @@ import { setupVite, serveStatic, log } from "./vite";
 import { getOrgConfig, type OrgConfig } from './config';
 import { storage } from "./storage";
 import { hashPassword } from "./auth";
+import { seedInitialData } from "./seed-data";
 
 import * as dotenv from 'dotenv';
 dotenv.config();
@@ -64,6 +65,11 @@ async function createDefaultAdmin() {
 }
 
 createDefaultAdmin();
+
+// Initialize seed data
+seedInitialData().catch(error => {
+  console.error('Failed to seed initial data:', error);
+});
 
 // Add global error handlers
 process.on('uncaughtException', (error) => {

@@ -12,6 +12,8 @@ export async function seedInitialData() {
       return;
     }
 
+    console.log("Creating seed data...");
+
     // Create default specialties
     const [cnsSpecialty] = await db.insert(specialties).values([
       { name: "CNS", description: "Central Nervous System" },
@@ -57,5 +59,6 @@ export async function seedInitialData() {
     
   } catch (error) {
     console.error("Error seeding data:", error);
+    throw error; // Re-throw to ensure the error is visible
   }
 }
