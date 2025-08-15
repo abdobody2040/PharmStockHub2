@@ -203,7 +203,7 @@ export default function UserManagementPage() {
   // Handle user actions
   const handleAddUser = (data: UserFormValues) => {
     // Handle specialtyId - convert empty string to null
-    const userData = { ...data };
+    const userData: any = { ...data };
     if (userData.specialtyId === "" || userData.specialtyId === "0") {
       userData.specialtyId = null;
     } else if (userData.specialtyId) {
@@ -229,7 +229,7 @@ export default function UserManagementPage() {
     if (!selectedUser) return;
 
     // Only include password if provided
-    const updateData = { ...data };
+    const updateData: any = { ...data };
     if (!updateData.password) {
       delete updateData.password;
     }

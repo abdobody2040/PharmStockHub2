@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import Chart from 'chart.js/auto';
 import { useRef, useEffect } from 'react';
-import { StockItem, InventoryRequest, User } from "@shared/schema";
+import { StockItem, InventoryRequest, User, StockMovement } from "@shared/schema";
 import { Link } from "wouter";
 
 interface DashboardStats {
@@ -59,11 +59,11 @@ export function RoleBasedDashboard() {
     queryKey: ["/api/stock-items/expiring"],
   });
 
-  const { data: movements = [] } = useQuery<any[]>({
+  const { data: movements = [] } = useQuery<StockMovement[]>({
     queryKey: ["/api/movements"],
   });
 
-  const { data: categories = [] } = useQuery({
+  const { data: categories = [] } = useQuery<Array<{ id: number; name: string; color: string }>>({
     queryKey: ["/api/categories"],
   });
 

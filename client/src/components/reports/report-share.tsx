@@ -86,7 +86,9 @@ export function ReportShare({ isOpen, onClose, reportType, reportData }: ReportS
         });
       } catch (error) {
         // User likely cancelled the share operation
-        console.log("Sharing failed", error);
+        if (process.env.NODE_ENV === 'development') {
+          console.log("Sharing failed", error);
+        }
       }
     } else {
       toast({

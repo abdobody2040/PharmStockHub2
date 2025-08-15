@@ -435,8 +435,8 @@ export class MemStorage implements IStorage {
       finalAssignee: request.finalAssignee ?? null,
       secondaryApprover: request.secondaryApprover ?? null,
       secondaryNotes: null,
-      shareFromUserId: (request as any).shareFromUserId ?? null,
-      shareToUserId: (request as any).shareToUserId ?? null
+      shareFromUserId: 'shareFromUserId' in request ? (request as any).shareFromUserId : null,
+      shareToUserId: 'shareToUserId' in request ? (request as any).shareToUserId : null
     };
     this.requestsMap.set(id, newRequest);
     return newRequest;

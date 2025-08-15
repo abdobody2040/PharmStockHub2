@@ -219,7 +219,7 @@ export function SmartSearchFilter({ items, onFilteredItems }: SmartSearchFilterP
                     <SelectItem value="all">All Levels</SelectItem>
                     <SelectItem value="low">Low Stock (≤10)</SelectItem>
                     <SelectItem value="normal">Normal (11-50)</SelectItem>
-                    <SelectItem value="high">High Stock (>50)</SelectItem>
+                    <SelectItem value="high">High Stock (&gt;50)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

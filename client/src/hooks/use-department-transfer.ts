@@ -13,9 +13,27 @@ interface DepartmentTransferResponse {
   success: boolean;
   message: string;
   data: {
-    item: any;
-    allocations: any[];
-    movement: any;
+    item: {
+      id: number;
+      name: string;
+      quantity: number;
+    };
+    allocations: Array<{
+      id: number;
+      userId: number;
+      stockItemId: number;
+      quantity: number;
+    }>;
+    movement: {
+      id: number;
+      stockItemId: number;
+      fromUserId: number | null;
+      toUserId: number;
+      quantity: number;
+      notes: string | null;
+      movedAt: Date;
+      movedBy: number;
+    };
     transferDetails: {
       fromUserId: number | null;
       toUserId: number;

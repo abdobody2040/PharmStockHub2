@@ -110,7 +110,6 @@ export default function StockMovementPage() {
               <DialogTitle>Create Stock Movement</DialogTitle>
             </DialogHeader>
             <StockMovementForm
-              stockItems={stockItems}
               onSubmit={handleSubmit}
               isLoading={createMovement.isPending}
             />

@@ -69,29 +69,31 @@ export default function RequestManagementPage() {
     queryKey: ["/api/users"],
   });
 
-  const { data: specialties = [] } = useQuery({
+  const { data: specialties = [] } = useQuery<Array<{ id: number; name: string }>>({
     queryKey: ["/api/specialties"],
   });
 
-  const { data: categories = [] } = useQuery({
+  const { data: categories = [] } = useQuery<Array<{ id: number; name: string; color: string }>>({
     queryKey: ["/api/categories"],
   });
 
-  const { data: stockItems = [] } = useQuery({
+  const { data: stockItems = [] } = useQuery<Array<{ id: number; name: string; quantity: number; categoryId: number }>>({
     queryKey: ["/api/stock-items"],
   });
 
   // Fetch detailed request data including items when viewing a request
-  const { data: requestDetails } = useQuery({
+  const { data: requestDetails } = useQuery<{ items: Array<{ id: number; quantity: number; stockItemId?: number; itemName?: string; notes?: string }> }>({
     queryKey: [`/api/requests/${currentRequest?.id}`],
     enabled: !!currentRequest?.id && showViewModal,
   });
 
   const requestItems = requestDetails?.items || [];
 
-  // Debug logging
-  console.log("Request details:", requestDetails);
-  console.log("Request items:", requestItems);
+  // Debug logging - remove in production
+  if (process.env.NODE_ENV === 'development') {
+    console.log("Request details:", requestDetails);
+    console.log("Request items:", requestItems);
+  }
 
   // Mutations
   const createRequestMutation = useMutation({
@@ -327,19 +329,19 @@ export default function RequestManagementPage() {
 
   const getStockItemName = (stockItemId: number | null) => {
     if (!stockItemId) return null;
-    const foundItem = stockItems.find((item: any) => item.id === stockItemId);
+    const foundItem = stockItems.find(item => item.id === stockItemId);
     return foundItem ? foundItem.name : `Item #${stockItemId}`;
   };
 
   const getStockItemDetails = (stockItemId: number | null) => {
     if (!stockItemId) return null;
-    const foundItem = stockItems.find((item: any) => item.id === stockItemId);
+    const foundItem = stockItems.find(item => item.id === stockItemId);
     return foundItem || null;
   };
 
   const getSpecialtyName = (specialtyId: number | null) => {
     if (!specialtyId) return null;
-    const foundSpecialty = specialties.find((specialty: any) => specialty.id === specialtyId);
+    const foundSpecialty = specialties.find(specialty => specialty.id === specialtyId);
     return foundSpecialty ? foundSpecialty.name : `Specialty #${specialtyId}`;
   };
 
@@ -648,8 +650,8 @@ export default function RequestManagementPage() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {requestItems.map((item: any) => {
-                            const stockItem = getStockItemDetails(item.stockItemId);
+                          {requestItems.map((item) => {
+                            const stockItem = getStockItemDetails(item.stockItemId || null);
                             const category = stockItem ? categories.find(c => c.id === stockItem.categoryId) : null;
 
                             return (

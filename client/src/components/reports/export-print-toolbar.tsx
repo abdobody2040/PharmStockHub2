@@ -56,12 +56,12 @@ export function ExportPrintToolbar({
       
       // Title
       pdf.setFontSize(16);
-      pdf.setFont(undefined, 'bold');
-      pdf.text(reportType, margin, 30);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text(reportType || 'Report', margin, 30);
       
       // Date
       pdf.setFontSize(10);
-      pdf.setFont(undefined, 'normal');
+      pdf.setFont('helvetica', 'normal');
       pdf.text(`Generated: ${new Date().toLocaleDateString()}`, margin, 40);
       pdf.text(`Total Records: ${data.length}`, margin, 50);
       
@@ -70,7 +70,7 @@ export function ExportPrintToolbar({
       const columnWidth = (pageWidth - 2 * margin) / Math.max(columns.length, 4);
       
       pdf.setFontSize(9);
-      pdf.setFont(undefined, 'bold');
+      pdf.setFont('helvetica', 'bold');
       
       if (columns.length > 0) {
         columns.forEach((col, index) => {
@@ -89,7 +89,7 @@ export function ExportPrintToolbar({
       yPosition += 10;
       
       // Table data
-      pdf.setFont(undefined, 'normal');
+      pdf.setFont('helvetica', 'normal');
       const formattedData = formatData(data);
       
       formattedData.slice(0, 30).forEach((item, index) => {
