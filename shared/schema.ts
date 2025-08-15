@@ -51,7 +51,7 @@ export const insertCategorySchema = createInsertSchema(categories);
 export const stockItems = pgTable("stock_items", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
-  categoryId: integer("category_id").notNull().references(() => categories.id),
+  categoryId: integer("category_id").notNull(),
   specialtyId: integer("specialty_id").references(() => specialties.id),
   quantity: integer("quantity").notNull().default(0),
   price: integer("price").default(0), // Price in cents (e.g. $10.99 = 1099)
@@ -76,61 +76,11 @@ export const insertStockItemSchema = createInsertSchema(stockItems).pick({
   createdBy: true,
 });
 
-// Add relations for Drizzle ORM
-import { relations } from "drizzle-orm";
-
-export const stockItemsRelations = relations(stockItems, ({ one, many }) => ({
-  category: one(categories, {
-    fields: [stockItems.categoryId],
-    references: [categories.id],
-  }),
-  specialty: one(specialties, {
-    fields: [stockItems.specialtyId],
-    references: [specialties.id],
-  }),
-  allocations: many(stockAllocations),
-  movements: many(stockMovements),
-}));
-
-export const stockAllocationsRelations = relations(stockAllocations, ({ one }) => ({
-  user: one(users, {
-    fields: [stockAllocations.userId],
-    references: [users.id],
-  }),
-  stockItem: one(stockItems, {
-    fields: [stockAllocations.stockItemId],
-    references: [stockItems.id],
-  }),
-}));
-
-export const stockMovementsRelations = relations(stockMovements, ({ one }) => ({
-  stockItem: one(stockItems, {
-    fields: [stockMovements.stockItemId],
-    references: [stockItems.id],
-  }),
-  fromUser: one(users, {
-    fields: [stockMovements.fromUserId],
-    references: [users.id],
-  }),
-  toUser: one(users, {
-    fields: [stockMovements.toUserId],
-    references: [users.id],
-  }),
-}));
-
-export const usersRelations = relations(users, ({ one, many }) => ({
-  specialty: one(specialties, {
-    fields: [users.specialtyId],
-    references: [specialties.id],
-  }),
-  allocations: many(stockAllocations),
-}));
-
 // Stock allocations - tracks which user has which stock items
 export const stockAllocations = pgTable("stock_allocations", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
-  stockItemId: integer("stock_item_id").notNull().references(() => stockItems.id),
+  userId: integer("user_id").notNull(),
+  stockItemId: integer("stock_item_id").notNull(),
   quantity: integer("quantity").notNull(),
   allocatedAt: timestamp("allocated_at").defaultNow(),
   allocatedBy: integer("allocated_by").notNull(), // User ID who allocated
@@ -242,9 +192,9 @@ export type InsertRequestFile = typeof requestFiles.$inferInsert;
 // Stock movements - tracks movement history
 export const stockMovements = pgTable("stock_movements", {
   id: serial("id").primaryKey(),
-  stockItemId: integer("stock_item_id").notNull().references(() => stockItems.id),
-  fromUserId: integer("from_user_id").references(() => users.id), // Null if from central inventory
-  toUserId: integer("to_user_id").notNull().references(() => users.id),
+  stockItemId: integer("stock_item_id").notNull(),
+  fromUserId: integer("from_user_id"), // Null if from central inventory
+  toUserId: integer("to_user_id").notNull(),
   quantity: integer("quantity").notNull(),
   notes: text("notes"),
   movedAt: timestamp("moved_at").defaultNow(),
@@ -330,7 +280,7 @@ export const insertSystemSettingsSchema = createInsertSchema(systemSettings).pic
 // Audit logs for tracking user actions
 export const auditLogs = pgTable("audit_logs", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
+  userId: integer("user_id").notNull(),
   action: text("action").notNull(),
   entityType: text("entity_type").notNull(),
   entityId: integer("entity_id"),

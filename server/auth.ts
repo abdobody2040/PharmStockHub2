@@ -41,29 +41,21 @@ export const upload = multer({
   storage: storage_config,
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
   fileFilter: (_req, file, cb) => {
-    // Accept only specific, safe file types
+    // Accept images, Excel files, and CSV files
     const allowedMimes = [
-      'image/jpeg',
-      'image/jpg', 
-      'image/png',
-      'image/gif',
-      'image/webp',
+      'image/',
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
       'application/vnd.ms-excel', // .xls
       'text/csv',
       'application/csv'
     ];
     
-    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.xlsx', '.xls', '.csv'];
-    const fileExtension = path.extname(file.originalname).toLowerCase();
+    const isAllowed = allowedMimes.some(mime => file.mimetype.startsWith(mime) || file.mimetype === mime);
     
-    const isMimeAllowed = allowedMimes.includes(file.mimetype);
-    const isExtensionAllowed = allowedExtensions.includes(fileExtension);
-    
-    if (isMimeAllowed && isExtensionAllowed) {
+    if (isAllowed) {
       cb(null, true);
     } else {
-      cb(new Error(`File type not allowed. Allowed types: ${allowedExtensions.join(', ')}`));
+      cb(new Error('Only image files, Excel files, and CSV files are allowed'));
     }
   }
 });
@@ -79,9 +71,13 @@ export async function comparePasswords(plaintext: string, hash: string): Promise
   try {
     // Handle case where password is not properly hashed (legacy plain text)
     if (!hash || !hash.includes('.')) {
-      // Security: Always reject plain text passwords
-      console.error('SECURITY WARNING: Plain text password detected - rejecting authentication');
-      return false;
+      // Security: Reject plain text passwords in production
+      if (process.env.NODE_ENV === 'production') {
+        console.error('SECURITY WARNING: Plain text password detected in production');
+        return false;
+      }
+      console.warn('Password appears to be in plain text format, which is insecure');
+      return plaintext === hash;
     }
 
     const [hashed, salt] = hash.split('.');
@@ -227,11 +223,11 @@ export function setupAuth(app: Express) {
       if (!user) return res.status(401).json({ message: info?.message || "Login failed" });
 
       // Check if password needs to be rehashed (plain text passwords)
-      // Our hash format should contain a '.' separator for salt
       if (user.password && !user.password.includes('.')) {
-        console.warn('Detected unhashed password for user:', user.username);
-        // Don't rehash during login for security - require password reset instead
-        return res.status(401).json({ message: "Password reset required" });
+        console.log('Rehashing plain text password for user:', user.username);
+        const hashedPassword = await hashPassword(user.password);
+        await storage.updateUser(user.id, { password: hashedPassword });
+        user.password = hashedPassword;
       }
 
       req.login(user, (loginErr) => { // Renamed err to loginErr to avoid conflict

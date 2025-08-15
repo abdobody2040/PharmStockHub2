@@ -20,26 +20,14 @@ declare global {
 
 const app = express();
 
+// Validate critical environment variables
 function validateEnvironment() {
-  const requiredEnvVars = ['DATABASE_URL', 'SESSION_SECRET'];
-  const missing = requiredEnvVars.filter(envVar => !process.env[envVar] || process.env[envVar].trim() === '');
+  const requiredEnvVars = ['DATABASE_URL'];
+  const missing = requiredEnvVars.filter(envVar => !process.env[envVar]);
 
   if (missing.length > 0) {
-    console.error(`Missing critical environment variables: ${missing.join(', ')}`);
-    console.error('Application cannot start without proper configuration.');
-    
-    if (process.env.NODE_ENV === 'production') {
-      console.error('Critical environment variables missing in production. Exiting.');
-      process.exit(1);
-    } else {
-      console.error('Critical environment variables missing. Please check your .env file.');
-      process.exit(1);
-    }
-  }
-
-  // Validate SESSION_SECRET strength
-  if (process.env.SESSION_SECRET && process.env.SESSION_SECRET.length < 32) {
-    console.warn('SESSION_SECRET should be at least 32 characters long for security.');
+    console.error(`Missing required environment variables: ${missing.join(', ')}`);
+    console.error('Please check your environment configuration.');
   }
 }
 

@@ -20,7 +20,7 @@ import {
 } from "@shared/schema";
 import { db } from "./db";
 
-import { eq, and, desc, sql, asc } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 
 // Ensure uploads directory exists
 const uploadsDir = path.join(process.cwd(), 'uploads');
@@ -39,30 +39,18 @@ const excelUpload = multer({
       cb(null, excelDir);
     },
     filename: (req, file, cb) => {
-      // Sanitize filename to prevent path traversal
-      const sanitizedOriginalName = path.basename(file.originalname).replace(/[^a-zA-Z0-9.-]/g, '_');
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-      const ext = path.extname(sanitizedOriginalName);
+      const ext = path.extname(file.originalname);
       cb(null, 'request-' + uniqueSuffix + ext);
     }
   }),
-  limits: { 
-    fileSize: 25 * 1024 * 1024, // 25MB limit for Excel files
-    files: 1 // Only one file per request
-  },
+  limits: { fileSize: 25 * 1024 * 1024 }, // 25MB limit for Excel files
   fileFilter: (req, file, cb) => {
-    // Validate MIME type and file extension
-    const allowedMimeTypes = [
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'application/vnd.ms-excel',
-      'text/csv'
-    ];
-    const allowedExtensions = /\.(xlsx|xls|csv)$/i;
-    
-    if (allowedMimeTypes.includes(file.mimetype) && allowedExtensions.test(file.originalname)) {
+    // Accept Excel files
+    if (file.mimetype.includes('spreadsheet') || file.originalname.match(/\.(xlsx|xls|csv)$/)) {
       cb(null, true);
     } else {
-      cb(new Error('Only Excel (.xlsx, .xls) and CSV files are allowed'));
+      cb(new Error('Only Excel and CSV files are allowed'));
     }
   }
 });
@@ -70,6 +58,7 @@ const excelUpload = multer({
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication
   const { isAuthenticated, hasPermission } = setupAuth(app);
+
   // Static route for serving uploaded files
   app.use('/uploads', express.static('uploads'));
 
@@ -189,152 +178,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-
-
-  // Stock items
-  app.get("/api/stock-items", isAuthenticated, async (req, res, next) => {
-    try {
-      const items = await storage.getStockItems();
-      res.json(items);
-    } catch (error) {
-      next(error);
-    }
-  });
-
-  app.post("/api/stock-items", isAuthenticated, async (req, res, next) => {
-    try {
-      const item = await storage.createStockItem(req.body);
-      res.json(item);
-    } catch (error) {
-      next(error);
-    }
-  });
-
-  app.put("/api/stock-items/:id", isAuthenticated, async (req, res, next) => {
-    try {
-      const id = parseInt(req.params.id);
-      const item = await storage.updateStockItem(id, req.body);
-      
-      if (!item) {
-        return res.status(404).json({ error: "Stock item not found" });
-      }
-      
-      res.json(item);
-    } catch (error) {
-      next(error);
-    }
-  });
-
-  app.delete("/api/stock-items/:id", isAuthenticated, async (req, res, next) => {
-    try {
-      const id = parseInt(req.params.id);
-      const success = await storage.deleteStockItem(id);
-      
-      if (!success) {
-        return res.status(404).json({ error: "Stock item not found" });
-      }
-      
-      res.json({ success: true });
-    } catch (error) {
-      next(error);
-    }
-  });
-
-  // Stock movements
-  app.get("/api/stock-movements", isAuthenticated, async (req, res, next) => {
-    try {
-      const movements = await storage.getMovements();
-      res.json(movements);
-    } catch (error) {
-      next(error);
-    }
-  });
-
-  app.post("/api/stock-movements", isAuthenticated, async (req, res, next) => {
-    try {
-      const movement = await storage.executeStockMovementTransaction(req.body);
-      res.json(movement);
-    } catch (error) {
-      next(error);
-    }
-  });
-
-  // Requests
-  app.get("/api/requests", isAuthenticated, async (req, res, next) => {
-    try {
-      const requests = await storage.getRequests();
-      res.json(requests);
-    } catch (error) {
-      next(error);
-    }
-  });
-
-  app.get("/api/requests/:id", isAuthenticated, async (req, res, next) => {
-    try {
-      const id = parseInt(req.params.id);
-      const request = await storage.getRequest(id);
-      
-      if (!request) {
-        return res.status(404).json({ error: "Request not found" });
-      }
-      
-      res.json(request);
-    } catch (error) {
-      next(error);
-    }
-  });
-
-  app.get("/api/requests/:id/items", isAuthenticated, async (req, res, next) => {
-    try {
-      const id = parseInt(req.params.id);
-      const items = await storage.getRequestItems(id);
-      res.json(items);
-    } catch (error) {
-      next(error);
-    }
-  });
-
-  app.post("/api/requests", isAuthenticated, async (req, res, next) => {
-    try {
-      const request = await storage.createRequest(req.body);
-      res.json(request);
-    } catch (error) {
-      next(error);
-    }
-  });
-
-  app.post("/api/requests/:id/approve", isAuthenticated, async (req, res, next) => {
-    try {
-      const id = parseInt(req.params.id);
-      const { notes } = req.body;
-      const request = await storage.approveRequest(id, notes);
-      
-      if (!request) {
-        return res.status(404).json({ error: "Request not found" });
-      }
-      
-      res.json(request);
-    } catch (error) {
-      next(error);
-    }
-  });
-
-  app.post("/api/requests/:id/deny", isAuthenticated, async (req, res, next) => {
-    try {
-      const id = parseInt(req.params.id);
-      const { notes } = req.body;
-      const request = await storage.denyRequest(id, notes);
-      
-      if (!request) {
-        return res.status(404).json({ error: "Request not found" });
-      }
-      
-      res.json(request);
-    } catch (error) {
-      next(error);
-    }
-  });
-
   app.delete("/api/categories/:id", isAuthenticated, async (req, res, next) => {
     try {
       const id = parseInt(req.params.id);
@@ -377,7 +220,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // If password is being updated, hash it first
       if (updateData.password) {
-        const { hashPassword } = await import('./auth');
+        const { hashPassword } = require('./auth');
         updateData.password = await hashPassword(updateData.password);
       }
       
@@ -409,36 +252,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get stock items with role-based filtering
+  // Stock items
   app.get("/api/stock-items", isAuthenticated, async (req, res, next) => {
     try {
+      const stockItems = await storage.getStockItems();
       const user = req.user;
       
-      // Use optimized query based on user role
+      // Filter inventory based on user role and allocations
       if (user && (user.role === 'marketer' || user.role === 'salesManager' || user.role === 'medicalRep')) {
-        // Get only allocated items with optimized join query
-        const allocatedItems = await db.query.stockItems.findMany({
-          where: sql`EXISTS (
-            SELECT 1 FROM ${stockAllocations} 
-            WHERE ${stockAllocations.stockItemId} = ${stockItems.id} 
-            AND ${stockAllocations.userId} = ${user.id}
-          )`,
-          with: {
-            category: true,
-            specialty: true
-          },
-          orderBy: asc(stockItems.name)
-        });
+        // Get allocated stock for this user
+        const userAllocations = await storage.getAllocations(user.id);
+        const allocatedItemIds = userAllocations.map(a => a.stockItemId);
+        
+        // Return only items allocated to this user
+        const allocatedItems = stockItems.filter(item => allocatedItemIds.includes(item.id));
         res.json(allocatedItems);
       } else {
-        // Admin, CEO, Stock Keeper, etc. see all items with optimized query
-        const stockItems = await db.query.stockItems.findMany({
-          with: {
-            category: true,
-            specialty: true
-          },
-          orderBy: asc(stockItems.name)
-        });
+        // Admin, CEO, Stock Keeper, etc. see all items
         res.json(stockItems);
       }
     } catch (error) {
@@ -970,7 +800,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Department Transfer Route - Move item from one department to another
-  app.post("/api/items/:itemId/transfer", isAuthenticated, hasPermission("canMoveStock"), async (req, res, next) => {
+  app.post("/api/items/:itemId/transfer", isAuthenticated, async (req, res, next) => {
     try {
       const itemId = parseInt(req.params.itemId);
       const { fromUserId, toUserId, quantity, notes } = req.body;

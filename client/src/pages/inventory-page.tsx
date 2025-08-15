@@ -54,8 +54,7 @@ import {
   Category, 
   StockMovement,
   User,
-  StockAllocation,
-  Specialty // Import Specialty type
+  StockAllocation
 } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -113,7 +112,7 @@ export default function InventoryPage() {
     queryKey: ["/api/allocations"],
   });
 
-  const { data: specialties = [] } = useQuery<Specialty[]>({ // Fetch specialties
+  const { data: specialties = [] } = useQuery<Specialty[]>({
     queryKey: ["/api/specialties"],
   });
 
@@ -199,20 +198,20 @@ export default function InventoryPage() {
     if (filterCategory !== "all" && item.categoryId !== parseInt(filterCategory)) {
       return false;
     }
-
+    
     // Search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       const category = categories.find(c => c.id === item.categoryId);
       const categoryName = category ? category.name.toLowerCase() : "";
-
+      
       return (
         item.name.toLowerCase().includes(query) ||
         (item.uniqueNumber?.toLowerCase().includes(query)) ||
         categoryName.includes(query)
       );
     }
-
+    
     return true;
   });
 
@@ -276,7 +275,7 @@ export default function InventoryPage() {
     const itemAllocations = allocations.filter(alloc => alloc.stockItemId === item.id);
     const totalAllocated = itemAllocations.reduce((sum, alloc) => sum + alloc.quantity, 0);
     const available = Math.max(0, item.quantity - totalAllocated);
-
+    
     return available;
   };
 
@@ -311,7 +310,7 @@ export default function InventoryPage() {
             }
           </p>
         </div>
-
+        
         <div className="flex space-x-2">
           <Button
             variant="outline"
@@ -329,7 +328,7 @@ export default function InventoryPage() {
           >
             <List className="h-5 w-5" />
           </Button>
-
+          
           <Button
             variant="outline"
             size="icon"
@@ -338,7 +337,7 @@ export default function InventoryPage() {
           >
             <RefreshCw className="h-5 w-5" />
           </Button>
-
+          
           {hasPermission("canAddItems") && (
             <Button onClick={() => setShowAddItemModal(true)}>
               <Plus className="mr-2 h-4 w-4" />
@@ -347,7 +346,7 @@ export default function InventoryPage() {
           )}
         </div>
       </div>
-
+      
       {/* Filters */}
       <Card className="mb-6">
         <CardContent className="p-4">
@@ -371,7 +370,7 @@ export default function InventoryPage() {
                 showGenerate={false}
               />
             </div>
-
+            
             <div className="flex flex-wrap space-x-2">
               <Select
                 value={filterCategory}
@@ -389,7 +388,7 @@ export default function InventoryPage() {
                   ))}
                 </SelectContent>
               </Select>
-
+              
               <Button variant="outline">
                 <Filter className="mr-2 h-4 w-4" />
                 More Filters
@@ -398,14 +397,14 @@ export default function InventoryPage() {
           </div>
         </CardContent>
       </Card>
-
+      
       {/* Loading state */}
       {isLoadingItems && (
         <div className="flex justify-center items-center py-10">
           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
         </div>
       )}
-
+      
       {/* Empty state */}
       {!isLoadingItems && filteredItems.length === 0 && (
         <Card className="py-10">
@@ -426,7 +425,7 @@ export default function InventoryPage() {
           </CardContent>
         </Card>
       )}
-
+      
       {/* Grid View */}
       {!isLoadingItems && filteredItems.length > 0 && view === "grid" && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -435,7 +434,6 @@ export default function InventoryPage() {
               key={item.id}
               item={item}
               category={getCategoryById(item.categoryId)}
-              specialty={getSpecialtyById(item.specialtyId)} // Pass specialty to card
               onView={handleViewItem}
               onEdit={hasPermission("canEditItems") ? handleEditItem : undefined}
               onDelete={hasPermission("canRemoveItems") ? handleDeleteItem : undefined}
@@ -444,7 +442,7 @@ export default function InventoryPage() {
           ))}
         </div>
       )}
-
+      
       {/* List View */}
       {!isLoadingItems && filteredItems.length > 0 && view === "list" && (
         <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -464,7 +462,7 @@ export default function InventoryPage() {
             <TableBody>
               {filteredItems.map((item) => {
                 const category = getCategoryById(item.categoryId);
-
+                
                 return (
                   <TableRow key={item.id}>
                     <TableCell>
@@ -556,7 +554,7 @@ export default function InventoryPage() {
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
-
+                        
                         {hasPermission("canEditItems") && (
                           <Button
                             variant="ghost"
@@ -567,7 +565,7 @@ export default function InventoryPage() {
                             <Edit className="h-4 w-4" />
                           </Button>
                         )}
-
+                        
                         {hasPermission("canRemoveItems") && (
                           <Button
                             variant="ghost"
@@ -587,7 +585,7 @@ export default function InventoryPage() {
           </Table>
         </div>
       )}
-
+      
       {/* Add Item Modal */}
       <Dialog open={showAddItemModal} onOpenChange={setShowAddItemModal}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto sm:max-w-2xl">
@@ -597,14 +595,14 @@ export default function InventoryPage() {
               Create a new item in your inventory. Fields marked with * are required.
             </DialogDescription>
           </DialogHeader>
-
+          
           <div className="py-4">
             <StockItemForm
               onSubmit={handleAddItem}
               isLoading={createItemMutation.isPending}
             />
           </div>
-
+          
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowAddItemModal(false)}>
               Cancel
@@ -612,14 +610,14 @@ export default function InventoryPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
+      
       {/* View Item Modal */}
       <Dialog open={showViewItemModal} onOpenChange={setShowViewItemModal}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>{currentItem?.name}</DialogTitle>
           </DialogHeader>
-
+          
           {currentItem && (
             <div className="mt-4 py-2">
               <div className="flex flex-col sm:flex-row">
@@ -684,7 +682,7 @@ export default function InventoryPage() {
                   </dl>
                 </div>
               </div>
-
+              
               <div className="mt-6">
                 <h4 className="text-sm font-medium text-gray-700 mb-2">Stock Movement History</h4>
                 <div className="mt-2 border rounded-md overflow-x-auto">
@@ -722,7 +720,7 @@ export default function InventoryPage() {
               </div>
             </div>
           )}
-
+          
           <DialogFooter>
             {hasPermission("canMoveStock") && (
               <Button className="mr-auto">
@@ -730,7 +728,7 @@ export default function InventoryPage() {
                 Move Stock
               </Button>
             )}
-
+            
             {hasPermission("canEditItems") && (
               <Button 
                 variant="outline" 
@@ -744,14 +742,14 @@ export default function InventoryPage() {
                 Edit
               </Button>
             )}
-
+            
             <Button variant="outline" onClick={() => setShowViewItemModal(false)}>
               Close
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
+      
       {/* Edit Item Modal */}
       <Dialog open={showEditItemModal} onOpenChange={setShowEditItemModal}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto sm:max-w-2xl">
@@ -761,7 +759,7 @@ export default function InventoryPage() {
               Update the details of this stock item. Fields marked with * are required.
             </DialogDescription>
           </DialogHeader>
-
+          
           <div className="py-4">
             {currentItem && (
               <StockItemForm
@@ -771,7 +769,7 @@ export default function InventoryPage() {
               />
             )}
           </div>
-
+          
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowEditItemModal(false)}>
               Cancel
@@ -779,7 +777,7 @@ export default function InventoryPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
+      
       {/* Delete Confirmation */}
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent>

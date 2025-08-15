@@ -92,28 +92,6 @@ const ROLE_PERMISSIONS = {
   },
   productManager: {
     canViewAll: false,
-    canAddItems: true,
-    canEditItems: true,
-    canRemoveItems: false,
-    canMoveStock: true,
-    canManageUsers: false,
-    canViewReports: true,
-    canAccessSettings: false,
-    canCreateRequests: true
-  },
-  stockKeeper: {
-    canViewAll: true,
-    canAddItems: true,
-    canEditItems: true,
-    canRemoveItems: true,
-    canMoveStock: true,
-    canManageUsers: false,
-    canViewReports: true,
-    canAccessSettings: false,
-    canCreateRequests: true
-  },
-  productManager: {
-    canViewAll: false,
     canAddItems: false,
     canEditItems: false,
     canRemoveItems: false,
