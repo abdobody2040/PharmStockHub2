@@ -849,12 +849,33 @@ export class DatabaseStorage implements IStorage {
 
   // Stock item operations
   async getStockItems(): Promise<StockItem[]> {
-    // Modified to include specialtyName
-    return db.select({
-      ...stockItems,
-      specialtyName: specialties.name
-    }).from(stockItems)
+    const result = await db.select({
+      id: stockItems.id,
+      name: stockItems.name,
+      description: stockItems.description,
+      quantity: stockItems.quantity,
+      unitPrice: stockItems.unitPrice,
+      categoryId: stockItems.categoryId,
+      specialtyId: stockItems.specialtyId,
+      expiry: stockItems.expiry,
+      uniqueNumber: stockItems.uniqueNumber,
+      imageUrl: stockItems.imageUrl,
+      notes: stockItems.notes,
+      createdAt: stockItems.createdAt,
+      specialty: {
+        id: specialties.id,
+        name: specialties.name,
+        description: specialties.description,
+        createdAt: specialties.createdAt
+      }
+    })
+    .from(stockItems)
     .leftJoin(specialties, eq(stockItems.specialtyId, specialties.id));
+    
+    return result.map(row => ({
+      ...row,
+      specialty: row.specialty.id ? row.specialty : null
+    }));
   }
 
   async getStockItem(id: number): Promise<StockItem | undefined> {
@@ -1353,16 +1374,6 @@ try {
 }
 
 export { storage };
-import { db } from './db';
-import { users, stockItems, categories, specialties, stockAllocations, stockMovements, inventoryRequests, requestItems, systemSettings } from '@shared/schema';
-import { eq, and, desc, asc, sql, isNull, gte, lte, like } from 'drizzle-orm';
-import { InsertUser, InsertStockItem, InsertCategory, InsertSpecialty, User, StockItem, StockAllocation, StockMovement } from '@shared/schema';
-import session from 'express-session';
-import connectPg from 'connect-pg-simple';
-
-const PgSession = connectPg(session);
-
-export const storage = {
   // Session store for authentication
   sessionStore: new PgSession({
     pool: require('./db').pool,
@@ -1664,12 +1675,4 @@ export const storage = {
     await this.updateSystemSettings({ activeRoles: JSON.stringify(roles) });
   },
 
-  // Permission checking
-  async hasPermission(userId: number, permission: string) {
-    const user = await this.getUser(userId);
-    if (!user) return false;
-    
-    const { ROLE_PERMISSIONS } = require('@shared/schema');
-    return ROLE_PERMISSIONS[user.role as keyof typeof ROLE_PERMISSIONS]?.[permission] === true;
-  }
-};
+  

@@ -39,18 +39,30 @@ const excelUpload = multer({
       cb(null, excelDir);
     },
     filename: (req, file, cb) => {
+      // Sanitize filename to prevent path traversal
+      const sanitizedOriginalName = path.basename(file.originalname).replace(/[^a-zA-Z0-9.-]/g, '_');
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-      const ext = path.extname(file.originalname);
+      const ext = path.extname(sanitizedOriginalName);
       cb(null, 'request-' + uniqueSuffix + ext);
     }
   }),
-  limits: { fileSize: 25 * 1024 * 1024 }, // 25MB limit for Excel files
+  limits: { 
+    fileSize: 25 * 1024 * 1024, // 25MB limit for Excel files
+    files: 1 // Only one file per request
+  },
   fileFilter: (req, file, cb) => {
-    // Accept Excel files
-    if (file.mimetype.includes('spreadsheet') || file.originalname.match(/\.(xlsx|xls|csv)$/)) {
+    // Validate MIME type and file extension
+    const allowedMimeTypes = [
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-excel',
+      'text/csv'
+    ];
+    const allowedExtensions = /\.(xlsx|xls|csv)$/i;
+    
+    if (allowedMimeTypes.includes(file.mimetype) && allowedExtensions.test(file.originalname)) {
       cb(null, true);
     } else {
-      cb(new Error('Only Excel and CSV files are allowed'));
+      cb(new Error('Only Excel (.xlsx, .xls) and CSV files are allowed'));
     }
   }
 });
