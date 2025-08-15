@@ -157,9 +157,7 @@ export const REQUEST_STATUS = {
   APPROVED: "approved", 
   DENIED: "denied",
   COMPLETED: "completed"
-} as const;
-
-// Inventory requests table
+} as // Inventory requests table
 export const inventoryRequests = pgTable("inventory_requests", {
   id: serial("id").primaryKey(),
   type: text("type").notNull(), // prepare_order, inventory_share, receive_inventory
@@ -178,7 +176,7 @@ export const inventoryRequests = pgTable("inventory_requests", {
   shareToUserId: integer("share_to_user_id").references(() => users.id), // For sharing: PM2
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-  completedAt: timestamp("completed_at"),
+  completedAt: timestamp("completed_at")t"),
 });
 
 // Request items table (for detailed item requests)
@@ -227,6 +225,7 @@ export const insertRequestFileSchema = createInsertSchema(requestFiles).pick({
   originalName: true,
   fileSize: true,
   mimeType: true,
+});rue,
 });
 
 // Types

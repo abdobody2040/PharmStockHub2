@@ -15,13 +15,31 @@ interface ForecastData {
   daysUntilStockout: number;
 }
 
+import { useMemo } from 'react';
+
 export function InventoryForecasting() {
   const { data: forecastData = [] } = useQuery<ForecastData[]>({
     queryKey: ['/api/analytics/forecast'],
   });
 
-  const criticalItems = forecastData.filter(item => item.daysUntilStockout <= 7);
-  const lowStockItems = forecastData.filter(item => item.currentStock <= item.reorderPoint);
+  const { criticalItems, lowStockItems } = useMemo(() => {
+    const critical: ForecastData[] = [];
+    const lowStock: ForecastData[] = [];
+    
+    forecastData.forEach(item => {
+      if (item.daysUntilStockout <= 7) {
+        critical.push(item);
+      }
+      if (item.currentStock <= item.reorderPoint) {
+        lowStock.push(item);
+      }
+    });
+    
+    return {
+      criticalItems: critical,
+      lowStockItems: lowStock
+    };
+  }, [forecastData]);
 
   return (
     <div className="space-y-6">

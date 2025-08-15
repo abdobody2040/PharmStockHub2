@@ -20,14 +20,6 @@ declare global {
 
 const app = express();
 
-// Validate critical environment variables
-const requiredEnvVars = ['DATABASE_URL'];
-const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
-
-if (missingEnvVars.length > 0) {
-  console.warn(`Warning: Missing environment variables: ${missingEnvVars.join(', ')}`);
-  console.warn('Application will continue with fallback configurations.');
-}
 function validateEnvironment() {
   const requiredEnvVars = ['DATABASE_URL', 'SESSION_SECRET'];
   const missing = requiredEnvVars.filter(envVar => !process.env[envVar] || process.env[envVar].trim() === '');
