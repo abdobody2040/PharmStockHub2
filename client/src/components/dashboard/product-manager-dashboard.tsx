@@ -50,12 +50,12 @@ export function ProductManagerDashboard() {
   });
 
   // Fetch categories for proper naming
-  const { data: categories = [] } = useQuery({
+  const { data: categories = [] } = useQuery<Array<{ id: number; name: string; color: string }>>({
     queryKey: ["/api/categories"],
   });
 
-  // Fetch users for transfers display
-  const { data: users = [] } = useQuery<any[]>({
+  // Fetch users for transfers display  
+  const { data: users = [] } = useQuery<Array<{ id: number; name: string; role: string }>>({
     queryKey: ["/api/users"],
   });
 
@@ -76,7 +76,7 @@ export function ProductManagerDashboard() {
 
   // Helper function to get category name
   const getCategoryName = (categoryId: number) => {
-    const category = (categories as any[]).find((c: any) => c.id === categoryId);
+    const category = categories.find((c: { id: number; name: string }) => c.id === categoryId);
     return category?.name || 'N/A';
   };
 

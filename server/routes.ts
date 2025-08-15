@@ -518,7 +518,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         fromUserId: validatedData.fromUserId,
         toUserId: validatedData.toUserId,
         quantity: validatedData.quantity,
-        notes: validatedData.notes,
+        notes: validatedData.notes || undefined,
         movedBy: validatedData.movedBy
       });
       
@@ -716,7 +716,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const stockItems = await storage.getStockItems();
       const allocations = await storage.getAllocations();
       
-      const syncReport = {
+      const syncReport: {
+        totalItems: number;
+        fixedItems: number;
+        errors: Array<{
+          itemId: number;
+          itemName: string;
+          issue: string;
+          totalQuantity?: number;
+          totalAllocated?: number;
+          realAvailable?: number;
+        }>;
+      } = {
         totalItems: stockItems.length,
         fixedItems: 0,
         errors: []
@@ -745,10 +756,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           syncReport.fixedItems++;
         } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
           syncReport.errors.push({
             itemId: item.id,
             itemName: item.name,
-            issue: `Error processing: ${error.message}`
+            issue: `Error processing: ${errorMessage}`
           });
         }
       }

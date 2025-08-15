@@ -71,9 +71,12 @@ export async function comparePasswords(plaintext: string, hash: string): Promise
   try {
     // Handle case where password is not properly hashed (legacy plain text)
     if (!hash || !hash.includes('.')) {
+      // Security: Reject plain text passwords in production
+      if (process.env.NODE_ENV === 'production') {
+        console.error('SECURITY WARNING: Plain text password detected in production');
+        return false;
+      }
       console.warn('Password appears to be in plain text format, which is insecure');
-      // For security, we should not allow plain text comparison in production
-      // but for development/migration purposes, we'll temporarily allow it
       return plaintext === hash;
     }
 

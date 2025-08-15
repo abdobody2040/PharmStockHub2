@@ -15,11 +15,11 @@ import {
 import jsPDF from "jspdf";
 
 interface ExportPrintToolbarProps {
-  data: any[];
+  data: Record<string, any>[];
   filename?: string;
   reportType?: string;
   columns?: { key: string; label: string; }[];
-  onCustomExport?: (format: string, data: any[]) => void;
+  onCustomExport?: (format: string, data: Record<string, any>[]) => void;
 }
 
 export function ExportPrintToolbar({ 
@@ -32,13 +32,13 @@ export function ExportPrintToolbar({
   const [exportFormat, setExportFormat] = useState("pdf");
   const [isExporting, setIsExporting] = useState(false);
 
-  const formatData = (items: any[]) => {
+  const formatData = (items: Record<string, any>[]) => {
     if (columns.length === 0) {
       return items;
     }
     
     return items.map(item => {
-      const formatted: any = {};
+      const formatted: Record<string, any> = {};
       columns.forEach(col => {
         formatted[col.label] = item[col.key] || "-";
       });
