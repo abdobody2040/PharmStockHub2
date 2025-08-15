@@ -26,8 +26,14 @@ function validateEnvironment() {
   const missing = requiredEnvVars.filter(envVar => !process.env[envVar]);
 
   if (missing.length > 0) {
-    console.error(`Missing required environment variables: ${missing.join(', ')}`);
-    console.error('Please check your environment configuration.');
+    console.warn(`Missing recommended environment variables: ${missing.join(', ')}`);
+    console.warn('Application may not function correctly without proper configuration.');
+    
+    // Only exit in production if critical vars are missing
+    if (process.env.NODE_ENV === 'production') {
+      console.error('Critical environment variables missing in production. Exiting.');
+      process.exit(1);
+    }
   }
 }
 

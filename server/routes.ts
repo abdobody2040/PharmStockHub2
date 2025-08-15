@@ -255,20 +255,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Stock items
   app.get("/api/stock-items", isAuthenticated, async (req, res, next) => {
     try {
-      const stockItems = await storage.getStockItems();
       const user = req.user;
       
-      // Filter inventory based on user role and allocations
+      // Use optimized query based on user role
       if (user && (user.role === 'marketer' || user.role === 'salesManager' || user.role === 'medicalRep')) {
-        // Get allocated stock for this user
-        const userAllocations = await storage.getAllocations(user.id);
-        const allocatedItemIds = userAllocations.map(a => a.stockItemId);
-        
-        // Return only items allocated to this user
-        const allocatedItems = stockItems.filter(item => allocatedItemIds.includes(item.id));
+        // Get only allocated items with a single optimized query
+        const allocatedItems = await storage.getStockItemsForUser(user.id);
         res.json(allocatedItems);
       } else {
         // Admin, CEO, Stock Keeper, etc. see all items
+        const stockItems = await storage.getStockItems();
         res.json(stockItems);
       }
     } catch (error) {

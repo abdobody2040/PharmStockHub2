@@ -38,11 +38,11 @@ function SpecialtyBadge({ specialtyId }: { specialtyId: number }) {
   const { data: specialties = [] } = useQuery<Specialty[]>({
     queryKey: ["/api/specialties"],
   });
-  
+
   const specialty = specialties.find(s => s.id === specialtyId);
-  
+
   if (!specialty) return null;
-  
+
   return (
     <Badge variant="secondary" className="text-xs bg-purple-50 text-purple-700 border-purple-200">
       {specialty.name}
@@ -61,11 +61,11 @@ export function StockItemCard({
 }: StockItemCardProps) {
   const { hasPermission } = useAuth();
   const [isHovered, setIsHovered] = useState(false);
-  
+
   const expiryStatus = getExpiryStatus(item.expiry);
   const expiryStatusColor = getExpiryStatusColor(expiryStatus);
   const categoryColor = getCategoryColorClass(category.name);
-  
+
   return (
     <Card 
       className={cn(
@@ -91,13 +91,13 @@ export function StockItemCard({
           </div>
         )}
       </div>
-      
+
       <CardContent className="p-4">
         <div className="flex justify-between items-start">
           <h3 className="text-lg font-medium text-gray-900 flex-1 mr-2 break-words">{item.name}</h3>
           <span className="text-sm text-gray-500 flex-shrink-0">{item.uniqueNumber}</span>
         </div>
-        
+
         <div className="mt-2 flex justify-between items-center">
           <div className="flex flex-col space-y-1">
             <Badge variant="outline" className={cn("font-medium", categoryColor)}>
@@ -130,7 +130,7 @@ export function StockItemCard({
             ${item.price ? ((item.price * item.quantity) / 100).toFixed(2) : '0.00'}
           </span>
         </div>
-        
+
         <div className="mt-3 flex justify-between items-center">
           <div className="flex flex-col">
             <span className="text-sm text-gray-600">Expires: {formatDate(item.expiry)}</span>
@@ -142,7 +142,7 @@ export function StockItemCard({
               </Badge>
             )}
           </div>
-          
+
           <div className="flex space-x-1">
             <Button
               variant="ghost"
@@ -152,7 +152,7 @@ export function StockItemCard({
             >
               <Eye className="h-4 w-4" />
             </Button>
-            
+
             {hasPermission('canEditItems') && onEdit && (
               <Button
                 variant="ghost"
@@ -163,7 +163,7 @@ export function StockItemCard({
                 <Edit className="h-4 w-4" />
               </Button>
             )}
-            
+
             {hasPermission('canRemoveItems') && onDelete && (
               <Button
                 variant="ghost"
@@ -174,7 +174,7 @@ export function StockItemCard({
                 <Trash2 className="h-4 w-4" />
               </Button>
             )}
-            
+
             {item.uniqueNumber && (
               <div className="ml-1">
                 <BarcodeActions

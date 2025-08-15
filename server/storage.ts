@@ -445,7 +445,7 @@ export class MemStorage implements IStorage {
   async updateRequest(id: number, requestData: Partial<InventoryRequest>): Promise<InventoryRequest | undefined> {
     const existingRequest = this.requestsMap.get(id);
     if (!existingRequest) return undefined;
-    
+
     const updatedRequest = { 
       ...existingRequest, 
       ...requestData,
@@ -622,11 +622,11 @@ export class DatabaseStorage implements IStorage {
         .from(systemSettings)
         .where(eq(systemSettings.key, 'activeRoles'))
         .limit(1);
-      
+
       if (setting) {
         return JSON.parse(setting.value);
       }
-      
+
       // Default active roles if not set
       return ['ceo', 'admin', 'productManager', 'stockKeeper'];
     } catch (error) {
@@ -784,22 +784,22 @@ export class DatabaseStorage implements IStorage {
           shareToUserId: null
         })
         .where(eq(inventoryRequests.assignedTo, id));
-      
+
       await db
         .update(inventoryRequests)
         .set({ finalAssignee: null })
         .where(eq(inventoryRequests.finalAssignee, id));
-        
+
       await db
         .update(inventoryRequests)
         .set({ secondaryApprover: null })
         .where(eq(inventoryRequests.secondaryApprover, id));
-        
+
       await db
         .update(inventoryRequests)
         .set({ shareFromUserId: null })
         .where(eq(inventoryRequests.shareFromUserId, id));
-        
+
       await db
         .update(inventoryRequests)
         .set({ shareToUserId: null })
@@ -849,7 +849,12 @@ export class DatabaseStorage implements IStorage {
 
   // Stock item operations
   async getStockItems(): Promise<StockItem[]> {
-    return db.select().from(stockItems);
+    // Modified to include specialtyName
+    return db.select({
+      ...stockItems,
+      specialtyName: specialties.name
+    }).from(stockItems)
+    .leftJoin(specialties, eq(stockItems.specialtyId, specialties.id));
   }
 
   async getStockItem(id: number): Promise<StockItem | undefined> {
@@ -1011,10 +1016,10 @@ export class DatabaseStorage implements IStorage {
           .select({ total: sum(stockAllocations.quantity) })
           .from(stockAllocations)
           .where(eq(stockAllocations.stockItemId, stockItemId));
-        
+
         const allocatedQuantity = totalAllocatedResult[0]?.total || 0;
         const availableInCentral = item.quantity - Number(allocatedQuantity);
-        
+
         if (availableInCentral < quantity) {
           throw new Error(
             `Not enough stock available in central inventory for item ID ${stockItemId}. Available: ${availableInCentral}, Requested: ${quantity}`
@@ -1132,7 +1137,7 @@ export class DatabaseStorage implements IStorage {
 
   async updateRequest(id: number, requestData: Partial<InventoryRequest>): Promise<InventoryRequest | undefined> {
     const cleanData = { ...requestData };
-    
+
     // Handle date fields properly
     if (cleanData.completedAt && typeof cleanData.completedAt === 'string') {
       cleanData.completedAt = new Date(cleanData.completedAt);
@@ -1140,7 +1145,7 @@ export class DatabaseStorage implements IStorage {
     if (cleanData.createdAt && typeof cleanData.createdAt === 'string') {
       cleanData.createdAt = new Date(cleanData.createdAt);
     }
-    
+
     const [updatedRequest] = await db
       .update(inventoryRequests)
       .set({
@@ -1182,7 +1187,7 @@ export class DatabaseStorage implements IStorage {
     if (request.type === "prepare_order" || request.type === "receive_inventory") {
       // Transfer inventory to requester
       await this.processInventoryTransfer(request);
-      
+
       return this.updateRequest(id, {
         status: "approved",
         notes,
@@ -1217,7 +1222,7 @@ export class DatabaseStorage implements IStorage {
   async processInventoryTransfer(request: InventoryRequest): Promise<void> {
     // Get all request items
     const requestItems = await this.getRequestItems(request.id);
-    
+
     for (const item of requestItems) {
       if (item.stockItemId && item.quantity) {
         try {
@@ -1238,7 +1243,7 @@ export class DatabaseStorage implements IStorage {
             } catch (centralError) {
               // If central inventory doesn't have enough, create a direct allocation
               console.log(`Central inventory insufficient, creating direct allocation for request ${request.id}`);
-              
+
               // Check if user already has allocation for this item
               const existingAllocation = await db
                 .select()
@@ -1250,7 +1255,7 @@ export class DatabaseStorage implements IStorage {
                   )
                 )
                 .limit(1);
-              
+
               if (existingAllocation.length > 0) {
                 // Update existing allocation
                 await db
@@ -1267,7 +1272,7 @@ export class DatabaseStorage implements IStorage {
                   allocatedAt: new Date(),
                 });
               }
-              
+
               // Create movement record
               await db.insert(stockMovements).values({
                 stockItemId: item.stockItemId,
@@ -1278,7 +1283,7 @@ export class DatabaseStorage implements IStorage {
                 notes: `Approved request (direct allocation): ${request.title}`,
                 movedAt: new Date(),
               });
-              
+
               console.log(`Successfully created direct allocation of ${item.quantity} units for item ${item.stockItemId} for request ${request.id}`);
             }
           } else if (request.type === "inventory_share") {
