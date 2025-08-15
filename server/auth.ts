@@ -41,21 +41,29 @@ export const upload = multer({
   storage: storage_config,
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
   fileFilter: (_req, file, cb) => {
-    // Accept images, Excel files, and CSV files
+    // Accept only specific, safe file types
     const allowedMimes = [
-      'image/',
+      'image/jpeg',
+      'image/jpg', 
+      'image/png',
+      'image/gif',
+      'image/webp',
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
       'application/vnd.ms-excel', // .xls
       'text/csv',
       'application/csv'
     ];
     
-    const isAllowed = allowedMimes.some(mime => file.mimetype.startsWith(mime) || file.mimetype === mime);
+    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.xlsx', '.xls', '.csv'];
+    const fileExtension = path.extname(file.originalname).toLowerCase();
     
-    if (isAllowed) {
+    const isMimeAllowed = allowedMimes.includes(file.mimetype);
+    const isExtensionAllowed = allowedExtensions.includes(fileExtension);
+    
+    if (isMimeAllowed && isExtensionAllowed) {
       cb(null, true);
     } else {
-      cb(new Error('Only image files, Excel files, and CSV files are allowed'));
+      cb(new Error(`File type not allowed. Allowed types: ${allowedExtensions.join(', ')}`));
     }
   }
 });

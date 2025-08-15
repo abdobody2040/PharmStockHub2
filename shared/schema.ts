@@ -76,6 +76,56 @@ export const insertStockItemSchema = createInsertSchema(stockItems).pick({
   createdBy: true,
 });
 
+// Add relations for Drizzle ORM
+import { relations } from "drizzle-orm";
+
+export const stockItemsRelations = relations(stockItems, ({ one, many }) => ({
+  category: one(categories, {
+    fields: [stockItems.categoryId],
+    references: [categories.id],
+  }),
+  specialty: one(specialties, {
+    fields: [stockItems.specialtyId],
+    references: [specialties.id],
+  }),
+  allocations: many(stockAllocations),
+  movements: many(stockMovements),
+}));
+
+export const stockAllocationsRelations = relations(stockAllocations, ({ one }) => ({
+  user: one(users, {
+    fields: [stockAllocations.userId],
+    references: [users.id],
+  }),
+  stockItem: one(stockItems, {
+    fields: [stockAllocations.stockItemId],
+    references: [stockItems.id],
+  }),
+}));
+
+export const stockMovementsRelations = relations(stockMovements, ({ one }) => ({
+  stockItem: one(stockItems, {
+    fields: [stockMovements.stockItemId],
+    references: [stockItems.id],
+  }),
+  fromUser: one(users, {
+    fields: [stockMovements.fromUserId],
+    references: [users.id],
+  }),
+  toUser: one(users, {
+    fields: [stockMovements.toUserId],
+    references: [users.id],
+  }),
+}));
+
+export const usersRelations = relations(users, ({ one, many }) => ({
+  specialty: one(specialties, {
+    fields: [users.specialtyId],
+    references: [specialties.id],
+  }),
+  allocations: many(stockAllocations),
+}));
+
 // Stock allocations - tracks which user has which stock items
 export const stockAllocations = pgTable("stock_allocations", {
   id: serial("id").primaryKey(),

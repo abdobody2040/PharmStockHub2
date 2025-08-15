@@ -22,18 +22,25 @@ const app = express();
 
 // Validate critical environment variables
 function validateEnvironment() {
-  const requiredEnvVars = ['DATABASE_URL'];
-  const missing = requiredEnvVars.filter(envVar => !process.env[envVar]);
+  const requiredEnvVars = ['DATABASE_URL', 'SESSION_SECRET'];
+  const missing = requiredEnvVars.filter(envVar => !process.env[envVar] || process.env[envVar].trim() === '');
 
   if (missing.length > 0) {
-    console.warn(`Missing recommended environment variables: ${missing.join(', ')}`);
-    console.warn('Application may not function correctly without proper configuration.');
+    console.error(`Missing critical environment variables: ${missing.join(', ')}`);
+    console.error('Application cannot start without proper configuration.');
     
-    // Only exit in production if critical vars are missing
     if (process.env.NODE_ENV === 'production') {
       console.error('Critical environment variables missing in production. Exiting.');
       process.exit(1);
+    } else {
+      console.error('Critical environment variables missing. Please check your .env file.');
+      process.exit(1);
     }
+  }
+
+  // Validate SESSION_SECRET strength
+  if (process.env.SESSION_SECRET && process.env.SESSION_SECRET.length < 32) {
+    console.warn('SESSION_SECRET should be at least 32 characters long for security.');
   }
 }
 

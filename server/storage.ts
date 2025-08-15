@@ -1353,3 +1353,323 @@ try {
 }
 
 export { storage };
+import { db } from './db';
+import { users, stockItems, categories, specialties, stockAllocations, stockMovements, inventoryRequests, requestItems, systemSettings } from '@shared/schema';
+import { eq, and, desc, asc, sql, isNull, gte, lte, like } from 'drizzle-orm';
+import { InsertUser, InsertStockItem, InsertCategory, InsertSpecialty, User, StockItem, StockAllocation, StockMovement } from '@shared/schema';
+import session from 'express-session';
+import connectPg from 'connect-pg-simple';
+
+const PgSession = connectPg(session);
+
+export const storage = {
+  // Session store for authentication
+  sessionStore: new PgSession({
+    pool: require('./db').pool,
+    tableName: 'session',
+    createTableIfMissing: true
+  }),
+
+  // User operations
+  async getUsers() {
+    return await db.select().from(users).orderBy(asc(users.name));
+  },
+
+  async getUser(id: number) {
+    const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
+    return result[0] || null;
+  },
+
+  async getUserByUsername(username: string) {
+    const result = await db.select().from(users).where(eq(users.username, username)).limit(1);
+    return result[0] || null;
+  },
+
+  async createUser(userData: InsertUser) {
+    const result = await db.insert(users).values(userData).returning();
+    return result[0];
+  },
+
+  async updateUser(id: number, updates: Partial<InsertUser>) {
+    const result = await db.update(users).set(updates).where(eq(users.id, id)).returning();
+    return result[0] || null;
+  },
+
+  async deleteUser(id: number) {
+    const result = await db.delete(users).where(eq(users.id, id)).returning();
+    return result.length > 0;
+  },
+
+  // Stock item operations
+  async getStockItems() {
+    return await db.query.stockItems.findMany({
+      with: {
+        category: true,
+        specialty: true
+      },
+      orderBy: asc(stockItems.name)
+    });
+  },
+
+  async getStockItemsForUser(userId: number) {
+    // Get allocated items for a specific user
+    const allocations = await db.select().from(stockAllocations).where(eq(stockAllocations.userId, userId));
+    const itemIds = allocations.map(a => a.stockItemId);
+    
+    if (itemIds.length === 0) return [];
+    
+    return await db.query.stockItems.findMany({
+      where: sql`${stockItems.id} IN (${sql.join(itemIds.map(id => sql`${id}`), sql`, `)})`,
+      with: {
+        category: true,
+        specialty: true
+      }
+    });
+  },
+
+  async getExpiringItems(days: number = 30) {
+    const futureDate = new Date();
+    futureDate.setDate(futureDate.getDate() + days);
+    
+    return await db.query.stockItems.findMany({
+      where: and(
+        gte(stockItems.expiry, new Date()),
+        lte(stockItems.expiry, futureDate)
+      ),
+      with: {
+        category: true,
+        specialty: true
+      },
+      orderBy: asc(stockItems.expiry)
+    });
+  },
+
+  async createStockItem(itemData: InsertStockItem) {
+    const result = await db.insert(stockItems).values(itemData).returning();
+    return result[0];
+  },
+
+  async updateStockItem(id: number, updates: Partial<InsertStockItem>) {
+    const result = await db.update(stockItems).set(updates).where(eq(stockItems.id, id)).returning();
+    return result[0] || null;
+  },
+
+  async deleteStockItem(id: number) {
+    const result = await db.delete(stockItems).where(eq(stockItems.id, id)).returning();
+    return result.length > 0;
+  },
+
+  // Category operations
+  async getCategories() {
+    return await db.select().from(categories).orderBy(asc(categories.name));
+  },
+
+  async createCategory(categoryData: any) {
+    const result = await db.insert(categories).values(categoryData).returning();
+    return result[0];
+  },
+
+  async updateCategory(id: number, updates: any) {
+    const result = await db.update(categories).set(updates).where(eq(categories.id, id)).returning();
+    return result[0] || null;
+  },
+
+  async deleteCategory(id: number) {
+    const result = await db.delete(categories).where(eq(categories.id, id)).returning();
+    return result.length > 0;
+  },
+
+  // Specialty operations
+  async getSpecialties() {
+    return await db.select().from(specialties).orderBy(asc(specialties.name));
+  },
+
+  async createSpecialty(specialtyData: InsertSpecialty) {
+    const result = await db.insert(specialties).values(specialtyData).returning();
+    return result[0];
+  },
+
+  async updateSpecialty(id: number, updates: Partial<InsertSpecialty>) {
+    const result = await db.update(specialties).set(updates).where(eq(specialties.id, id)).returning();
+    return result[0] || null;
+  },
+
+  async deleteSpecialty(id: number) {
+    const result = await db.delete(specialties).where(eq(specialties.id, id)).returning();
+    return result.length > 0;
+  },
+
+  // Stock allocation operations
+  async getAllocations(userId?: number) {
+    if (userId) {
+      return await db.select().from(stockAllocations).where(eq(stockAllocations.userId, userId));
+    }
+    return await db.select().from(stockAllocations);
+  },
+
+  async createAllocation(allocationData: any) {
+    const result = await db.insert(stockAllocations).values(allocationData).returning();
+    return result[0];
+  },
+
+  async updateAllocation(id: number, updates: any) {
+    const result = await db.update(stockAllocations).set(updates).where(eq(stockAllocations.id, id)).returning();
+    return result[0] || null;
+  },
+
+  async deleteAllocation(id: number) {
+    const result = await db.delete(stockAllocations).where(eq(stockAllocations.id, id)).returning();
+    return result.length > 0;
+  },
+
+  // Stock movement operations
+  async getMovements() {
+    return await db.select().from(stockMovements).orderBy(desc(stockMovements.movedAt));
+  },
+
+  async executeStockMovementTransaction(movementData: any) {
+    return await db.transaction(async (tx) => {
+      // Insert movement record
+      const result = await tx.insert(stockMovements).values(movementData).returning();
+      
+      // Update allocations if needed
+      if (movementData.fromUserId) {
+        // Reduce from source allocation
+        await tx
+          .update(stockAllocations)
+          .set({ quantity: sql`${stockAllocations.quantity} - ${movementData.quantity}` })
+          .where(and(
+            eq(stockAllocations.userId, movementData.fromUserId),
+            eq(stockAllocations.stockItemId, movementData.stockItemId)
+          ));
+      }
+
+      // Add to target allocation
+      const existingAllocation = await tx
+        .select()
+        .from(stockAllocations)
+        .where(and(
+          eq(stockAllocations.userId, movementData.toUserId),
+          eq(stockAllocations.stockItemId, movementData.stockItemId)
+        ))
+        .limit(1);
+
+      if (existingAllocation.length > 0) {
+        await tx
+          .update(stockAllocations)
+          .set({ quantity: sql`${stockAllocations.quantity} + ${movementData.quantity}` })
+          .where(eq(stockAllocations.id, existingAllocation[0].id));
+      } else {
+        await tx.insert(stockAllocations).values({
+          userId: movementData.toUserId,
+          stockItemId: movementData.stockItemId,
+          quantity: movementData.quantity,
+          allocatedBy: movementData.movedBy,
+          allocatedAt: new Date()
+        });
+      }
+
+      return result[0];
+    });
+  },
+
+  // Request operations
+  async getRequests() {
+    return await db.select().from(inventoryRequests).orderBy(desc(inventoryRequests.createdAt));
+  },
+
+  async getRequest(id: number) {
+    const result = await db.select().from(inventoryRequests).where(eq(inventoryRequests.id, id)).limit(1);
+    return result[0] || null;
+  },
+
+  async getRequestItems(requestId: number) {
+    return await db.select().from(requestItems).where(eq(requestItems.requestId, requestId));
+  },
+
+  async createRequest(requestData: any) {
+    const result = await db.insert(inventoryRequests).values(requestData).returning();
+    return result[0];
+  },
+
+  async createRequestItem(itemData: any) {
+    const result = await db.insert(requestItems).values(itemData).returning();
+    return result[0];
+  },
+
+  async updateRequest(id: number, updates: any) {
+    const result = await db.update(inventoryRequests).set(updates).where(eq(inventoryRequests.id, id)).returning();
+    return result[0] || null;
+  },
+
+  async approveRequest(id: number, notes?: string) {
+    const result = await db.update(inventoryRequests)
+      .set({ status: 'approved', notes, updatedAt: new Date() })
+      .where(eq(inventoryRequests.id, id))
+      .returning();
+    return result[0] || null;
+  },
+
+  async denyRequest(id: number, notes?: string) {
+    const result = await db.update(inventoryRequests)
+      .set({ status: 'denied', notes, updatedAt: new Date() })
+      .where(eq(inventoryRequests.id, id))
+      .returning();
+    return result[0] || null;
+  },
+
+  async approveAndForward(id: number, notes?: string) {
+    const result = await db.update(inventoryRequests)
+      .set({ status: 'pending_secondary', notes, updatedAt: new Date() })
+      .where(eq(inventoryRequests.id, id))
+      .returning();
+    return result[0] || null;
+  },
+
+  async finalApprove(id: number, notes?: string) {
+    const result = await db.update(inventoryRequests)
+      .set({ status: 'completed', notes, completedAt: new Date(), updatedAt: new Date() })
+      .where(eq(inventoryRequests.id, id))
+      .returning();
+    return result[0] || null;
+  },
+
+  // System settings
+  async getSystemSettings() {
+    const result = await db.select().from(systemSettings);
+    return result.reduce((acc, setting) => {
+      acc[setting.key] = setting.value;
+      return acc;
+    }, {} as Record<string, string>);
+  },
+
+  async updateSystemSettings(settings: Record<string, string>) {
+    for (const [key, value] of Object.entries(settings)) {
+      await db.insert(systemSettings)
+        .values({ key, value })
+        .onConflictDoUpdate({
+          target: systemSettings.key,
+          set: { value, updatedAt: new Date() }
+        });
+    }
+  },
+
+  // Active roles management
+  async getActiveRoles() {
+    const settings = await this.getSystemSettings();
+    return JSON.parse(settings.activeRoles || '["ceo", "admin", "stockKeeper"]');
+  },
+
+  async updateActiveRoles(roles: string[]) {
+    await this.updateSystemSettings({ activeRoles: JSON.stringify(roles) });
+  },
+
+  // Permission checking
+  async hasPermission(userId: number, permission: string) {
+    const user = await this.getUser(userId);
+    if (!user) return false;
+    
+    const { ROLE_PERMISSIONS } = require('@shared/schema');
+    return ROLE_PERMISSIONS[user.role as keyof typeof ROLE_PERMISSIONS]?.[permission] === true;
+  }
+};

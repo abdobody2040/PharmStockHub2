@@ -259,12 +259,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Use optimized query based on user role
       if (user && (user.role === 'marketer' || user.role === 'salesManager' || user.role === 'medicalRep')) {
-        // Get only allocated items with a single optimized query
-        const allocatedItems = await storage.getStockItemsForUser(user.id);
+        // Get only allocated items with optimized join query
+        const allocatedItems = await db.query.stockItems.findMany({
+          where: sql`EXISTS (
+            SELECT 1 FROM ${stockAllocations} 
+            WHERE ${stockAllocations.stockItemId} = ${stockItems.id} 
+            AND ${stockAllocations.userId} = ${user.id}
+          )`,
+          with: {
+            category: true,
+            specialty: true
+          },
+          orderBy: asc(stockItems.name)
+        });
         res.json(allocatedItems);
       } else {
-        // Admin, CEO, Stock Keeper, etc. see all items
-        const stockItems = await storage.getStockItems();
+        // Admin, CEO, Stock Keeper, etc. see all items with optimized query
+        const stockItems = await db.query.stockItems.findMany({
+          with: {
+            category: true,
+            specialty: true
+          },
+          orderBy: asc(stockItems.name)
+        });
         res.json(stockItems);
       }
     } catch (error) {
@@ -796,7 +813,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Department Transfer Route - Move item from one department to another
-  app.post("/api/items/:itemId/transfer", isAuthenticated, async (req, res, next) => {
+  app.post("/api/items/:itemId/transfer", isAuthenticated, hasPermission("canMoveStock"), async (req, res, next) => {
     try {
       const itemId = parseInt(req.params.itemId);
       const { fromUserId, toUserId, quantity, notes } = req.body;
