@@ -27,7 +27,7 @@ export function auditLogger(action: string, entityType: string) {
           entityType,
           entityId: req.params.id ? parseInt(req.params.id) : undefined,
           newValues: req.body,
-          ipAddress: req.ip,
+          ipAddress: req.ip || 'unknown',
           userAgent: req.get('User-Agent') || 'Unknown'
         }).catch(console.error);
       }

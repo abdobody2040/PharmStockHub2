@@ -426,7 +426,7 @@ export function ProductManagerDashboard() {
                     .slice(0, 5)
                     .map((movement) => {
                       const stockItem = stockItems.find(item => item.id === movement.stockItemId);
-                      const fromUser = users.find((u: any) => u.id === movement.fromUserId);
+                      const fromUser = users.find(u => u.id === movement.fromUserId);
                       
                       return (
                         <tr key={movement.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">

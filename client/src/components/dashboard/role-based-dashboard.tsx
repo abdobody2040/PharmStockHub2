@@ -257,7 +257,7 @@ export function RoleBasedDashboard() {
           <CardDescription>Latest inventory movements allocated to you</CardDescription>
         </CardHeader>
         <CardContent>
-          {movements && (movements as any[]).filter((m: any) => m.toUserId === user?.id).length > 0 ? (
+          {movements && (movements as StockMovement[]).filter(m => m.toUserId === user?.id).length > 0 ? (
             <div className="overflow-x-auto">
               <table className="w-full border-collapse">
                 <thead>
@@ -270,10 +270,10 @@ export function RoleBasedDashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {(movements as any[])
-                    .filter((m: any) => m.toUserId === user?.id)
+                  {(movements as StockMovement[])
+                    .filter(m => m.toUserId === user?.id)
                     .slice(0, 5)
-                    .map((movement: any) => {
+                    .map((movement) => {
                       const stockItem = stockItems.find(item => item.id === movement.stockItemId);
                       const fromUser = users.find(u => u.id === movement.fromUserId);
                       
@@ -574,7 +574,7 @@ export function RoleBasedDashboard() {
 
   // Helper function to get category name
   const getCategoryName = (categoryId: number) => {
-    const category = (categories as any[]).find((c: any) => c.id === categoryId);
+    const category = (categories as Array<{ id: number; name: string; color: string }>).find(c => c.id === categoryId);
     return category?.name || 'N/A';
   }
 

@@ -277,7 +277,33 @@ export const insertSystemSettingsSchema = createInsertSchema(systemSettings).pic
   value: true,
 });
 
-export type SystemSetting = typeof systemSettings.$inferSelect;
+// Audit logs for tracking user actions
+export const auditLogs = pgTable("audit_logs", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  action: text("action").notNull(),
+  entityType: text("entity_type").notNull(),
+  entityId: integer("entity_id"),
+  oldValues: text("old_values"), // JSON string
+  newValues: text("new_values"), // JSON string
+  ipAddress: text("ip_address").notNull(),
+  userAgent: text("user_agent").notNull(),
+  timestamp: timestamp("timestamp").defaultNow(),
+});
+
+export const insertAuditLogSchema = createInsertSchema(auditLogs).pick({
+  userId: true,
+  action: true,
+  entityType: true,
+  entityId: true,
+  oldValues: true,
+  newValues: true,
+  ipAddress: true,
+  userAgent: true,
+});
+
+export type AuditLog = typeof auditLogs.$inferSelect;
+export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
 export type InsertSystemSetting = z.infer<typeof insertSystemSettingsSchema>;
 
 // Role permissions

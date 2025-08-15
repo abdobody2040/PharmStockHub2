@@ -334,7 +334,7 @@ export default function ReportsPage() {
     setDateRange(dateRange);
 
     // Prepare report data based on report type
-    let reportData: any[][] = [];
+    let reportData: string[][] = [];
 
     switch(reportType) {
       case 'inventory':
@@ -499,7 +499,7 @@ export default function ReportsPage() {
   };
 
   // Generate PDF report
-  const generatePdfReport = (reportType: string, data: any[][]) => {
+  const generatePdfReport = (reportType: string, data: string[][]) => {
     const doc = new jsPDF();
     const reportTitle = reportType.charAt(0).toUpperCase() + reportType.slice(1) + ' Report';
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -569,7 +569,7 @@ export default function ReportsPage() {
   };
 
   // Generate Excel report (as TSV for simplicity)
-  const generateExcelReport = (reportType: string, data: any[][]) => {
+  const generateExcelReport = (reportType: string, data: string[][]) => {
     // Create a tsv string that Excel can open
     const tsvContent = data.map(row => row.join("\t")).join("\n");
 
@@ -584,7 +584,7 @@ export default function ReportsPage() {
   };
 
   // Generate CSV report
-  const generateCsvReport = (reportType: string, data: any[][]) => {
+  const generateCsvReport = (reportType: string, data: string[][]) => {
     // Create a CSV string
     const csvContent = data.map(row => 
       row.map(cell => {

@@ -103,7 +103,7 @@ export default function StockManagementPage() {
 
   // Create movement mutation
   const createMovementMutation = useMutation({
-    mutationFn: async (data: { movements: any[] }) => {
+    mutationFn: async (data: { movements: Array<{ stockItemId: number; fromUserId?: number; toUserId: number; quantity: number; notes?: string }> }) => {
       const results = [];
       for (const movement of data.movements) {
         const response = await fetch("/api/movements", {
