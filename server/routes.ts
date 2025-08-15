@@ -20,7 +20,7 @@ import {
 } from "@shared/schema";
 import { db } from "./db";
 
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, sql, asc } from "drizzle-orm";
 
 // Ensure uploads directory exists
 const uploadsDir = path.join(process.cwd(), 'uploads');
@@ -70,13 +70,6 @@ const excelUpload = multer({
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication
   const { isAuthenticated, hasPermission } = setupAuth(app);
-
-  import express, { type Request, Response, NextFunction } from "express";
-import { isAuthenticated, hasPermission } from "./auth";
-import { storage } from "./storage";
-import { insertCategorySchema } from "@shared/schema";
-
-export function registerRoutes(app: express.Application) {
   // Static route for serving uploaded files
   app.use('/uploads', express.static('uploads'));
 
@@ -179,7 +172,6 @@ export function registerRoutes(app: express.Application) {
       next(error);
     }
   });
-}
 
   app.put("/api/categories/:id", isAuthenticated, async (req, res, next) => {
     try {
@@ -385,7 +377,7 @@ export function registerRoutes(app: express.Application) {
       
       // If password is being updated, hash it first
       if (updateData.password) {
-        const { hashPassword } = require('./auth');
+        const { hashPassword } = await import('./auth');
         updateData.password = await hashPassword(updateData.password);
       }
       
@@ -417,7 +409,7 @@ export function registerRoutes(app: express.Application) {
     }
   });
 
-  // Stock items
+  // Get stock items with role-based filtering
   app.get("/api/stock-items", isAuthenticated, async (req, res, next) => {
     try {
       const user = req.user;
