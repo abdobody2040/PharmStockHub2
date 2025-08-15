@@ -51,7 +51,7 @@ export const insertCategorySchema = createInsertSchema(categories);
 export const stockItems = pgTable("stock_items", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
-  categoryId: integer("category_id").notNull(),
+  categoryId: integer("category_id").notNull().references(() => categories.id),
   specialtyId: integer("specialty_id").references(() => specialties.id),
   quantity: integer("quantity").notNull().default(0),
   price: integer("price").default(0), // Price in cents (e.g. $10.99 = 1099)
@@ -129,8 +129,8 @@ export const usersRelations = relations(users, ({ one, many }) => ({
 // Stock allocations - tracks which user has which stock items
 export const stockAllocations = pgTable("stock_allocations", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull(),
-  stockItemId: integer("stock_item_id").notNull(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  stockItemId: integer("stock_item_id").notNull().references(() => stockItems.id),
   quantity: integer("quantity").notNull(),
   allocatedAt: timestamp("allocated_at").defaultNow(),
   allocatedBy: integer("allocated_by").notNull(), // User ID who allocated
@@ -157,7 +157,9 @@ export const REQUEST_STATUS = {
   APPROVED: "approved", 
   DENIED: "denied",
   COMPLETED: "completed"
-} as // Inventory requests table
+} as const;
+
+// Inventory requests table
 export const inventoryRequests = pgTable("inventory_requests", {
   id: serial("id").primaryKey(),
   type: text("type").notNull(), // prepare_order, inventory_share, receive_inventory
@@ -176,7 +178,7 @@ export const inventoryRequests = pgTable("inventory_requests", {
   shareToUserId: integer("share_to_user_id").references(() => users.id), // For sharing: PM2
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-  completedAt: timestamp("completed_at")t"),
+  completedAt: timestamp("completed_at"),
 });
 
 // Request items table (for detailed item requests)
@@ -225,7 +227,6 @@ export const insertRequestFileSchema = createInsertSchema(requestFiles).pick({
   originalName: true,
   fileSize: true,
   mimeType: true,
-});rue,
 });
 
 // Types
@@ -241,9 +242,9 @@ export type InsertRequestFile = typeof requestFiles.$inferInsert;
 // Stock movements - tracks movement history
 export const stockMovements = pgTable("stock_movements", {
   id: serial("id").primaryKey(),
-  stockItemId: integer("stock_item_id").notNull(),
-  fromUserId: integer("from_user_id"), // Null if from central inventory
-  toUserId: integer("to_user_id").notNull(),
+  stockItemId: integer("stock_item_id").notNull().references(() => stockItems.id),
+  fromUserId: integer("from_user_id").references(() => users.id), // Null if from central inventory
+  toUserId: integer("to_user_id").notNull().references(() => users.id),
   quantity: integer("quantity").notNull(),
   notes: text("notes"),
   movedAt: timestamp("moved_at").defaultNow(),
@@ -329,7 +330,7 @@ export const insertSystemSettingsSchema = createInsertSchema(systemSettings).pic
 // Audit logs for tracking user actions
 export const auditLogs = pgTable("audit_logs", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull(),
+  userId: integer("user_id").notNull().references(() => users.id),
   action: text("action").notNull(),
   entityType: text("entity_type").notNull(),
   entityId: integer("entity_id"),
@@ -427,20 +428,6 @@ export const ROLE_PERMISSIONS = {
     canShareInventory: false,
     canManageRequests: false,
     canRestockInventory: false,
-    canValidateInventory: falses: true,
-    canEditItems: true,
-    canRemoveItems: true,
-    canMoveStock: false,
-    canManageUsers: false,
-    canViewReports: false,
-    canAccessSettings: true,
-    canManageSpecialties: false,
-    canSeeAllSpecialties: false,
-    canCreateRequests: false,
-    canUploadFiles: false,
-    canShareInventory: false,
-    canManageRequests: false,
-    canRestockInventory: false,
     canValidateInventory: false
   },
   admin: {
@@ -487,15 +474,6 @@ export const ROLE_PERMISSIONS = {
     canMoveStock: true,
     canManageUsers: false,
     canViewReports: true,
-    canAccessSettings: false,
-    canManageSpecialties: false,
-    canSeeAllSpecialties: false,
-    canCreateRequests: true,
-    canUploadFiles: true,
-    canShareInventory: true,
-    canManageRequests: false,
-    canRestockInventory: false,
-    canValidateInventory: falses: true,
     canAccessSettings: false,
     canManageSpecialties: false,
     canSeeAllSpecialties: false,
