@@ -229,10 +229,9 @@ export function setupAuth(app: Express) {
       // Check if password needs to be rehashed (plain text passwords)
       // Our hash format should contain a '.' separator for salt
       if (user.password && !user.password.includes('.')) {
-        console.log('Rehashing plain text password for user:', user.username);
-        const hashedPassword = await hashPassword(user.password);
-        await storage.updateUser(user.id, { password: hashedPassword });
-        user.password = hashedPassword;
+        console.warn('Detected unhashed password for user:', user.username);
+        // Don't rehash during login for security - require password reset instead
+        return res.status(401).json({ message: "Password reset required" });
       }
 
       req.login(user, (loginErr) => { // Renamed err to loginErr to avoid conflict

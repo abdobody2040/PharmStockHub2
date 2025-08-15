@@ -71,6 +71,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication
   const { isAuthenticated, hasPermission } = setupAuth(app);
 
+  import express, { type Request, Response, NextFunction } from "express";
+import { isAuthenticated, hasPermission } from "./auth";
+import { storage } from "./storage";
+import { insertCategorySchema } from "@shared/schema";
+
+export function registerRoutes(app: express.Application) {
   // Static route for serving uploaded files
   app.use('/uploads', express.static('uploads'));
 
@@ -173,6 +179,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       next(error);
     }
   });
+}
 
   app.put("/api/categories/:id", isAuthenticated, async (req, res, next) => {
     try {
@@ -185,6 +192,152 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       res.json(category);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+
+
+  // Stock items
+  app.get("/api/stock-items", isAuthenticated, async (req, res, next) => {
+    try {
+      const items = await storage.getStockItems();
+      res.json(items);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/stock-items", isAuthenticated, async (req, res, next) => {
+    try {
+      const item = await storage.createStockItem(req.body);
+      res.json(item);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.put("/api/stock-items/:id", isAuthenticated, async (req, res, next) => {
+    try {
+      const id = parseInt(req.params.id);
+      const item = await storage.updateStockItem(id, req.body);
+      
+      if (!item) {
+        return res.status(404).json({ error: "Stock item not found" });
+      }
+      
+      res.json(item);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.delete("/api/stock-items/:id", isAuthenticated, async (req, res, next) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteStockItem(id);
+      
+      if (!success) {
+        return res.status(404).json({ error: "Stock item not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Stock movements
+  app.get("/api/stock-movements", isAuthenticated, async (req, res, next) => {
+    try {
+      const movements = await storage.getMovements();
+      res.json(movements);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/stock-movements", isAuthenticated, async (req, res, next) => {
+    try {
+      const movement = await storage.executeStockMovementTransaction(req.body);
+      res.json(movement);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Requests
+  app.get("/api/requests", isAuthenticated, async (req, res, next) => {
+    try {
+      const requests = await storage.getRequests();
+      res.json(requests);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/requests/:id", isAuthenticated, async (req, res, next) => {
+    try {
+      const id = parseInt(req.params.id);
+      const request = await storage.getRequest(id);
+      
+      if (!request) {
+        return res.status(404).json({ error: "Request not found" });
+      }
+      
+      res.json(request);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/requests/:id/items", isAuthenticated, async (req, res, next) => {
+    try {
+      const id = parseInt(req.params.id);
+      const items = await storage.getRequestItems(id);
+      res.json(items);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/requests", isAuthenticated, async (req, res, next) => {
+    try {
+      const request = await storage.createRequest(req.body);
+      res.json(request);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/requests/:id/approve", isAuthenticated, async (req, res, next) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { notes } = req.body;
+      const request = await storage.approveRequest(id, notes);
+      
+      if (!request) {
+        return res.status(404).json({ error: "Request not found" });
+      }
+      
+      res.json(request);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/requests/:id/deny", isAuthenticated, async (req, res, next) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { notes } = req.body;
+      const request = await storage.denyRequest(id, notes);
+      
+      if (!request) {
+        return res.status(404).json({ error: "Request not found" });
+      }
+      
+      res.json(request);
     } catch (error) {
       next(error);
     }
